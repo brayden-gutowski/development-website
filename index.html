@@ -7,9 +7,11 @@
     <meta name="description" content="One person on one planet between infinite stars." />
     <meta property="og:description" content="One person on one planet between infinite stars." />
     <title>Brayden Gutowski</title>
-    <link rel="icon" type="image/png" sizes="64x64" href="assets/towski-dev-logo.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/towski-dev-logo.png?v=20260820" />
+    <link rel="shortcut icon" type="image/png" href="assets/towski-dev-logo.png?v=20260820" />
+    <link rel="apple-touch-icon" href="assets/towski-dev-logo.png?v=20260820" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20260820-bottom-locations" />
+    <link rel="stylesheet" href="style.css?v=20260820-time-center" />
   </head>
   <body>
     <main class="app" id="app">
@@ -58,7 +60,7 @@
                 </feMerge>
               </filter>
             </defs>
-            <path class="wordmark__path" id="wordmark-path" d="M 60 92 Q 600 92 1140 92" />
+            <path class="wordmark__path" id="wordmark-path" d="M -160 92 L 1360 92" />
             <text class="wordmark__halo" aria-hidden="true">
               <textPath href="#wordmark-path" startOffset="50%" text-anchor="middle">Brayden Gutowski<tspan class="wordmark__suffix" dx="0.18em">.dev</tspan></textPath>
             </text>
@@ -85,6 +87,17 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
         <p class="eyebrow" id="location-kicker">Selected location</p>
+        <div class="location-panel__time" id="location-local-time" data-period="day">
+          <svg class="location-panel__time-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="location-panel__time-sun">
+              <circle cx="12" cy="12" r="3.5" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+            </g>
+            <path class="location-panel__time-moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+          </svg>
+          <span class="location-panel__time-label">Local time</span>
+          <time id="location-local-time-value">--:--</time>
+        </div>
         <h1 id="location-heading">Profile</h1>
         <p class="location-panel__subheading" id="location-subheading"></p>
         <p class="location-panel__detail" id="location-detail"></p>
@@ -138,6 +151,6 @@
     </main>
 
     <noscript>This interactive globe requires JavaScript.</noscript>
-    <script type="module" src="script.js?v=20260820-blog-layout"></script>
+    <script type="module" src="script.js?v=20260820-local-time"></script>
   </body>
 </html>

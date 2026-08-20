@@ -11,7 +11,7 @@
   --color-accent: #c5e7ee;
 
   --font-sans: "Helvetica Neue", "Inter", "Segoe UI", Arial, sans-serif;
-  --font-display: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-display: Arial, "Helvetica Neue", sans-serif;
 
   --text-xs: 0.6875rem;
   --text-sm: 0.8125rem;
@@ -139,25 +139,24 @@ a:focus-visible {
 .wordmark text {
   font-family: var(--font-display);
   font-size: 82px;
-  font-stretch: condensed;
   font-weight: 700;
   letter-spacing: 0.055em;
   text-transform: uppercase;
 }
 
 .wordmark__halo {
-  fill: rgba(250, 252, 255, 0.64);
-  stroke: rgba(250, 252, 255, 0.36);
+  fill: rgba(245, 248, 249, 0.54);
+  stroke: rgba(245, 248, 249, 0.28);
   stroke-width: 3px;
-  opacity: 0.72;
+  opacity: 0.64;
   filter: url("#wordmark-halo-blur");
 }
 
 .wordmark__text {
-  fill: #ffffff;
+  fill: #f1f3f3;
   filter:
-    drop-shadow(0 0 0.12rem rgba(255, 255, 255, 1))
-    drop-shadow(0 0 0.34rem rgba(255, 255, 255, 0.76));
+    drop-shadow(0 0 0.12rem rgba(255, 255, 255, 0.78))
+    drop-shadow(0 0 0.34rem rgba(255, 255, 255, 0.52));
 }
 
 .wordmark__accent-glow {
@@ -357,6 +356,7 @@ a:focus-visible {
 }
 
 .location-panel {
+  --location-panel-gap: var(--space-2);
   position: absolute;
   top: 50%;
   right: var(--page-pad);
@@ -374,6 +374,10 @@ a:focus-visible {
   backdrop-filter: blur(18px);
 }
 
+.location-panel > .eyebrow {
+  margin: 0;
+}
+
 .location-panel.is-open {
   opacity: 1;
   transform: translate(0, -50%);
@@ -381,22 +385,73 @@ a:focus-visible {
 }
 
 .location-panel h1 {
-  margin: var(--space-2) 2.5rem var(--space-3) 0;
+  margin: var(--location-panel-gap) 2.5rem 0 0;
   font-size: clamp(1.9rem, 3.6vw, 3.25rem);
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 0.94;
 }
 
+.location-panel__time {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 0.42rem;
+  margin-top: var(--location-panel-gap);
+  color: #f3c95c;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.location-panel__time[data-period="night"] {
+  color: #bfd7ee;
+}
+
+.location-panel__time-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  align-self: center;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.location-panel__time-moon,
+.location-panel__time[data-period="night"] .location-panel__time-sun {
+  display: none;
+}
+
+.location-panel__time[data-period="night"] .location-panel__time-moon {
+  display: block;
+}
+
+.location-panel__time-label {
+  font-size: 1em;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.location-panel__time time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
 .location-panel__lede {
-  margin: var(--space-3) 0 0;
+  margin: var(--location-panel-gap) 0 0;
   color: var(--color-muted);
   font-size: var(--text-sm);
   line-height: 1.6;
 }
 
 .location-panel__subheading {
-  margin: 0;
+  margin: var(--location-panel-gap) 0 0;
   color: var(--color-ink);
   font-size: var(--text-lg);
   font-weight: 500;
@@ -480,7 +535,7 @@ a:focus-visible {
   gap: var(--space-2);
   align-items: center;
   flex-wrap: nowrap;
-  margin-top: var(--space-5);
+  margin-top: var(--location-panel-gap);
 }
 
 .panel-actions .text-button {

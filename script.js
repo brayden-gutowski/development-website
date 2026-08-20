@@ -15,6 +15,7 @@ const CONFIG = {
   dragSpeed: 0.0046,
   focusDuration: 1100,
   solarRefreshInterval: 60_000,
+  cloudRotationPeriodMs: 24 * 60 * 1000,
   travelStarCount: 12,
   travelStarEndProgress: 0.7,
 };
@@ -26,6 +27,7 @@ const LOCATIONS = {
     heading: "Education",
     subheading: "University of Florida",
     detail: "Major in Computer Science",
+    timeZone: "America/New_York",
     lat: 29.6516,
     lon: -82.3248,
     description: "I'm currently a player and the market coordinator for UF Valorant Esports.  I'm also a part of the DevLUp game development club at UF.",
@@ -40,6 +42,7 @@ const LOCATIONS = {
     heading: "Languages",
     subheading: "Japanese at an N5 level; Proficient in English",
     detail: "Minor in Japanese Literature",
+    timeZone: "Asia/Tokyo",
     lat: 35.6762,
     lon: 139.6503,
     description: "I have been learning Japanese for roughly a year, and have taken 2 courses for Japanese, placing me at around an N5 level.  I'm currently taking a third course, meaning I'm studying toward an N4 level.",
@@ -178,6 +181,8 @@ const ui = {
   panel: document.querySelector("#location-panel"),
   panelClose: document.querySelector("#close-panel"),
   kicker: document.querySelector("#location-kicker"),
+  localTime: document.querySelector("#location-local-time"),
+  localTimeValue: document.querySelector("#location-local-time-value"),
   heading: document.querySelector("#location-heading"),
   subheading: document.querySelector("#location-subheading"),
   detail: document.querySelector("#location-detail"),
@@ -232,10 +237,12 @@ let earthStar;
 let raycaster;
 let sunlight;
 let earthMaterial;
+let cloudLayer;
 let markerGlowTexture;
 const sunDirectionLocal = new THREE.Vector3();
 const sunDirectionWorld = new THREE.Vector3(0, 0, 1);
 let nextSolarUpdateAt = 0;
+let nextLocalTimeUpdateAt = 0;
 let markerHitTargets = [];
 let frameId;
 
@@ -504,6 +511,35 @@ function getSubsolarPoint(date = new Date()) {
   };
 }
 
+function isLocationInDaylight(location, date) {
+  const subsolarPoint = getSubsolarPoint(date);
+  const locationLat = THREE.MathUtils.degToRad(location.lat);
+  const subsolarLat = THREE.MathUtils.degToRad(subsolarPoint.lat);
+  const longitudeDifference = THREE.MathUtils.degToRad(location.lon - subsolarPoint.lon);
+  const sunFacing = Math.sin(locationLat) * Math.sin(subsolarLat)
+    + Math.cos(locationLat) * Math.cos(subsolarLat) * Math.cos(longitudeDifference);
+  return sunFacing > 0;
+}
+
+function updateLocationLocalTime(date = new Date()) {
+  const location = LOCATIONS[state.selectedId];
+  if (!location) return;
+  const formattedTime = new Intl.DateTimeFormat("en-US", {
+    timeZone: location.timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+  const period = isLocationInDaylight(location, date) ? "day" : "night";
+  ui.localTime.dataset.period = period;
+  ui.localTimeValue.dateTime = date.toISOString();
+  ui.localTimeValue.textContent = formattedTime;
+  ui.localTime.setAttribute(
+    "aria-label",
+    `${formattedTime} local time in ${location.kicker}. It is currently ${period === "day" ? "daytime" : "nighttime"}.`,
+  );
+  nextLocalTimeUpdateAt = date.getTime() + 30_000;
+}
+
 function updateSolarLighting() {
   if (!earthGroup || !sunlight) return;
   const now = Date.now();
@@ -714,7 +750,7 @@ function setupScene(
   earth.name = "earth";
   earthGroup.add(earth);
 
-  const clouds = new THREE.Mesh(
+  cloudLayer = new THREE.Mesh(
     new THREE.SphereGeometry(CONFIG.globeRadius + 0.014, 192, 128),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -726,9 +762,9 @@ function setupScene(
       depthWrite: false,
     }),
   );
-  clouds.name = "earth-clouds";
-  clouds.renderOrder = 1;
-  earthGroup.add(clouds);
+  cloudLayer.name = "earth-clouds";
+  cloudLayer.renderOrder = 1;
+  earthGroup.add(cloudLayer);
 
   scene.add(new THREE.HemisphereLight(0x8ea7b0, 0x020406, 0.2));
   sunlight = new THREE.DirectionalLight(0xfff7e8, 2.85);
@@ -792,7 +828,7 @@ function updateWordmarkCurve() {
   const rawProgress = THREE.MathUtils.clamp((state.zoomCurrentProgress - 0.42) / 0.58, 0, 1);
   const curveProgress = rawProgress * rawProgress * (3 - 2 * rawProgress);
   if (curveProgress < 0.001) {
-    ui.wordmarkPath.setAttribute("d", "M 150 92 L 1050 92");
+    ui.wordmarkPath.setAttribute("d", "M -160 92 L 1360 92");
     return;
   }
 
@@ -814,16 +850,20 @@ function updateWordmarkCurve() {
     ? THREE.MathUtils.clamp((1 - getLayoutScale()) * 40, 0, 16)
     : 0;
   const titleGapPx = THREE.MathUtils.clamp(svgBounds.width * 0.026, 14, 50) + focusTitleGapPx;
-  const halfAngle = THREE.MathUtils.degToRad(63);
+  const halfAngle = THREE.MathUtils.degToRad(86);
   const radiusForEarth = (earthRadiusPx + titleGapPx) / svgScale;
-  const maximumRadius = (Math.min(centerX, 1200 - centerX) - 54) / Math.sin(halfAngle);
-  const targetRadius = Math.min(Math.max(365, radiusForEarth), maximumRadius);
+  const baseRadius = Math.max(365, radiusForEarth);
+  const visibleText = ui.wordmark.querySelector(".wordmark__text");
+  const measuredTextLength = visibleText?.getComputedTextLength() || 0;
+  const requiredPathLength = measuredTextLength * 1.28;
+  const targetRadius = Math.max(baseRadius, requiredPathLength / (2 * halfAngle));
+  const arcCenterY = centerY + (targetRadius - baseRadius);
   const targetHalfChord = targetRadius * Math.sin(halfAngle);
-  const targetEdgeY = centerY - targetRadius * Math.cos(halfAngle);
+  const targetEdgeY = arcCenterY - targetRadius * Math.cos(halfAngle);
   const targetSagitta = targetRadius * (1 - Math.cos(halfAngle));
 
-  const leftX = THREE.MathUtils.lerp(150, centerX - targetHalfChord, curveProgress);
-  const rightX = THREE.MathUtils.lerp(1050, centerX + targetHalfChord, curveProgress);
+  const leftX = THREE.MathUtils.lerp(-160, centerX - targetHalfChord, curveProgress);
+  const rightX = THREE.MathUtils.lerp(1360, centerX + targetHalfChord, curveProgress);
   const edgeY = THREE.MathUtils.lerp(92, targetEdgeY, curveProgress);
   const sagitta = targetSagitta * curveProgress;
   const halfChord = (rightX - leftX) / 2;
@@ -864,7 +904,11 @@ function animate(now = 0) {
   frameId = requestAnimationFrame(animate);
   updateFocus(now);
   earthGroup.quaternion.copy(state.currentQuaternion);
+  if (cloudLayer && !state.reducedMotion) {
+    cloudLayer.rotation.y = (now / CONFIG.cloudRotationPeriodMs) * Math.PI * 2;
+  }
   updateSolarLighting();
+  if (state.selectedId && Date.now() >= nextLocalTimeUpdateAt) updateLocationLocalTime();
   state.zoomCurrentProgress += (state.zoomProgress - state.zoomCurrentProgress) * (state.reducedMotion ? 1 : 0.075);
   state.globeCurrentScale += (state.globeTargetScale - state.globeCurrentScale) * (state.reducedMotion ? 1 : 0.075);
   earthGroup.scale.setScalar(state.globeCurrentScale);
@@ -1007,6 +1051,7 @@ function focusLocation(locationId, { preserveBlogUrl = false } = {}) {
   state.selectedId = locationId;
 
   ui.kicker.textContent = location.kicker;
+  updateLocationLocalTime();
   ui.heading.textContent = location.heading;
   ui.subheading.textContent = location.subheading;
   ui.detail.textContent = location.detail;
