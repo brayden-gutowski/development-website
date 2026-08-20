@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Red abstract study</title>
+  <desc id="desc">A deep red geometric composition with layered translucent arcs.</desc>
+  <rect width="1200" height="900" fill="#b9404b"/>
+  <circle cx="930" cy="210" r="390" fill="#e66b70" opacity="0.52"/>
+  <circle cx="180" cy="820" r="420" fill="#742736" opacity="0.4"/>
+  <path d="M-80 600 460 70l180 180L95 790Z" fill="#f5b4ab" opacity="0.2"/>
+  <path d="M520 900 1200 270v630Z" fill="#6d1f30" opacity="0.34"/>
+</svg>

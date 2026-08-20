@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Blue abstract study</title>
+  <desc id="desc">A cobalt blue composition with cyan bands and dark geometric forms.</desc>
+  <rect width="1200" height="900" fill="#315f99"/>
+  <circle cx="260" cy="180" r="390" fill="#6faad1" opacity="0.48"/>
+  <path d="M0 700 660 40l220 220L220 920Z" fill="#93d2df" opacity="0.25"/>
+  <path d="M700 0h500v900H880L610 630Z" fill="#183861" opacity="0.46"/>
+  <circle cx="940" cy="690" r="230" fill="#4e80b8" opacity="0.72"/>
+</svg>

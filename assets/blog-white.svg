@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">White abstract study</title>
+  <desc id="desc">An off-white architectural composition with soft gray shadows.</desc>
+  <rect width="1200" height="900" fill="#efefec"/>
+  <path d="M0 130h840v240H0Z" fill="#d4d5d2"/>
+  <path d="M440 0h360v900H440Z" fill="#fafaf8" opacity="0.92"/>
+  <circle cx="930" cy="640" r="300" fill="#c7c9c8" opacity="0.62"/>
+  <path d="M180 900 870 210l180 180-510 510Z" fill="#ffffff" opacity="0.8"/>
+</svg>
