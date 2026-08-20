@@ -254,7 +254,9 @@ function getRestCameraZ() {
 
 function getFocusCameraZ() {
   const restZ = getRestCameraZ();
-  return camera?.aspect < 0.9 ? restZ * 0.66 : CONFIG.cameraFocusZ;
+  if (camera?.aspect < 0.9) return restZ * 0.66;
+  const laptopFocusOffset = THREE.MathUtils.clamp((1 - getLayoutScale()) * 3.7, 0, 1.35);
+  return CONFIG.cameraFocusZ + laptopFocusOffset;
 }
 
 function globeScaleFromProgress(progress) {
@@ -615,16 +617,16 @@ function updateWordmarkCurve() {
   const svgScale = svgBounds.width / 1200;
   const centerX = (centerScreenX - svgBounds.left) / svgScale;
   const centerY = (centerScreenY - svgBounds.top) / svgScale;
-  const titleGapPx = THREE.MathUtils.clamp(svgBounds.width * 0.026, 14, 50);
+  const focusTitleGapPx = state.selectedId && window.innerWidth > 720
+    ? THREE.MathUtils.clamp((1 - getLayoutScale()) * 40, 0, 16)
+    : 0;
+  const titleGapPx = THREE.MathUtils.clamp(svgBounds.width * 0.026, 14, 50) + focusTitleGapPx;
   const halfAngle = THREE.MathUtils.degToRad(63);
   const radiusForEarth = (earthRadiusPx + titleGapPx) / svgScale;
   const maximumRadius = (Math.min(centerX, 1200 - centerX) - 54) / Math.sin(halfAngle);
   const targetRadius = Math.min(Math.max(365, radiusForEarth), maximumRadius);
   const targetHalfChord = targetRadius * Math.sin(halfAngle);
-  const laptopTitleOffsetPx = window.innerWidth > 720
-    ? THREE.MathUtils.clamp((1 - getLayoutScale()) * 130, 0, 48)
-    : 0;
-  const targetEdgeY = centerY - targetRadius * Math.cos(halfAngle) + laptopTitleOffsetPx / svgScale;
+  const targetEdgeY = centerY - targetRadius * Math.cos(halfAngle);
   const targetSagitta = targetRadius * (1 - Math.cos(halfAngle));
 
   const leftX = THREE.MathUtils.lerp(150, centerX - targetHalfChord, curveProgress);
