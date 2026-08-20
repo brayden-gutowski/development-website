@@ -117,8 +117,8 @@ const JAPANESE_BLOG_CATEGORIES = [
     entries: [
       {
         id: "blog-entry-8-21-2026",
-        title: "近日公開",
-        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nCurabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.",
+        title: "日本語ブログ 2026年8月21日",
+        body: "日本語ブログテスト",
         media: [
           {
             src: "assets/blog-2026-08-21-left.webp",
