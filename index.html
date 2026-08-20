@@ -85,9 +85,16 @@
 
       <div class="interaction-guide" id="interaction-guide">
         <svg class="interaction-guide__arrow" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" />
+          <path class="interaction-guide__scroll-arrow" d="M12 19V5M6.5 10.5 12 5l5.5 5.5" />
+          <g class="interaction-guide__pinch-arrows">
+            <path class="interaction-guide__pinch-arrow interaction-guide__pinch-arrow--out" d="M10 10 5 5m0 0h5M5 5v5" />
+            <path class="interaction-guide__pinch-arrow interaction-guide__pinch-arrow--in" d="m14 14 5 5m0 0v-5m0 5h-5" />
+          </g>
         </svg>
-        <p>Scroll through the stars</p>
+        <p>
+          <span class="interaction-guide__desktop-copy">Scroll through the stars</span>
+          <span class="interaction-guide__mobile-copy">Pinch through the stars</span>
+        </p>
       </div>
 
       <nav class="location-nav" aria-label="Featured locations">
@@ -112,6 +119,6 @@
     </main>
 
     <noscript>This interactive globe requires JavaScript.</noscript>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="script.js?v=20260820-florida"></script>
   </body>
 </html>

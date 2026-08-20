@@ -10,6 +10,7 @@ const CONFIG = {
   cameraFocusZ: 4.55,
   initialGlobeScale: 0.0014,
   scrollProgressRate: 0.00085,
+  pinchProgressRate: 0.0045,
   maxPixelRatio: 1.75,
   dragSpeed: 0.0046,
   focusDuration: 1100,
@@ -179,6 +180,10 @@ const state = {
   dragging: false,
   dragged: false,
   pointerId: null,
+  activePointers: new Map(),
+  pinchDistance: 0,
+  pinching: false,
+  initialZoomAligned: false,
   previousPointer: new THREE.Vector2(),
   pointerNdc: new THREE.Vector2(),
   currentQuaternion: new THREE.Quaternion(),
@@ -255,6 +260,10 @@ function getFocusCameraZ() {
 function globeScaleFromProgress(progress) {
   const eased = Math.pow(THREE.MathUtils.clamp(progress, 0, 1), 1.6);
   return THREE.MathUtils.lerp(CONFIG.initialGlobeScale, CONFIG.maxGlobeScale, eased);
+}
+
+function getLayoutScale() {
+  return Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
 }
 
 function createStarSpriteTexture() {
@@ -398,6 +407,24 @@ function latLonToVector3(lat, lon, radius) {
   );
 }
 
+function orientationForLocation(location) {
+  const localDirection = latLonToVector3(location.lat, location.lon, 1).normalize();
+  return new THREE.Quaternion().setFromUnitVectors(
+    localDirection,
+    new THREE.Vector3(0, 0, 1),
+  );
+}
+
+function alignFirstZoomToFlorida() {
+  if (state.initialZoomAligned) return;
+  const floridaOrientation = orientationForLocation(LOCATIONS.gainesville);
+  state.currentQuaternion.copy(floridaOrientation);
+  state.targetQuaternion.copy(floridaOrientation);
+  state.focusActive = false;
+  earthGroup?.quaternion.copy(floridaOrientation);
+  state.initialZoomAligned = true;
+}
+
 function createMarker(location, index) {
   const marker = new THREE.Group();
   marker.name = `marker-${location.id}`;
@@ -517,10 +544,10 @@ function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture
   scene.add(sunlight);
   Object.values(LOCATIONS).forEach(createMarker);
 
-  const initialTilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.12, -0.42, -0.05));
-  earthGroup.quaternion.copy(initialTilt);
-  state.currentQuaternion.copy(initialTilt);
-  state.targetQuaternion.copy(initialTilt);
+  const initialOrientation = orientationForLocation(LOCATIONS.gainesville);
+  earthGroup.quaternion.copy(initialOrientation);
+  state.currentQuaternion.copy(initialOrientation);
+  state.targetQuaternion.copy(initialOrientation);
 }
 
 function resize() {
@@ -588,13 +615,16 @@ function updateWordmarkCurve() {
   const svgScale = svgBounds.width / 1200;
   const centerX = (centerScreenX - svgBounds.left) / svgScale;
   const centerY = (centerScreenY - svgBounds.top) / svgScale;
-  const titleGapPx = THREE.MathUtils.clamp(svgBounds.width * 0.026, 20, 32);
+  const titleGapPx = THREE.MathUtils.clamp(svgBounds.width * 0.026, 14, 50);
   const halfAngle = THREE.MathUtils.degToRad(63);
   const radiusForEarth = (earthRadiusPx + titleGapPx) / svgScale;
   const maximumRadius = (Math.min(centerX, 1200 - centerX) - 54) / Math.sin(halfAngle);
   const targetRadius = Math.min(Math.max(365, radiusForEarth), maximumRadius);
   const targetHalfChord = targetRadius * Math.sin(halfAngle);
-  const targetEdgeY = centerY - targetRadius * Math.cos(halfAngle);
+  const laptopTitleOffsetPx = window.innerWidth > 720
+    ? THREE.MathUtils.clamp((1 - getLayoutScale()) * 130, 0, 48)
+    : 0;
+  const targetEdgeY = centerY - targetRadius * Math.cos(halfAngle) + laptopTitleOffsetPx / svgScale;
   const targetSagitta = targetRadius * (1 - Math.cos(halfAngle));
 
   const leftX = THREE.MathUtils.lerp(150, centerX - targetHalfChord, curveProgress);
@@ -611,8 +641,9 @@ function updateWordmarkCurve() {
 
 function updateZoomInterface() {
   const progress = THREE.MathUtils.smoothstep(state.zoomCurrentProgress, 0, 1);
+  const layoutScale = getLayoutScale();
   const wordmarkScale = THREE.MathUtils.lerp(1.1, 0.96, progress);
-  const wordmarkY = THREE.MathUtils.lerp(28, -8, progress);
+  const wordmarkY = THREE.MathUtils.lerp(28, -8, progress) * layoutScale;
   const accentGlowFade = 1 - THREE.MathUtils.smoothstep(state.zoomCurrentProgress, 0.26, 0.78);
   const suffixPresence = 1 - THREE.MathUtils.smoothstep(state.zoomCurrentProgress, 0.24, 0.58);
   const suffixFontSize = 0.52 * suffixPresence;
@@ -664,15 +695,47 @@ function rotateFromDelta(deltaX, deltaY) {
 
 function onPointerDown(event) {
   if (event.button !== 0) return;
+  state.activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
+  ui.stage.setPointerCapture(event.pointerId);
+
+  if (state.activePointers.size >= 2) {
+    const [first, second] = [...state.activePointers.values()];
+    state.pinching = true;
+    state.dragging = false;
+    state.dragged = true;
+    state.pinchDistance = first.distanceTo(second);
+    ui.stage.classList.remove("is-dragging");
+    if (state.selectedId) closePanel();
+    return;
+  }
+
   state.dragging = true;
   state.dragged = false;
   state.pointerId = event.pointerId;
   state.previousPointer.set(event.clientX, event.clientY);
-  ui.stage.setPointerCapture(event.pointerId);
   ui.stage.classList.add("is-dragging");
 }
 
 function onPointerMove(event) {
+  if (state.activePointers.has(event.pointerId)) {
+    state.activePointers.get(event.pointerId).set(event.clientX, event.clientY);
+  }
+
+  if (state.pinching && state.activePointers.size >= 2) {
+    const [first, second] = [...state.activePointers.values()];
+    const nextDistance = first.distanceTo(second);
+    const distanceDelta = nextDistance - state.pinchDistance;
+    state.pinchDistance = nextDistance;
+    if (distanceDelta > 0) alignFirstZoomToFlorida();
+    state.zoomProgress = THREE.MathUtils.clamp(
+      state.zoomProgress + distanceDelta * CONFIG.pinchProgressRate,
+      0,
+      1,
+    );
+    state.globeTargetScale = globeScaleFromProgress(state.zoomProgress);
+    return;
+  }
+
   if (!state.dragging || event.pointerId !== state.pointerId) return;
   const deltaX = event.clientX - state.previousPointer.x;
   const deltaY = event.clientY - state.previousPointer.y;
@@ -685,15 +748,29 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
+  const endedPinch = state.pinching;
+  state.activePointers.delete(event.pointerId);
+  if (ui.stage.hasPointerCapture(event.pointerId)) ui.stage.releasePointerCapture(event.pointerId);
+
+  if (endedPinch) {
+    state.pinching = state.activePointers.size >= 2;
+    state.pinchDistance = 0;
+    state.dragging = false;
+    state.pointerId = null;
+    ui.stage.classList.remove("is-dragging");
+    return;
+  }
+
   if (event.pointerId !== state.pointerId) return;
   state.dragging = false;
+  state.pointerId = null;
   ui.stage.classList.remove("is-dragging");
-  if (ui.stage.hasPointerCapture(event.pointerId)) ui.stage.releasePointerCapture(event.pointerId);
   if (!state.dragged) selectMarkerAtPointer(event);
 }
 
 function onWheel(event) {
   event.preventDefault();
+  if (event.deltaY < 0) alignFirstZoomToFlorida();
   if (state.selectedId) {
     closePanel();
     state.zoomProgress = 1;
@@ -721,12 +798,11 @@ function selectMarkerAtPointer(event) {
 function focusLocation(locationId, { preserveBlogUrl = false } = {}) {
   const location = LOCATIONS[locationId];
   if (!location) return;
+  state.initialZoomAligned = true;
   closeDrawer({ preserveBlogUrl });
 
-  const localDirection = latLonToVector3(location.lat, location.lon, 1).normalize();
-  const frontDirection = new THREE.Vector3(0, 0, 1);
   state.focusStartQuaternion.copy(state.currentQuaternion);
-  state.targetQuaternion.setFromUnitVectors(localDirection, frontDirection);
+  state.targetQuaternion.copy(orientationForLocation(location));
   state.focusStartedAt = performance.now();
   state.focusActive = true;
   state.zoomProgress = 1;
