@@ -14,6 +14,7 @@ const CONFIG = {
   maxPixelRatio: 1.75,
   dragSpeed: 0.0046,
   focusDuration: 1100,
+  solarRefreshInterval: 60_000,
   travelStarCount: 12,
   travelStarEndProgress: 0.7,
 };
@@ -72,14 +73,23 @@ const DRAWERS = {
         title: "Towski.dev",
         meta: "Javascript; HTML",
         description: "This website is a museum of my life I plan to update monthly or yearly for a long time. I hope that one day I've travelled the world and this globe is filled with different areas to look at.  In the meantime I have information on my Japanese and coding journey.\n\nThank you for looking at my world.",
-        attribution: {
-          prefix: "Earth and star textures by ",
-          sourceLabel: "Solar System Scope",
-          sourceHref: "https://www.solarsystemscope.com/textures/",
-          middle: ", for web use under ",
-          licenseLabel: "CC BY 4.0",
-          licenseHref: "https://creativecommons.org/licenses/by/4.0/",
-        },
+        attributions: [
+          {
+            prefix: "Earth, cloud, and star textures by ",
+            sourceLabel: "Solar System Scope",
+            sourceHref: "https://edu.solarsystemscope.com/textures/",
+            middle: ", for web use under ",
+            licenseLabel: "CC BY 4.0",
+            licenseHref: "https://creativecommons.org/licenses/by/4.0/",
+            suffix: "; resized and converted for this site.",
+          },
+          {
+            prefix: "Night lights imagery by ",
+            sourceLabel: "NASA Earth Observatory",
+            sourceHref: "https://visibleearth.nasa.gov/images/144898/earth-at-night-black-marble-2016-color-maps",
+            suffix: ", using Suomi NPP VIIRS data (2016).",
+          },
+        ],
       },
       {
         title: "AREDL Discord Bot",
@@ -105,8 +115,18 @@ const JAPANESE_BLOG_CATEGORIES = [
       {
         id: "blog-entry-8-21-2026",
         title: "近日公開",
-        body: "",
+        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nCurabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.",
         media: [
+          {
+            src: "assets/blog-2026-08-21-left.webp",
+            label: "A person sitting on a colorful patterned staircase",
+            side: "left",
+          },
+          {
+            src: "assets/blog-2026-08-21-right.webp",
+            label: "A person sitting on a bench beneath a cloudy night sky",
+            side: "right",
+          },
         ],
       },
     ],
@@ -210,6 +230,12 @@ let travelStarGroup;
 let travelStars;
 let earthStar;
 let raycaster;
+let sunlight;
+let earthMaterial;
+let markerGlowTexture;
+const sunDirectionLocal = new THREE.Vector3();
+const sunDirectionWorld = new THREE.Vector3(0, 0, 1);
+let nextSolarUpdateAt = 0;
 let markerHitTargets = [];
 let frameId;
 
@@ -242,6 +268,18 @@ function chooseStarTexture() {
   return "assets/stars-8192.webp";
 }
 
+function chooseNightTexture() {
+  return window.innerWidth <= 800
+    ? "assets/earth-night-2048.webp"
+    : "assets/earth-night-3600.jpg";
+}
+
+function chooseCloudTexture() {
+  return window.innerWidth <= 800
+    ? "assets/earth-clouds-2048.webp"
+    : "assets/earth-clouds-4096.webp";
+}
+
 function getRestCameraZ() {
   if (!camera || camera.aspect >= 0.9) return CONFIG.cameraRestZ;
   const halfVerticalFov = THREE.MathUtils.degToRad(camera.fov / 2);
@@ -256,7 +294,12 @@ function getFocusCameraZ() {
   const restZ = getRestCameraZ();
   if (camera?.aspect < 0.9) return restZ * 0.66;
   const laptopFocusOffset = THREE.MathUtils.clamp((1 - getLayoutScale()) * 3.7, 0, 1.35);
-  return CONFIG.cameraFocusZ + laptopFocusOffset;
+  const ultrawideFocusOffset = THREE.MathUtils.clamp(
+    (camera.aspect - (16 / 9)) * 1.05,
+    0,
+    0.75,
+  );
+  return CONFIG.cameraFocusZ + Math.max(laptopFocusOffset, ultrawideFocusOffset);
 }
 
 function globeScaleFromProgress(progress) {
@@ -399,6 +442,24 @@ function createEarthStar() {
   return point;
 }
 
+function createMarkerGlowTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 62);
+  gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+  gradient.addColorStop(0.14, "rgba(255, 255, 255, 0.92)");
+  gradient.addColorStop(0.34, "rgba(250, 252, 255, 0.42)");
+  gradient.addColorStop(0.64, "rgba(250, 252, 255, 0.11)");
+  gradient.addColorStop(1, "rgba(250, 252, 255, 0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function latLonToVector3(lat, lon, radius) {
   const phi = THREE.MathUtils.degToRad(90 - lat);
   const theta = THREE.MathUtils.degToRad(lon + 180);
@@ -407,6 +468,54 @@ function latLonToVector3(lat, lon, radius) {
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta),
   );
+}
+
+function getSubsolarPoint(date = new Date()) {
+  const year = date.getUTCFullYear();
+  const startOfYear = Date.UTC(year, 0, 0);
+  const currentDay = Date.UTC(year, date.getUTCMonth(), date.getUTCDate());
+  const dayOfYear = Math.floor((currentDay - startOfYear) / 86_400_000);
+  const daysInYear = new Date(Date.UTC(year, 1, 29)).getUTCDate() === 29 ? 366 : 365;
+  const utcHours = date.getUTCHours()
+    + date.getUTCMinutes() / 60
+    + date.getUTCSeconds() / 3600;
+  const fractionalYear = (2 * Math.PI / daysInYear)
+    * (dayOfYear - 1 + (utcHours - 12) / 24);
+  const equationOfTime = 229.18 * (
+    0.000075
+    + 0.001868 * Math.cos(fractionalYear)
+    - 0.032077 * Math.sin(fractionalYear)
+    - 0.014615 * Math.cos(2 * fractionalYear)
+    - 0.040849 * Math.sin(2 * fractionalYear)
+  );
+  const declination = 0.006918
+    - 0.399912 * Math.cos(fractionalYear)
+    + 0.070257 * Math.sin(fractionalYear)
+    - 0.006758 * Math.cos(2 * fractionalYear)
+    + 0.000907 * Math.sin(2 * fractionalYear)
+    - 0.002697 * Math.cos(3 * fractionalYear)
+    + 0.00148 * Math.sin(3 * fractionalYear);
+  const utcMinutes = utcHours * 60;
+  const rawLongitude = (720 - utcMinutes - equationOfTime) / 4;
+  const longitude = ((rawLongitude + 540) % 360) - 180;
+  return {
+    lat: THREE.MathUtils.radToDeg(declination),
+    lon: longitude,
+  };
+}
+
+function updateSolarLighting() {
+  if (!earthGroup || !sunlight) return;
+  const now = Date.now();
+  if (now >= nextSolarUpdateAt) {
+    const subsolarPoint = getSubsolarPoint(new Date(now));
+    sunDirectionLocal.copy(latLonToVector3(subsolarPoint.lat, subsolarPoint.lon, 1)).normalize();
+    nextSolarUpdateAt = now + CONFIG.solarRefreshInterval;
+  }
+  sunDirectionWorld.copy(sunDirectionLocal).applyQuaternion(earthGroup.quaternion).normalize();
+  sunlight.position.copy(sunDirectionWorld).multiplyScalar(12);
+  const shader = earthMaterial?.userData.shader;
+  if (shader) shader.uniforms.uSunDirection.value.copy(sunDirectionWorld);
 }
 
 function orientationForLocation(location) {
@@ -440,6 +549,24 @@ function createMarker(location, index) {
   marker.position.copy(position);
   marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), position.clone().normalize());
 
+  markerGlowTexture ??= createMarkerGlowTexture();
+  const glow = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.22, 0.22),
+    new THREE.MeshBasicMaterial({
+      map: markerGlowTexture,
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  glow.position.z = 0.004;
+  glow.name = "signal-glow";
+  marker.add(glow);
+
   const dotMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     side: THREE.DoubleSide,
@@ -464,7 +591,15 @@ function createMarker(location, index) {
   earthGroup.add(marker);
 }
 
-function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture, starsTexture) {
+function setupScene(
+  earthTexture,
+  normalTexture,
+  roughnessTexture,
+  heightTexture,
+  starsTexture,
+  nightTexture,
+  cloudTexture,
+) {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
   const initialCameraZ = getRestCameraZ();
@@ -498,15 +633,22 @@ function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture
 
   earthTexture.colorSpace = THREE.SRGBColorSpace;
   starsTexture.colorSpace = THREE.SRGBColorSpace;
+  nightTexture.colorSpace = THREE.SRGBColorSpace;
   starsTexture.wrapS = THREE.RepeatWrapping;
   starsTexture.wrapT = THREE.ClampToEdgeWrapping;
   starsTexture.repeat.set(1, 1);
   starsTexture.offset.set(0, 0);
+  nightTexture.wrapS = THREE.RepeatWrapping;
+  nightTexture.wrapT = THREE.ClampToEdgeWrapping;
+  cloudTexture.wrapS = THREE.RepeatWrapping;
+  cloudTexture.wrapT = THREE.ClampToEdgeWrapping;
   earthTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   normalTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   roughnessTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   heightTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   starsTexture.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy());
+  nightTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  cloudTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
   skySphere = new THREE.Mesh(
     new THREE.SphereGeometry(42, 96, 64),
@@ -523,9 +665,7 @@ function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture
   skySphere.renderOrder = -10;
   scene.add(skySphere);
 
-  const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(CONFIG.globeRadius, 192, 128),
-    new THREE.MeshStandardMaterial({
+  earthMaterial = new THREE.MeshStandardMaterial({
       map: earthTexture,
       normalMap: normalTexture,
       normalScale: new THREE.Vector2(0.72, 0.72),
@@ -535,14 +675,63 @@ function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture
       displacementMap: heightTexture,
       displacementScale: 0.018,
       displacementBias: -0.002,
-    }),
+  });
+  earthMaterial.onBeforeCompile = (shader) => {
+    shader.uniforms.uNightMap = { value: nightTexture };
+    shader.uniforms.uSunDirection = { value: sunDirectionWorld.clone() };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nvarying vec3 vEarthWorldNormal;",
+      )
+      .replace(
+        "#include <beginnormal_vertex>",
+        "#include <beginnormal_vertex>\nvEarthWorldNormal = normalize(mat3(modelMatrix) * objectNormal);",
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nuniform sampler2D uNightMap;\nuniform vec3 uSunDirection;\nvarying vec3 vEarthWorldNormal;",
+      )
+      .replace(
+        "#include <opaque_fragment>",
+        `
+          float sunFacing = dot(normalize(vEarthWorldNormal), normalize(uSunDirection));
+          float nightAmount = 1.0 - smoothstep(-0.18, 0.12, sunFacing);
+          vec3 nightColor = texture2D(uNightMap, vMapUv).rgb * 1.12;
+          outgoingLight = mix(outgoingLight, nightColor, nightAmount);
+          #include <opaque_fragment>
+        `,
+      );
+    earthMaterial.userData.shader = shader;
+  };
+  earthMaterial.customProgramCacheKey = () => "live-solar-night-lights-v1";
+
+  const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(CONFIG.globeRadius, 192, 128),
+    earthMaterial,
   );
   earth.name = "earth";
   earthGroup.add(earth);
 
-  scene.add(new THREE.HemisphereLight(0xb9d4df, 0x071015, 1.22));
-  const sunlight = new THREE.DirectionalLight(0xffffff, 2.25);
-  sunlight.position.set(-3.7, 2.1, 4.5);
+  const clouds = new THREE.Mesh(
+    new THREE.SphereGeometry(CONFIG.globeRadius + 0.014, 192, 128),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      alphaMap: cloudTexture,
+      transparent: true,
+      opacity: 0.62,
+      roughness: 1,
+      metalness: 0,
+      depthWrite: false,
+    }),
+  );
+  clouds.name = "earth-clouds";
+  clouds.renderOrder = 1;
+  earthGroup.add(clouds);
+
+  scene.add(new THREE.HemisphereLight(0x8ea7b0, 0x020406, 0.2));
+  sunlight = new THREE.DirectionalLight(0xfff7e8, 2.85);
   scene.add(sunlight);
   Object.values(LOCATIONS).forEach(createMarker);
 
@@ -550,6 +739,7 @@ function setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture
   earthGroup.quaternion.copy(initialOrientation);
   state.currentQuaternion.copy(initialOrientation);
   state.targetQuaternion.copy(initialOrientation);
+  updateSolarLighting();
 }
 
 function resize() {
@@ -590,8 +780,11 @@ function updateMarkers(now) {
     const phase = child.userData.phase;
     const cycle = (Math.sin(now * 0.0032 + phase) + 1) / 2;
     const dot = child.getObjectByName("signal-dot");
+    const glow = child.getObjectByName("signal-glow");
     dot.scale.setScalar(0.82 + cycle * 0.24);
     dot.material.opacity = 0.18 + cycle * 0.82;
+    glow.scale.setScalar(0.9 + cycle * 0.24);
+    glow.material.opacity = 0.38 + cycle * 0.2;
   });
 }
 
@@ -671,6 +864,7 @@ function animate(now = 0) {
   frameId = requestAnimationFrame(animate);
   updateFocus(now);
   earthGroup.quaternion.copy(state.currentQuaternion);
+  updateSolarLighting();
   state.zoomCurrentProgress += (state.zoomProgress - state.zoomCurrentProgress) * (state.reducedMotion ? 1 : 0.075);
   state.globeCurrentScale += (state.globeTargetScale - state.globeCurrentScale) * (state.reducedMotion ? 1 : 0.075);
   earthGroup.scale.setScalar(state.globeCurrentScale);
@@ -868,23 +1062,28 @@ function renderPrivateBlog() {
         const body = document.createElement("p");
         body.className = "blog-entry__body";
         body.textContent = entry.body;
-        content.append(body);
 
         if (entry.media?.length) {
-          const gallery = document.createElement("div");
-          gallery.className = "blog-entry__gallery";
+          content.classList.add("blog-entry__content--editorial");
+          const leftRail = document.createElement("div");
+          leftRail.className = "blog-entry__rail blog-entry__rail--left";
+          const rightRail = document.createElement("div");
+          rightRail.className = "blog-entry__rail blog-entry__rail--right";
+
           entry.media.forEach((media) => {
             const frame = document.createElement("figure");
-            frame.className = `blog-entry__image blog-entry__image--${media.size}`;
+            frame.className = `blog-entry__image blog-entry__image--${media.side}`;
             const image = document.createElement("img");
             image.src = media.src;
             image.alt = media.label;
             image.loading = "lazy";
             image.decoding = "async";
             frame.append(image);
-            gallery.append(frame);
+            (media.side === "right" ? rightRail : leftRail).append(frame);
           });
-          content.append(gallery);
+          content.append(leftRail, body, rightRail);
+        } else {
+          content.append(body);
         }
 
         entryDetails.append(entrySummary, content);
@@ -964,31 +1163,35 @@ function renderDrawerContent(drawerId) {
       description.textContent = entry.description;
       content.append(title, meta, description);
 
-      if (entry.attribution) {
+      const attributions = entry.attributions
+        ?? (entry.attribution ? [entry.attribution] : []);
+      attributions.forEach((item) => {
         const attribution = document.createElement("p");
         attribution.className = "project-card__attribution";
 
         const sourceLink = document.createElement("a");
-        sourceLink.href = entry.attribution.sourceHref;
+        sourceLink.href = item.sourceHref;
         sourceLink.target = "_blank";
         sourceLink.rel = "noopener noreferrer";
-        sourceLink.textContent = entry.attribution.sourceLabel;
-
-        const licenseLink = document.createElement("a");
-        licenseLink.href = entry.attribution.licenseHref;
-        licenseLink.target = "_blank";
-        licenseLink.rel = "noopener noreferrer";
-        licenseLink.textContent = entry.attribution.licenseLabel;
+        sourceLink.textContent = item.sourceLabel;
 
         attribution.append(
-          document.createTextNode(entry.attribution.prefix),
+          document.createTextNode(item.prefix),
           sourceLink,
-          document.createTextNode(entry.attribution.middle),
-          licenseLink,
-          document.createTextNode("."),
         );
+        if (item.licenseHref) {
+          const licenseLink = document.createElement("a");
+          licenseLink.href = item.licenseHref;
+          licenseLink.target = "_blank";
+          licenseLink.rel = "noopener noreferrer";
+          licenseLink.textContent = item.licenseLabel;
+          attribution.append(document.createTextNode(item.middle), licenseLink);
+        } else if (item.middle) {
+          attribution.append(document.createTextNode(item.middle));
+        }
+        if (item.suffix) attribution.append(document.createTextNode(item.suffix));
         content.append(attribution);
-      }
+      });
 
       if (entry.linkLabel) {
         const linkLabel = document.createElement("span");
@@ -1102,15 +1305,33 @@ async function init() {
       setLoadProgress(18 + (loaded / total) * 72, "Preparing the globe");
     };
     const textureLoader = new THREE.TextureLoader(manager);
-    const [earthTexture, normalTexture, roughnessTexture, heightTexture, starsTexture] = await Promise.all([
+    const [
+      earthTexture,
+      normalTexture,
+      roughnessTexture,
+      heightTexture,
+      starsTexture,
+      nightTexture,
+      cloudTexture,
+    ] = await Promise.all([
       textureLoader.loadAsync(chooseEarthTexture()),
       textureLoader.loadAsync("assets/earth-normal-2048.png"),
       textureLoader.loadAsync("assets/earth-roughness-2048.webp"),
       textureLoader.loadAsync("assets/earth-height-2048.webp"),
       textureLoader.loadAsync(chooseStarTexture()),
+      textureLoader.loadAsync(chooseNightTexture()),
+      textureLoader.loadAsync(chooseCloudTexture()),
     ]);
     setLoadProgress(92, "Positioning signals");
-    setupScene(earthTexture, normalTexture, roughnessTexture, heightTexture, starsTexture);
+    setupScene(
+      earthTexture,
+      normalTexture,
+      roughnessTexture,
+      heightTexture,
+      starsTexture,
+      nightTexture,
+      cloudTexture,
+    );
     bindEvents();
     resize();
     animate();
