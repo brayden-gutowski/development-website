@@ -139,7 +139,7 @@ const JAPANESE_BLOG_CATEGORIES = [
     entries: [
       {
         id: "blog-entry-8-21-2026",
-        title: "初めまして　　　2026年8月21日",
+        title: "初めまして　　2026年8月21日",
         body: [
           "こんにちはみなさん！私の名前はブライデンです。二年生です。せんこうはコンピュータサイエンスです。でも、私のふくせんこうは日本語文学です。しゅっしんはフロリダのメルボルンです。メルボルンにビーチがあります。とてもきれいです。私はビデオゲームをするのがとくいです。でも、今とてもいそがしいです。ファッションが好きです。たのしいですから。",
           "日本のゲームの中でいちばん好きなのはにゃんこだいせんそうです。ゲームは大きくてむずかしいです。それにねこはかわいいですね。今年、私はレジェンドストーリーをクリアしましたので、ぶんぶんネコライダーがあります。かっこいいですね。",
@@ -157,14 +157,14 @@ const JAPANESE_BLOG_CATEGORIES = [
             src: "assets/blog-2026-08-21-left.webp",
             label: "A person sitting on a colorful patterned staircase",
             side: "left",
-            caption: "このしゃしんですわていります",
+            caption: "このしゃしんにすわていります",
             captionPosition: "below",
           },
           {
             src: "assets/blog-2026-08-21-climbing.jpg",
             label: "A person rock climbing on an indoor climbing wall",
             side: "right",
-            caption: "このしゃしんでロッククライミングをしていります（ククライミングをするのがへたです。。。）",
+            caption: "このしゃしんにロッククライミングをしていります（ククライミングをするのがへたです。。。）",
             captionPosition: "above",
           },
           {
