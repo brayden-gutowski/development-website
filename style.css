@@ -178,6 +178,13 @@ a:focus-visible {
   fill: none;
   stroke: none;
   filter: url("#wordmark-accent-blur");
+  opacity: 1;
+  transition: opacity 420ms var(--ease-standard);
+}
+
+.wordmark.is-glitching .wordmark__accent-glow {
+  opacity: 0;
+  transition-duration: 80ms;
 }
 
 .wordmark__accent-spacer {
@@ -644,6 +651,14 @@ a:focus-visible {
   max-height: calc(100vh - (var(--page-pad) * 2));
 }
 
+.content-drawer.is-blog:not(.is-music-reviews).has-expanded-entry {
+  width: min(61.5rem, calc(100vw - (var(--page-pad) * 2)));
+}
+
+.content-drawer.is-music-reviews.has-expanded-entry {
+  width: min(50rem, calc(100vw - (var(--page-pad) * 2)));
+}
+
 .content-drawer__close {
   position: absolute;
   top: var(--space-3);
@@ -938,8 +953,8 @@ a:focus-visible {
 
 .content-drawer.has-expanded-entry .blog-entry__content--editorial {
   display: grid;
-  grid-template-columns: minmax(10rem, 0.82fr) minmax(20rem, 1.2fr) minmax(10rem, 0.82fr);
-  gap: clamp(1.1rem, 2.2vw, 2.35rem);
+  grid-template-columns: minmax(8rem, 0.72fr) minmax(18rem, 1.35fr) minmax(8rem, 0.72fr);
+  gap: clamp(1rem, 1.7vw, 1.65rem);
   align-items: start;
 }
 
@@ -964,21 +979,27 @@ a:focus-visible {
 }
 
 .blog-entry__rail {
+  --blog-entry-rail-gap: clamp(1rem, 1.6vw, 1.45rem);
   display: grid;
-  gap: clamp(0.55rem, 1vw, 0.9rem);
+  gap: var(--blog-entry-rail-gap);
   align-content: start;
   min-width: 0;
 }
 
 .blog-entry__rail--right {
-  padding-top: clamp(3rem, 9vh, 7rem);
+  padding-top: var(--blog-entry-rail-gap);
 }
 
 .blog-entry__image {
   position: relative;
-  aspect-ratio: 3 / 4;
   min-width: 0;
   margin: 0;
+}
+
+.blog-entry__image-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--radius-sm);
@@ -997,6 +1018,39 @@ a:focus-visible {
   transform: scale(1.018);
 }
 
+.blog-entry__caption {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.blog-entry__image--caption-above .blog-entry__caption {
+  margin-bottom: 0.48rem;
+}
+
+.blog-entry__image--caption-below .blog-entry__caption {
+  margin-top: 0.48rem;
+}
+
+.blog-entry__image--caption-overlay .blog-entry__caption {
+  position: absolute;
+  top: 0.65rem;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 1.3rem);
+  padding: 0.34rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(2, 4, 6, 0.66);
+  color: var(--color-ink);
+  line-height: 1.35;
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+}
+
 .blog-entry[open] .blog-entry__image {
   animation: blog-image-in 480ms var(--ease-out) both;
 }
@@ -1011,6 +1065,168 @@ a:focus-visible {
 
 .blog-entry[open] .blog-entry__image:nth-child(3) {
   animation-delay: 230ms;
+}
+
+.music-review-category,
+.music-review {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: rgba(2, 4, 6, 0.2);
+}
+
+.music-review-category {
+  overflow: hidden;
+}
+
+.music-review-category > summary,
+.music-review > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.music-review-category > summary::-webkit-details-marker,
+.music-review > summary::-webkit-details-marker {
+  display: none;
+}
+
+.music-review-category > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.music-review-category > summary::after,
+.music-review > summary::after {
+  content: "+";
+  color: var(--color-dim);
+  font-size: 1rem;
+  font-weight: 400;
+  transition: transform var(--duration-medium) var(--ease-out), color var(--duration-fast) var(--ease-standard);
+}
+
+.music-review-category[open] > summary::after,
+.music-review[open] > summary::after {
+  transform: rotate(45deg);
+}
+
+.music-review-category__entries {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) var(--space-2);
+}
+
+.music-review-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.music-review {
+  overflow: clip;
+  background: rgba(255, 255, 255, 0.018);
+  interpolate-size: allow-keywords;
+  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.music-review:hover {
+  border-color: var(--color-line-strong);
+}
+
+.music-review[open] {
+  background: rgba(8, 14, 18, 0.58);
+}
+
+.music-review > summary {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr) auto 1rem;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 0.75rem;
+}
+
+.music-review__cover {
+  display: block;
+  width: 4.75rem;
+  height: 4.75rem;
+  object-fit: cover;
+  border: 1px solid var(--color-line-strong);
+  border-radius: calc(var(--radius-sm) * 0.72);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.music-review__identity {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.music-review__title {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-review__artist {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-review__rating {
+  justify-self: end;
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.music-review::details-content {
+  block-size: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-0.35rem);
+  transition:
+    block-size var(--duration-medium) var(--ease-out),
+    opacity 260ms var(--ease-standard),
+    transform var(--duration-medium) var(--ease-out),
+    content-visibility var(--duration-medium) allow-discrete;
+}
+
+.music-review[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.music-review__body {
+  padding: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.music-review__description {
+  margin: 0;
+  max-width: 58rem;
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.music-review[open] .music-review__description {
+  animation: blog-copy-in 420ms 80ms var(--ease-out) both;
 }
 
 .text-button--quiet:hover {
@@ -1202,6 +1418,12 @@ noscript {
     width: calc(100vw - (var(--page-pad) * 2));
   }
 
+  .music-review__title {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
   .interaction-guide {
     top: 56dvh;
     bottom: auto;
@@ -1311,7 +1533,7 @@ noscript {
     padding-top: 0;
   }
 
-  .blog-entry__image {
+  .blog-entry__image-frame {
     max-height: 70vh;
   }
 

@@ -39,7 +39,21 @@ const LOCATIONS = {
       { label: "Coding projects", drawerId: "coding-projects" },
     ],
   },
-  tokyo: {
+  nashville: {
+    id: "nashville",
+    kicker: "Nashville, Tennessee",
+    heading: "Music (W.I.P.)",
+    subheading: "My favorite albums of all time",
+    detail: "Music >= 9/10",
+    timeZone: "America/Chicago",
+    lat: 36.1627,
+    lon: -86.7816,
+    description: "Music has been an extremely influential part of my life and reviewing albums I've listened to has started to be a common pastime.  Using music sites like Album of the Year never sat right with me, having my own opinions buried under thousands of others who disagree with me, so I decided to put a music review area within my world.  Within my reviews I have listed every single album I have ever given over a 9/10.  These albums all either changed my life, my mind, or my inspirations in ways no other art form ever has, or likely ever will.",
+    actions: [
+      { label: "Music Reviews", drawerId: "music-reviews" },
+    ],
+  },
+    tokyo: {
     id: "tokyo",
     kicker: "Tokyo, Japan",
     heading: "Languages",
@@ -110,9 +124,14 @@ const DRAWERS = {
     description: "",
     supportsBlog: true,
   },
+  "music-reviews": {
+    kicker: "Nashville / Music Reviews",
+    title: "Music Reviews",
+    description: "",
+    supportsMusicReviews: true,
+  },
 };
 
-// Add future Japanese blog categories and entries here before publishing the site.
 const JAPANESE_BLOG_CATEGORIES = [
   {
     id: "intermediate-japanese",
@@ -127,13 +146,96 @@ const JAPANESE_BLOG_CATEGORIES = [
             src: "assets/blog-2026-08-21-left.webp",
             label: "A person sitting on a colorful patterned staircase",
             side: "left",
+            caption: "このしゃしんですわていります",
+            captionPosition: "below",
           },
           {
-            src: "assets/blog-2026-08-21-right.webp",
-            label: "A person sitting on a bench beneath a cloudy night sky",
+            src: "assets/blog-2026-08-21-climbing.jpg",
+            label: "A person rock climbing on an indoor climbing wall",
             side: "right",
+            caption: "このしゃしんでロッククライミングをしていります（ククライミングをするのがへたです。。。）",
+            captionPosition: "above",
+          },
+          {
+            src: "assets/blog-2026-08-21-mecha-bunbun.png",
+            label: "Mecha Bun Bun Cat Rider character illustration",
+            side: "left",
+            aspectRatio: "995 / 1180",
+            caption: "ぶんぶんネコライダーはとてもかっこいいです。",
+            captionPosition: "below",
+          },
+          {
+            src: "assets/blog-2026-08-21-jojos.jpg",
+            label: "JoJo's Bizarre Adventure: Diamond Is Unbreakable promotional artwork",
+            side: "right",
+            aspectRatio: "560 / 800",
+            caption: "ジョジョのキミノウナボウケンパート４",
+            captionPosition: "above",
           },
         ],
+      },
+    ],
+  },
+];
+
+// Add future album reviews here in descending rating order.
+const MUSIC_REVIEW_CATEGORIES = [
+  {
+    id: "favorite-albums",
+    entries: [
+      {
+        id: "the-college-dropout",
+        title: "The College Dropout",
+        artist: "Kanye West",
+        rating: "10/10",
+        description: "I have listened to new albums consistently for a few years now, and one of the first hip-hop albums I ever listened to front to back was The College Dropout.  I didn’t realize it at the time, but that album would be my favorite album of all time and no album following that one would reach a higher peak.  This album is genuinely incredible.  The skits are funny; the production is unique, catchy, and incredible; even the lyrics have a fun vibe you can’t find anywhere else.  This is, for many people, Kanye West’s greatest album.  For me, it is simply the greatest album.",
+        image: "assets/college-dropout.jpg",
+        imageAlt: "The College Dropout album cover by Kanye West",
+      },
+      {
+        id: "they-left-me-with-the-sword",
+        title: "They Left Me With The Sword",
+        artist: "Paris Texas",
+        rating: "10/10",
+        description: "During the beginning of this year I felt my biggest and longest creativity block.  I spent months not being able to think about what to create when I typically enjoy being the first person I know to make a new project or idea come to life.  This isn’t an exaggeration when I say that upon the first listen of this EP my creativity block broke.  This EP is so beautifully put together and far blows away anything Paris Texas previously put out.  8 tracks with 6 total songs, and every single one is incredible.  Tantrum might be one of my favorite tracks of all time, the production stands out and the lyrics are fun too.  The last minute of the song especially shines to me with the electric guitar making the part almost feel over-produced while having so few elements.  El Camino is one of the best outro tracks I’ve heard since Paris Texas’ ‘...We Fall’ off of Mid Air.  If you happen to be reading this, I hope you decide to listen to this album, it seriously changed my life.",
+        image: "assets/TheyLeftMeWithTheSword.jpg",
+        imageAlt: "They Left Me With The Sword album cover by Paris Texas",
+      },
+      {
+        id: "imaginal-disk",
+        title: "Imaginal Disk",
+        artist: "Magdalena Bay",
+        rating: "10/10",
+        description: "This album is the most unique album that stands on this list.  I listened to this for the first time closely after its release and didn’t like the album.  I later decided to re-listen to the album and it was incredible.  The story hidden within the album feels convoluted and too mysterious to unfold, but that's the point.  The actual instruments and sounds give you the rest of the key to making the story feel strange and otherworldly.  If you haven’t listened to this album, I really highly recommend it, there's nothing else like it.",
+        image: "assets/ImaginalDiskj.jpg",
+        imageAlt: "Imaginal Disk album cover by Magdalena Bay",
+      },
+      {
+        id: "the-forever-story",
+        title: "The Forever Story",
+        artist: "J.I.D",
+        rating: "9.8/10",
+        description: "No other album tells a story to me like The Forever Story by JID.  Song by song, the album is non-stop incredible.  It’s almost unfortunate that the song that seemed to go viral was Surround Sound, which I personally believe is in the bottom 3 of the album.  Songs like Crack Sandwich show JID as the best lyricist of all time, and the song Kody Blue 31 has been my favorite song of all time since I first heard it.  The craziest part about this record is it isn’t like I just named everyone’s favorite songs.  Raydar, Dance Now, Stars, Lauder Too, and 2007 are all incredible songs that tell their own stories with incredible production, properly implemented flow switches, and lyricism capable of placing JID in the top 1 conversation.",
+        image: "assets/TheForeverStory.jpg",
+        imageAlt: "The Forever Story album cover by J.I.D",
+      },
+      {
+        id: "the-miseducation-of-lauryn-hill",
+        title: "The Miseducation of Lauryn Hill",
+        artist: "Lauryn Hill",
+        rating: "9.8/10",
+        description: "An album released in the 20th century has no place having better production than modern hip-hop albums.  I personally believe this is the best example of hip-hop, r&b, and soul fusion that has ever touched music.  This album is an inspiration to millions of people and deserves every ounce of recognition it gets.  This review doesn’t even need to do it justice because you’ve already heard it.",
+        image: "assets/TheMiseducationOfLaurenHill.jpg",
+        imageAlt: "The Miseducation of Lauryn Hill album cover by Lauryn Hill",
+      },
+      {
+        id: "to-pimp-a-butterfly",
+        title: "To Pimp a Butterfly",
+        artist: "Kendrick Lamar",
+        rating: "9.6/10",
+        description: "Kendrick Lamar has shown time and time again why he is one of the best lyricists of all time.  This album was his 2nd time showcasing that off to the world in his full capacity, and his first time doing it nearly flawlessly.  I find this album to be a marvel that has an incredible tracklist with incredible ideas for songs.  Mortal Man alone is enough to show a new listener how great he is with new song concepts, and songs across the tracklist fight against systematic oppression in ways few other artists manage to do.",
+        image: "assets/ToPimpAButterfly.jpg",
+        imageAlt: "To Pimp a Butterfly album cover by Kendrick Lamar",
       },
     ],
   },
@@ -221,6 +323,9 @@ const state = {
   currentQuaternion: new THREE.Quaternion(),
   targetQuaternion: new THREE.Quaternion(),
   focusStartQuaternion: new THREE.Quaternion(),
+  focusStartZoomProgress: 0,
+  focusStartGlobeScale: CONFIG.initialGlobeScale,
+  focusStartCameraZ: CONFIG.cameraRestZ,
   focusStartedAt: 0,
   focusActive: false,
   drawerId: null,
@@ -316,7 +421,10 @@ function waitForWordmarkFrame(duration, token) {
 
 async function transitionWordmarkTo(targetName) {
   const currentName = ui.wordmarkNames[0]?.textContent || ENGLISH_WORDMARK;
-  if (currentName === targetName && !ui.wordmark.classList.contains("is-glitching")) return;
+  const isGlitching = ui.wordmark.classList.contains("is-glitching");
+  const isJapaneseWordmark = ui.wordmark.classList.contains("is-japanese");
+  const targetsJapaneseWordmark = targetName === JAPANESE_WORDMARK;
+  if (!isGlitching && isJapaneseWordmark === targetsJapaneseWordmark) return;
   const token = ++wordmarkTransitionToken;
 
   if (state.reducedMotion) {
@@ -664,10 +772,10 @@ function alignFirstZoomToFlorida() {
   state.initialZoomAligned = true;
 }
 
-function createMarker(location, index) {
+function createMarker(location) {
   const marker = new THREE.Group();
   marker.name = `marker-${location.id}`;
-  marker.userData = { locationId: location.id, phase: index * Math.PI * 0.78 };
+  marker.userData = { locationId: location.id, phase: 0 };
 
   const position = latLonToVector3(
     location.lat,
@@ -807,6 +915,7 @@ function setupScene(
   earthMaterial.onBeforeCompile = (shader) => {
     shader.uniforms.uNightMap = { value: nightTexture };
     shader.uniforms.uSunDirection = { value: sunDirectionWorld.clone() };
+    shader.uniforms.uWordmarkGlowStrength = { value: 0 };
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
@@ -819,21 +928,35 @@ function setupScene(
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
-        "#include <common>\nuniform sampler2D uNightMap;\nuniform vec3 uSunDirection;\nvarying vec3 vEarthWorldNormal;",
+        "#include <common>\nuniform sampler2D uNightMap;\nuniform vec3 uSunDirection;\nuniform float uWordmarkGlowStrength;\nvarying vec3 vEarthWorldNormal;",
       )
       .replace(
         "#include <opaque_fragment>",
         `
-          float sunFacing = dot(normalize(vEarthWorldNormal), normalize(uSunDirection));
+          vec3 earthWorldNormal = normalize(vEarthWorldNormal);
+          vec3 surfaceLight = outgoingLight;
+          float sunFacing = dot(earthWorldNormal, normalize(uSunDirection));
           float nightAmount = 1.0 - smoothstep(-0.18, 0.12, sunFacing);
           vec3 nightColor = texture2D(uNightMap, vMapUv).rgb * 1.12;
-          outgoingLight = mix(outgoingLight, nightColor, nightAmount);
+          outgoingLight = mix(surfaceLight, nightColor, nightAmount);
+
+          float wordmarkUpperArc = smoothstep(0.08, 0.68, earthWorldNormal.y);
+          float wordmarkRimEntry = smoothstep(-0.025, 0.16, earthWorldNormal.z);
+          float wordmarkRimExit = 1.0 - smoothstep(0.38, 0.72, earthWorldNormal.z);
+          float wordmarkSpill = wordmarkUpperArc * wordmarkRimEntry * wordmarkRimExit;
+          float darkSideReveal = smoothstep(0.08, 0.92, nightAmount);
+          vec3 wordmarkTint = vec3(0.88, 0.93, 1.0);
+          vec3 dayWordmarkLight = surfaceLight * 0.12 + wordmarkTint * 0.004;
+          vec3 nightWordmarkLight = diffuseColor.rgb * 0.18 + wordmarkTint * 0.025;
+          vec3 wordmarkLight = mix(dayWordmarkLight, nightWordmarkLight, darkSideReveal);
+          float wordmarkIntensity = mix(0.05, 0.32, darkSideReveal);
+          outgoingLight += wordmarkLight * wordmarkSpill * wordmarkIntensity * uWordmarkGlowStrength;
           #include <opaque_fragment>
         `,
       );
     earthMaterial.userData.shader = shader;
   };
-  earthMaterial.customProgramCacheKey = () => "live-solar-night-lights-v1";
+  earthMaterial.customProgramCacheKey = () => "live-solar-night-lights-wordmark-v4";
 
   const earth = new THREE.Mesh(
     new THREE.SphereGeometry(CONFIG.globeRadius, 192, 128),
@@ -891,6 +1014,9 @@ function updateFocus(now) {
   const progress = Math.min(1, (now - state.focusStartedAt) / duration);
   const eased = easeInOutCubic(progress);
   state.currentQuaternion.slerpQuaternions(state.focusStartQuaternion, state.targetQuaternion, eased);
+  state.zoomCurrentProgress = THREE.MathUtils.lerp(state.focusStartZoomProgress, 1, eased);
+  state.globeCurrentScale = THREE.MathUtils.lerp(state.focusStartGlobeScale, CONFIG.maxGlobeScale, eased);
+  state.cameraCurrentZ = THREE.MathUtils.lerp(state.focusStartCameraZ, getFocusCameraZ(), eased);
   if (progress === 1) state.focusActive = false;
 }
 
@@ -978,6 +1104,12 @@ function updateZoomInterface() {
   ui.wordmark.style.setProperty("--wordmark-scale", wordmarkScale.toFixed(3));
   ui.wordmark.style.setProperty("--wordmark-y", `${wordmarkY.toFixed(1)}px`);
   ui.wordmark.style.setProperty("--accent-glow-opacity", (accentGlowFade * 0.82).toFixed(3));
+  const earthShader = earthMaterial?.userData.shader;
+  if (earthShader?.uniforms.uWordmarkGlowStrength) {
+    const planetGlowFade = THREE.MathUtils.smoothstep(progress, 0.82, 1);
+    const planetGlowPresence = Math.pow(planetGlowFade, 2.4);
+    earthShader.uniforms.uWordmarkGlowStrength.value = planetGlowPresence;
+  }
   ui.wordmarkSuffixes.forEach((suffix) => {
     const opacity = suffix.classList.contains("wordmark__accent-color")
       ? suffixPresence * accentGlowFade * 0.82
@@ -994,6 +1126,7 @@ function updateZoomInterface() {
 
 function animate(now = 0) {
   frameId = requestAnimationFrame(animate);
+  const focusWasActive = state.focusActive;
   updateFocus(now);
   earthGroup.quaternion.copy(state.currentQuaternion);
   if (cloudLayer && !state.reducedMotion) {
@@ -1001,14 +1134,16 @@ function animate(now = 0) {
   }
   updateSolarLighting();
   if (state.selectedId && Date.now() >= nextLocalTimeUpdateAt) updateLocationLocalTime();
-  state.zoomCurrentProgress += (state.zoomProgress - state.zoomCurrentProgress) * (state.reducedMotion ? 1 : 0.075);
-  state.globeCurrentScale += (state.globeTargetScale - state.globeCurrentScale) * (state.reducedMotion ? 1 : 0.075);
+  if (!focusWasActive) {
+    state.zoomCurrentProgress += (state.zoomProgress - state.zoomCurrentProgress) * (state.reducedMotion ? 1 : 0.075);
+    state.globeCurrentScale += (state.globeTargetScale - state.globeCurrentScale) * (state.reducedMotion ? 1 : 0.075);
+    state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * (state.reducedMotion ? 1 : 0.075);
+  }
   earthGroup.scale.setScalar(state.globeCurrentScale);
   earthStar.material.opacity = Math.max(0, 0.92 * (1 - state.zoomCurrentProgress / 0.085));
   earthStar.visible = earthStar.material.opacity > 0.01;
   updateZoomInterface();
   updateWordmarkCurve();
-  state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * (state.reducedMotion ? 1 : 0.075);
   camera.position.z = state.cameraCurrentZ;
   skySphere.position.copy(camera.position);
   skySphere.quaternion.slerp(state.currentQuaternion, state.reducedMotion ? 1 : 0.024);
@@ -1037,6 +1172,7 @@ function onPointerDown(event) {
     state.dragged = true;
     state.pinchDistance = first.distanceTo(second);
     ui.stage.classList.remove("is-dragging");
+    state.focusActive = false;
     if (state.selectedId) closePanel();
     return;
   }
@@ -1102,6 +1238,7 @@ function onPointerUp(event) {
 
 function onWheel(event) {
   event.preventDefault();
+  state.focusActive = false;
   if (event.deltaY < 0) alignFirstZoomToFlorida();
   if (state.selectedId) {
     closePanel();
@@ -1134,6 +1271,9 @@ function focusLocation(locationId, { preserveBlogUrl = false } = {}) {
   closeDrawer({ preserveBlogUrl });
 
   state.focusStartQuaternion.copy(state.currentQuaternion);
+  state.focusStartZoomProgress = state.zoomCurrentProgress;
+  state.focusStartGlobeScale = state.globeCurrentScale;
+  state.focusStartCameraZ = state.cameraCurrentZ;
   state.targetQuaternion.copy(orientationForLocation(location));
   state.focusStartedAt = performance.now();
   state.focusActive = true;
@@ -1210,13 +1350,26 @@ function renderPrivateBlog() {
 
           entry.media.forEach((media) => {
             const frame = document.createElement("figure");
-            frame.className = `blog-entry__image blog-entry__image--${media.side}`;
+            frame.className = `blog-entry__image blog-entry__image--${media.side}${media.caption ? ` blog-entry__image--caption-${media.captionPosition}` : ""}`;
+            const imageFrame = document.createElement("div");
+            imageFrame.className = "blog-entry__image-frame";
+            if (media.aspectRatio) imageFrame.style.aspectRatio = media.aspectRatio;
             const image = document.createElement("img");
             image.src = media.src;
             image.alt = media.label;
             image.loading = "lazy";
             image.decoding = "async";
-            frame.append(image);
+            imageFrame.append(image);
+
+            if (media.caption) {
+              const caption = document.createElement("figcaption");
+              caption.className = "blog-entry__caption";
+              caption.textContent = media.caption;
+              if (media.captionPosition === "above") frame.append(caption, imageFrame);
+              else frame.append(imageFrame, caption);
+            } else {
+              frame.append(imageFrame);
+            }
             (media.side === "right" ? rightRail : leftRail).append(frame);
           });
           content.append(leftRail, body, rightRail);
@@ -1260,11 +1413,75 @@ function renderPrivateBlog() {
   }
 }
 
+function renderMusicReviews() {
+  const entriesContainer = document.createElement("div");
+  entriesContainer.className = "music-review-list";
+
+  MUSIC_REVIEW_CATEGORIES.forEach((category) => {
+    category.entries.forEach((entry) => {
+      const review = document.createElement("details");
+      review.className = "music-review";
+      review.dataset.musicReview = entry.id;
+
+      const summary = document.createElement("summary");
+      const cover = document.createElement("img");
+      cover.className = "music-review__cover";
+      cover.src = entry.image;
+      cover.alt = entry.imageAlt;
+      cover.loading = "lazy";
+      cover.decoding = "async";
+
+      const identity = document.createElement("span");
+      identity.className = "music-review__identity";
+      const title = document.createElement("strong");
+      title.className = "music-review__title";
+      title.textContent = entry.title;
+      const artist = document.createElement("span");
+      artist.className = "music-review__artist";
+      artist.textContent = entry.artist;
+      identity.append(title, artist);
+
+      const rating = document.createElement("strong");
+      rating.className = "music-review__rating";
+      rating.textContent = entry.rating;
+      summary.append(cover, identity, rating);
+
+      const body = document.createElement("div");
+      body.className = "music-review__body";
+      const description = document.createElement("p");
+      description.className = "music-review__description";
+      description.textContent = entry.description;
+      body.append(description);
+      review.append(summary, body);
+
+      review.addEventListener("toggle", () => {
+        if (review.open) {
+          ui.drawerContent.querySelectorAll(".music-review[open]").forEach((openReview) => {
+            if (openReview !== review) openReview.open = false;
+          });
+        }
+        ui.drawer.classList.toggle(
+          "has-expanded-entry",
+          Boolean(ui.drawerContent.querySelector(".music-review[open]")),
+        );
+      });
+      entriesContainer.append(review);
+    });
+  });
+
+  ui.drawerContent.replaceChildren(entriesContainer);
+  ui.drawer.classList.remove("has-expanded-entry");
+}
+
 function renderDrawerContent(drawerId) {
   const drawer = DRAWERS[drawerId];
   if (!drawer) return;
   if (drawer.supportsBlog) {
     renderPrivateBlog();
+    return;
+  }
+  if (drawer.supportsMusicReviews) {
+    renderMusicReviews();
     return;
   }
 
@@ -1365,7 +1582,8 @@ function openDrawer(drawerId) {
   ui.drawerTitle.textContent = drawer.title;
   ui.drawerDescription.textContent = drawer.description;
   ui.drawerDescription.hidden = !drawer.description;
-  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsBlog));
+  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsBlog || drawer.supportsMusicReviews));
+  ui.drawer.classList.toggle("is-music-reviews", Boolean(drawer.supportsMusicReviews));
   ui.drawer.classList.remove("has-expanded-entry");
   renderDrawerContent(drawerId);
   ui.drawer.classList.add("is-open");
