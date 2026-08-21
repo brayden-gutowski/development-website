@@ -42,7 +42,7 @@ const LOCATIONS = {
   nashville: {
     id: "nashville",
     kicker: "Nashville, Tennessee",
-    heading: "Music (W.I.P.)",
+    heading: "Music",
     subheading: "My favorite albums of all time",
     detail: "Music >= 9/10",
     timeZone: "America/Chicago",
@@ -139,8 +139,19 @@ const JAPANESE_BLOG_CATEGORIES = [
     entries: [
       {
         id: "blog-entry-8-21-2026",
-        title: "日本語ブログ 2026年8月21日",
-        body: "日本語ブログテスト",
+        title: "初めまして　　　2026年8月21日",
+        body: [
+          "こんにちはみなさん！私の名前はブライデンです。二年生です。せんこうはコンピュータサイエンスです。でも、私のふくせんこうは日本語文学です。しゅっしんはフロリダのメルボルンです。メルボルンにビーチがあります。とてもきれいです。私はビデオゲームをするのがとくいです。でも、今とてもいそがしいです。ファッションが好きです。たのしいですから。",
+          "日本のゲームの中でいちばん好きなのはにゃんこだいせんそうです。ゲームは大きくてむずかしいです。それにねこはかわいいですね。今年、私はレジェンドストーリーをクリアしましたので、ぶんぶんネコライダーがあります。かっこいいですね。",
+          "アニメの中でいちばん好きなのはジョジョのキミノウナボウケンです。パート４すごくおもしろい。私はテレビを見るのが好きです。それに、ロッククライミングをするのがすきです。でも、へたです。",
+          "じゃあまた。",
+        ],
+        glossary: [
+          ["ふくせんこう", "Academic minor"],
+          ["にゃんこだいせんそう", "Battle Cats"],
+          ["クリアする", "To complete (a game)"],
+          ["レジェンドストーリー", "Stories of Legend"],
+        ],
         media: [
           {
             src: "assets/blog-2026-08-21-left.webp",
@@ -236,6 +247,114 @@ const MUSIC_REVIEW_CATEGORIES = [
         description: "Kendrick Lamar has shown time and time again why he is one of the best lyricists of all time.  This album was his 2nd time showcasing that off to the world in his full capacity, and his first time doing it nearly flawlessly.  I find this album to be a marvel that has an incredible tracklist with incredible ideas for songs.  Mortal Man alone is enough to show a new listener how great he is with new song concepts, and songs across the tracklist fight against systematic oppression in ways few other artists manage to do.",
         image: "assets/ToPimpAButterfly.jpg",
         imageAlt: "To Pimp a Butterfly album cover by Kendrick Lamar",
+      },
+      {
+        id: "hurry-up-tomorrow",
+        title: "Hurry Up Tomorrow",
+        artist: "The Weeknd",
+        rating: "9.5/10",
+        description: "Hurry Up Tomorrow was The Weeknd’s retirement album, and I also believe it is the best album in his career.  The concept of having everything and feeling yourself lose your most valued item, your memories, is such a difficult thing to discuss, and The Weeknd does it beautifully.  The production on this album is something no other artist could achieve, and the vocals on this album are almost good enough to make someone cry.  Songs like Wake Me Up set the tone for the album, and then The Weeknd immediately jumps back into being a hitmaker with Cry For Me.  If you’ve never heard this album, take a drive late at night on 95 and listen to it, it really is a life-changing experience.",
+        image: "assets/HurryUpTomorrow.jpg",
+        imageAlt: "Hurry Up Tomorrow album cover by The Weeknd",
+      },
+      {
+        id: "illmatic",
+        title: "Illmatic",
+        artist: "Nas",
+        rating: "9.5/10",
+        description: "Almost everyone would put Illmatic as their best hip-hop debut album of all time, and for good reason.  The lyricism and topics covered in each song is simply incredible and has aged to be one of the greatest albums of all time.  I find it impressive how Nas started out so strong, fell so far, and then came back up with his recent releases of Kings Disease.  Nas’ lyricism is a marvel, and this album is the best example of it by far.",
+        image: "assets/Illmatic.jpg",
+        imageAlt: "Illmatic album cover by Nas",
+      },
+      {
+        id: "blonde",
+        title: "Blonde",
+        artist: "Frank Ocean",
+        rating: "9.4/10",
+        description: "My favorite retirement album of all time (hopefully not…).  This album is beautiful from start to finish, with the vocals from Frank Ocean becoming an added instrument rather than a voice over other instruments.  Channel Orange was already phenomenal and this album just shows the growth that occurred over the 4 years he waited between the albums.  Nights has the most beautiful beat switch in history, and an incredible guitar solo as well.  Be careful when you listen to this project though, the topics end up being a bit rough if you’re fresh out of a relationship.",
+        image: "assets/Blonde.jpg",
+        imageAlt: "Blonde album cover by Frank Ocean",
+      },
+      {
+        id: "because-the-internet",
+        title: "Because The Internet",
+        artist: "Childish Gambino",
+        rating: "9.4/10",
+        description: "Because The Internet is an album that is seemingly polarizing but I will always stand by the fact that I love it.  This album’s lyrics have not aged well, but that almost makes it better.  This album has become a time capsule for the time it was released, and the production on every song is extremely fun.  I find a lot of this album to be more unique than many modern hip-hop projects manage to be, and I appreciate the risks that Donald Glover took when making this project.  Every time I listen to this album, I catch a new lyric that makes me chuckle.",
+        image: "assets/BecauseTheInternet.jpg",
+        imageAlt: "Because The Internet album cover by Childish Gambino",
+      },
+      {
+        id: "igor",
+        title: "Igor",
+        artist: "Tyler, The Creator",
+        rating: "9.3/10",
+        description: "Igor is probably my favorite conceptual album of all time.  The story behind it is unique and clear, but the songs don’t step too hard into telling the story so that they become rudimentary and boring.  Tyler has shown repeatedly that he knows no norms, and he proves it with his production once again on this album.  ‘ARE WE STILL FRIENDS?’ is my personal favorite song, and little details like the album ending nearly as it began just show the talent and thought put behind this album.",
+        image: "assets/Igor.jpg",
+        imageAlt: "Igor album cover by Tyler, The Creator",
+      },
+      {
+        id: "let-god-sort-em-out",
+        title: "Let God Sort Em Out",
+        artist: "Clipse",
+        rating: "9.2/10",
+        description: "Only one song has ever made me cry: The Birds Don’t Sing.  This album has Pharell beats from start to finish so it was bound to be a masterpiece.  Probably my favorite 5 run track of all time is the first 5 songs of this album, and every other song is a banger too.  The Bird’s Don’t Sing is an emotional and heartbreaking song that discusses the death of both of Malice and Pusha’s parents, a topic that is such a nightmare for anyone listening that it instantly engages the listener and connects them to the artists.",
+        image: "assets/LetGodSortEmOut.jpg",
+        imageAlt: "Let God Sort Em Out album cover by Clipse",
+      },
+      {
+        id: "they-left-me-with-the-gun",
+        title: "They Left Me With The Gun",
+        artist: "Paris Texas",
+        rating: "9.1/10",
+        description: "They Left Me With The Gun is the sequel to They Left Me With The Sword, and it retains almost all of its talent and uniqueness that made the first stand out.  This EP has incredibly strong songs and does the same swapping back and forth from heavy rock to peaceful love songs as the first.  Going from HALO to No Strings is an experience, and it’s incredibly well done.  Much like the first part to this EP, the lyrics stay funny enough to keep you engaged throughout the album, and the production remains incredible.",
+        image: "assets/TheyLeftMeWithTheGun.jpg",
+        imageAlt: "They Left Me With The Gun album cover by Paris Texas",
+      },
+      {
+        id: "the-life-of-pablo",
+        title: "The Life of Pablo",
+        artist: "Kanye West",
+        rating: "9.1/10",
+        description: "The Life of Pablo is my second favorite Kanye West album to date, and that stands for a number of reasons.  The production is once again, incredible and unique.  Kanye West shows that he wants to push the limits of hip-hop with every coming album, and manages to make the best song of his career, Saint Pablo, be the finisher on the album.  Songs like Ultralight Beam see a beautiful production with Chance the Rapper in his prime, while songs like Fade would go on to begin the collaboration between Kanye West and Ty Dolla $ign.  This album shows Kanye West having fun with production, and as a result, it comes off as a fun album to listen to.  I highly recommend this project.",
+        image: "assets/TheLifeOfPablo.jpg",
+        imageAlt: "The Life of Pablo album cover by Kanye West",
+      },
+      {
+        id: "endless",
+        title: "Endless",
+        artist: "Frank Ocean",
+        rating: "9/10",
+        description: "This album being his ‘trick’ to get out of his label is hilarious to me, because it’s a masterpiece.  I dropped hundreds of dollars years ago in order to get the vinyl of this, and I don’t regret it at all.  It has an unfinished feel that doesn’t actually hurt the project as the topics covered in the project feel more raw and vocalized due to it.  This album actually gave me a lot of inspiration for this website, as both the cover and tracks are quite inspirational.",
+        image: "assets/Endless.jpg",
+        imageAlt: "Endless album cover by Frank Ocean",
+      },
+      {
+        id: "late-registration",
+        title: "Late Registration",
+        artist: "Kanye West",
+        rating: "9/10",
+        description: "The college trilogy is often thought to be the prime of Kanye West, and this album backs that claim.  Late Registration has production that you can only find with a Kanye album, and even songs that break the norm entirely, such as Addiction, sound so good it's confusing.  This album is a relic of the past, and the topics covered have aged better than the topics in any other album.  In particular, Hey Mama is enough to make me cry nowadays.",
+        image: "assets/LateRegistration.jpg",
+        imageAlt: "Late Registration album cover by Kanye West",
+      },
+      {
+        id: "samurai",
+        title: "Samurai",
+        artist: "Lupe Fiasco",
+        rating: "9/10",
+        description: "Lupe Fiasco’s Samurai is his return to glory.  While I love many projects by Lupe Fiasco, none have even come close to this project besides The Cool, which was nearly 20 years ago.  This album shows Lupe rapping at his absolute strongest, backed by some insanely unique tracks that keep me coming back to listen again.  Unfortunately I feel like this album got skipped over when it was released, so I really recommend listening to it.",
+        image: "assets/Samurai.jpg",
+        imageAlt: "Samurai album cover by Lupe Fiasco",
+      },
+      {
+        id: "chromakopia",
+        title: "CHROMAKOPIA",
+        artist: "Tyler, The Creator",
+        rating: "9/10",
+        description: "CHROMAKOPIA is an emotional ride that discusses Tyler’s ride through fame and a pregnancy scare.  This album broke every rule that Tyler set for himself, which is what made it so great.  Songs like Darling, I and Sticky manage to find their way into the album as a hit, while songs like I Killed You and Like Him manage to be the emotional rollercoaster that Tyler clearly planned them out to be.",
+        image: "assets/CHROMAKOPIA.jpg",
+        imageAlt: "CHROMAKOPIA album cover by Tyler, The Creator",
       },
     ],
   },
@@ -1337,9 +1456,28 @@ function renderPrivateBlog() {
 
         const content = document.createElement("div");
         content.className = "blog-entry__content";
-        const body = document.createElement("p");
+        const body = document.createElement("div");
         body.className = "blog-entry__body";
-        body.textContent = entry.body;
+        const paragraphs = Array.isArray(entry.body) ? entry.body : [entry.body];
+        paragraphs.forEach((paragraph) => {
+          const copy = document.createElement("p");
+          copy.className = "blog-entry__paragraph";
+          copy.textContent = paragraph;
+          body.append(copy);
+        });
+
+        if (entry.glossary?.length) {
+          const glossary = document.createElement("dl");
+          glossary.className = "blog-entry__glossary";
+          entry.glossary.forEach(([japanese, english]) => {
+            const term = document.createElement("dt");
+            term.textContent = japanese;
+            const definition = document.createElement("dd");
+            definition.textContent = english;
+            glossary.append(term, definition);
+          });
+          body.append(glossary);
+        }
 
         if (entry.media?.length) {
           content.classList.add("blog-entry__content--editorial");
