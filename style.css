@@ -159,6 +159,21 @@ a:focus-visible {
     drop-shadow(0 0 0.34rem rgba(255, 255, 255, 0.52));
 }
 
+.wordmark.is-glitching svg {
+  animation: wordmark-glitch-shift 170ms ease-in-out infinite;
+}
+
+.wordmark.is-glitching .wordmark__text {
+  filter:
+    drop-shadow(-0.055rem 0 rgba(68, 225, 255, 0.42))
+    drop-shadow(0.055rem 0 rgba(255, 55, 105, 0.38))
+    drop-shadow(0 0 0.34rem rgba(255, 255, 255, 0.58));
+}
+
+.wordmark.is-glitching .wordmark__halo {
+  opacity: 0.68;
+}
+
 .wordmark__accent-glow {
   fill: none;
   stroke: none;
@@ -1017,6 +1032,25 @@ a:focus-visible {
 
 @keyframes button-progress {
   to { width: 100%; }
+}
+
+@keyframes wordmark-glitch-shift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  28% {
+    transform: translate(-0.45px, 0.25px);
+  }
+
+  55% {
+    transform: translate(0.55px, -0.3px);
+  }
+
+  78% {
+    transform: translate(-0.25px, -0.2px);
+  }
 }
 
 @keyframes drawer-content-in {

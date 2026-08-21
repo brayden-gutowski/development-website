@@ -1,6 +1,9 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
 
 const DEFAULT_DOCUMENT_TITLE = document.title;
+const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
+const JAPANESE_WORDMARK = "ブライデン・グトウスキ";
+const WORDMARK_GLITCH_CHARACTERS = ["ア", "ヲ", "7", "#", "?", "▓"];
 
 const CONFIG = {
   globeRadius: 1.72,
@@ -190,6 +193,10 @@ const ui = {
   actions: document.querySelector("#location-actions"),
   locationLinks: [...document.querySelectorAll("[data-location]")],
   wordmark: document.querySelector(".wordmark"),
+  wordmarkTitle: document.querySelector("#wordmark-title"),
+  wordmarkNames: [...document.querySelectorAll(".wordmark__name")],
+  wordmarkAccentPrefix: document.querySelector(".wordmark__accent-prefix"),
+  wordmarkAccentName: document.querySelector(".wordmark__accent-name"),
   wordmarkPath: document.querySelector("#wordmark-path"),
   wordmarkSuffixes: [...document.querySelectorAll(".wordmark__suffix")],
   drawer: document.querySelector("#content-drawer"),
@@ -245,6 +252,7 @@ let nextSolarUpdateAt = 0;
 let nextLocalTimeUpdateAt = 0;
 let markerHitTargets = [];
 let frameId;
+let wordmarkTransitionToken = 0;
 
 function setLoadProgress(percent, message) {
   ui.progress.style.width = `${Math.max(4, Math.min(100, percent))}%`;
@@ -261,6 +269,90 @@ function showFallback(message) {
   ui.fallback.hidden = false;
   ui.fallback.querySelector("p").textContent = message;
   ui.loading.classList.add("is-complete");
+}
+
+function setWordmarkName(name) {
+  ui.wordmarkNames.forEach((wordmarkName) => {
+    wordmarkName.textContent = name;
+  });
+}
+
+function setWordmarkAccent(name) {
+  const isJapanese = name === JAPANESE_WORDMARK;
+  ui.wordmarkAccentPrefix.textContent = isJapanese ? "ブライデン・グ" : "Brayden Gu";
+  ui.wordmarkAccentName.textContent = isJapanese ? "トウスキ" : "towski";
+}
+
+function distributeWordmarkCharacters(characters, slotCount) {
+  const slots = Array(slotCount).fill("");
+  if (characters.length === 1) {
+    slots[Math.floor(slotCount / 2)] = characters[0];
+    return slots;
+  }
+  characters.forEach((character, index) => {
+    const slotIndex = Math.round((index / (characters.length - 1)) * (slotCount - 1));
+    slots[slotIndex] = character;
+  });
+  return slots;
+}
+
+function shuffledWordmarkSlots(slotCount) {
+  const slots = Array.from({ length: slotCount }, (_value, index) => index);
+  for (let index = slots.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [slots[index], slots[swapIndex]] = [slots[swapIndex], slots[index]];
+  }
+  if (slots.every((slot, index) => slot === index) && slots.length > 1) {
+    [slots[0], slots[1]] = [slots[1], slots[0]];
+  }
+  return slots;
+}
+
+function waitForWordmarkFrame(duration, token) {
+  return new Promise((resolve) => {
+    window.setTimeout(() => resolve(token === wordmarkTransitionToken), duration);
+  });
+}
+
+async function transitionWordmarkTo(targetName) {
+  const currentName = ui.wordmarkNames[0]?.textContent || ENGLISH_WORDMARK;
+  if (currentName === targetName && !ui.wordmark.classList.contains("is-glitching")) return;
+  const token = ++wordmarkTransitionToken;
+
+  if (state.reducedMotion) {
+    setWordmarkName(targetName);
+    setWordmarkAccent(targetName);
+    ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
+    ui.wordmarkTitle.textContent = `${targetName}.dev`;
+    return;
+  }
+
+  const sourceCharacters = [...currentName];
+  const targetCharacters = [...targetName];
+  const slotCount = Math.max(sourceCharacters.length, targetCharacters.length);
+  const currentSlots = distributeWordmarkCharacters(sourceCharacters, slotCount);
+  const targetSlots = distributeWordmarkCharacters(targetCharacters, slotCount);
+  const transitionSlots = shuffledWordmarkSlots(slotCount)
+    .filter((slotIndex) => currentSlots[slotIndex] !== targetSlots[slotIndex]);
+  ui.wordmark.classList.add("is-glitching");
+
+  for (let index = 0; index < transitionSlots.length; index += 1) {
+    const slotIndex = transitionSlots[index];
+    const glitchCharacter = WORDMARK_GLITCH_CHARACTERS[index % WORDMARK_GLITCH_CHARACTERS.length];
+    currentSlots[slotIndex] = glitchCharacter;
+    setWordmarkName(currentSlots.join(""));
+    if (!await waitForWordmarkFrame(32, token)) return;
+    currentSlots[slotIndex] = targetSlots[slotIndex];
+    setWordmarkName(currentSlots.join(""));
+    if (!await waitForWordmarkFrame(58, token)) return;
+  }
+
+  if (token !== wordmarkTransitionToken) return;
+  setWordmarkName(targetName);
+  setWordmarkAccent(targetName);
+  ui.wordmark.classList.remove("is-glitching");
+  ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
+  ui.wordmarkTitle.textContent = `${targetName}.dev`;
 }
 
 function chooseEarthTexture() {
@@ -1049,6 +1141,7 @@ function focusLocation(locationId, { preserveBlogUrl = false } = {}) {
   state.globeTargetScale = CONFIG.maxGlobeScale;
   state.cameraTargetZ = getFocusCameraZ();
   state.selectedId = locationId;
+  transitionWordmarkTo(locationId === "tokyo" ? JAPANESE_WORDMARK : ENGLISH_WORDMARK);
 
   ui.kicker.textContent = location.kicker;
   updateLocationLocalTime();
