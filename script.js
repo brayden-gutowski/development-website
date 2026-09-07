@@ -65,6 +65,7 @@ const LOCATIONS = {
     description: "I have been learning Japanese for roughly a year, and have taken 2 courses for Japanese, placing me at around an N5 level.  I'm currently taking a third course, meaning I'm studying toward an N4 level.",
     actions: [
       { label: "Japanese Blog", drawerId: "japanese-blog" },
+      { label: "Japanese Books", drawerId: "japanese-book-reviews" },
     ],
   },
 };
@@ -123,6 +124,12 @@ const DRAWERS = {
     title: "日本語ブログ",
     description: "",
     supportsBlog: true,
+  },
+  "japanese-book-reviews": {
+    kicker: "Japan / Japanese Books",
+    title: "日本語の本のレビュー",
+    description: "",
+    supportsBookReviews: true,
   },
   "music-reviews": {
     kicker: "Nashville / Music Reviews",
@@ -186,6 +193,29 @@ const JAPANESE_BLOG_CATEGORIES = [
           },
         ],
       },
+    ],
+  },
+];
+
+const JAPANESE_BOOK_REVIEWS = [
+  {
+    id: "akai-sakana-to-kodomo",
+    title: "赤い魚と子ども",
+    rating: 4,
+    image: "assets/BookCover.webp",
+    imageAlt: "赤い魚と子どもの本の表紙",
+    body: [
+      "えい語の本を読むのがきらいですが、日本語で読むのが好きですよ。さらに赤い魚と子どもはとてもかわいい話です。",
+      "初めにたくさん魚がいました。でも、子どもの魚は花びらを食べて、魚はいろをかえます。だから、子どもの魚はすごくかわいくて、小さいですから、魚がつかまります！子どもの魚のおかあさんはかなしいですよ。でも、魚は家に帰ります。それから、みなさんはうれしいです！",
+      "この本はおもしろかったです。プロットはかんたんでたのしいです。この本のイラストはとてもきれいです。でも、この本のエンディングはちょっと長いです。さらに私はじしょを使わなかったから、新しいたん語はむずかしかったです。",
+      "来しゅう、話をよんでみたいです。私はうれしいです！",
+    ],
+    glossary: [
+      ["かえる", "To change"],
+      ["花びら", "Flower petal"],
+      ["初め", "At first"],
+      ["つかまる", "To get caught (by hand)"],
+      ["イラスト", "Illustration"],
     ],
   },
 ];
@@ -394,6 +424,34 @@ function clearBlogRoute({ replace = true } = {}) {
   document.title = DEFAULT_DOCUMENT_TITLE;
 }
 
+function readBookReviewRoute() {
+  const match = window.location.hash.match(/^#book-review\/([^/]+)$/);
+  if (!match) return null;
+  try {
+    return { entryId: decodeURIComponent(match[1]) };
+  } catch {
+    return null;
+  }
+}
+
+function findBookReviewEntry(entryId) {
+  return JAPANESE_BOOK_REVIEWS.find((entry) => entry.id === entryId) || null;
+}
+
+function writeBookReviewRoute(entryId, { replace = false } = {}) {
+  const route = `#book-review/${encodeURIComponent(entryId)}`;
+  const entry = findBookReviewEntry(entryId);
+  window.history[replace ? "replaceState" : "pushState"](null, "", route);
+  document.title = entry ? `${entry.title} | ${DEFAULT_DOCUMENT_TITLE}` : DEFAULT_DOCUMENT_TITLE;
+}
+
+function clearBookReviewRoute({ replace = true } = {}) {
+  if (!readBookReviewRoute()) return;
+  const cleanUrl = `${window.location.pathname}${window.location.search}`;
+  window.history[replace ? "replaceState" : "pushState"](null, "", cleanUrl);
+  document.title = DEFAULT_DOCUMENT_TITLE;
+}
+
 const ui = {
   app: document.querySelector("#app"),
   stage: document.querySelector("#globe-stage"),
@@ -431,6 +489,7 @@ const ui = {
 
 const state = {
   selectedId: null,
+  globeAvailable: false,
   dragging: false,
   dragged: false,
   pointerId: null,
@@ -491,9 +550,23 @@ function closeLoadingScreen() {
 
 function showFallback(message) {
   cancelAnimationFrame(frameId);
+  state.globeAvailable = false;
+  ui.app.classList.add("is-static-fallback");
   ui.fallback.hidden = false;
   ui.fallback.querySelector("p").textContent = message;
   ui.loading.classList.add("is-complete");
+}
+
+function canCreateWebGLContext() {
+  try {
+    const testCanvas = document.createElement("canvas");
+    return Boolean(
+      testCanvas.getContext("webgl2", { failIfMajorPerformanceCaveat: false })
+      || testCanvas.getContext("webgl", { failIfMajorPerformanceCaveat: false }),
+    );
+  } catch {
+    return false;
+  }
 }
 
 function setWordmarkName(name) {
@@ -1384,22 +1457,24 @@ function selectMarkerAtPointer(event) {
   if (intersection) focusLocation(intersection.object.userData.locationId);
 }
 
-function focusLocation(locationId, { preserveBlogUrl = false } = {}) {
+function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   const location = LOCATIONS[locationId];
   if (!location) return;
-  state.initialZoomAligned = true;
-  closeDrawer({ preserveBlogUrl });
+  closeDrawer({ preserveContentUrl });
 
-  state.focusStartQuaternion.copy(state.currentQuaternion);
-  state.focusStartZoomProgress = state.zoomCurrentProgress;
-  state.focusStartGlobeScale = state.globeCurrentScale;
-  state.focusStartCameraZ = state.cameraCurrentZ;
-  state.targetQuaternion.copy(orientationForLocation(location));
-  state.focusStartedAt = performance.now();
-  state.focusActive = true;
-  state.zoomProgress = 1;
-  state.globeTargetScale = CONFIG.maxGlobeScale;
-  state.cameraTargetZ = getFocusCameraZ();
+  if (state.globeAvailable) {
+    state.initialZoomAligned = true;
+    state.focusStartQuaternion.copy(state.currentQuaternion);
+    state.focusStartZoomProgress = state.zoomCurrentProgress;
+    state.focusStartGlobeScale = state.globeCurrentScale;
+    state.focusStartCameraZ = state.cameraCurrentZ;
+    state.targetQuaternion.copy(orientationForLocation(location));
+    state.focusStartedAt = performance.now();
+    state.focusActive = true;
+    state.zoomProgress = 1;
+    state.globeTargetScale = CONFIG.maxGlobeScale;
+    state.cameraTargetZ = getFocusCameraZ();
+  }
   state.selectedId = locationId;
   transitionWordmarkTo(locationId === "tokyo" ? JAPANESE_WORDMARK : ENGLISH_WORDMARK);
 
@@ -1612,6 +1687,104 @@ function renderMusicReviews() {
   ui.drawer.classList.remove("has-expanded-entry");
 }
 
+function createStarRating(value) {
+  const rating = document.createElement("span");
+  rating.className = "book-review__rating";
+  rating.setAttribute("aria-label", `${value} out of 5 stars`);
+
+  for (let index = 1; index <= 5; index += 1) {
+    const star = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    star.setAttribute("viewBox", "0 0 24 24");
+    star.setAttribute("aria-hidden", "true");
+    star.classList.add("book-review__star");
+    if (index <= value) star.classList.add("is-filled");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "m12 2.7 2.82 5.72 6.31.92-4.57 4.45 1.08 6.29L12 17.11l-5.64 2.97 1.08-6.29-4.57-4.45 6.31-.92L12 2.7Z");
+    star.append(path);
+    rating.append(star);
+  }
+
+  return rating;
+}
+
+function renderBookReviews() {
+  const activeRoute = readBookReviewRoute();
+  const reviews = JAPANESE_BOOK_REVIEWS.map((entry) => {
+    const review = document.createElement("details");
+    review.className = "book-review";
+    review.dataset.bookReview = entry.id;
+
+    const summary = document.createElement("summary");
+    const title = document.createElement("strong");
+    title.className = "book-review__title";
+    title.textContent = entry.title;
+    summary.append(title, createStarRating(entry.rating));
+
+    const content = document.createElement("div");
+    content.className = "book-review__content";
+    const coverFrame = document.createElement("div");
+    coverFrame.className = "book-review__cover-frame";
+    const cover = document.createElement("img");
+    cover.className = "book-review__cover";
+    cover.src = entry.image;
+    cover.alt = entry.imageAlt;
+    cover.loading = "lazy";
+    cover.decoding = "async";
+    coverFrame.append(cover);
+
+    const copy = document.createElement("div");
+    copy.className = "book-review__copy";
+    entry.body.forEach((paragraph) => {
+      const paragraphElement = document.createElement("p");
+      paragraphElement.className = "book-review__paragraph";
+      paragraphElement.textContent = paragraph;
+      copy.append(paragraphElement);
+    });
+
+    const glossarySection = document.createElement("section");
+    glossarySection.className = "book-review__vocabulary";
+    const glossary = document.createElement("dl");
+    glossary.className = "book-review__glossary";
+    entry.glossary.forEach(([japanese, english]) => {
+      const term = document.createElement("dt");
+      term.textContent = japanese;
+      const definition = document.createElement("dd");
+      definition.textContent = english;
+      glossary.append(term, definition);
+    });
+    glossarySection.append(glossary);
+    copy.append(glossarySection);
+    content.append(coverFrame, copy);
+    review.append(summary, content);
+
+    review.addEventListener("toggle", () => {
+      if (review.open) {
+        ui.drawerContent.querySelectorAll(".book-review[open]").forEach((openReview) => {
+          if (openReview !== review) openReview.open = false;
+        });
+        const currentRoute = readBookReviewRoute();
+        writeBookReviewRoute(entry.id, { replace: currentRoute?.entryId === entry.id });
+      } else if (readBookReviewRoute()?.entryId === entry.id) {
+        clearBookReviewRoute();
+      }
+      ui.drawer.classList.toggle(
+        "has-expanded-entry",
+        Boolean(ui.drawerContent.querySelector(".book-review[open]")),
+      );
+    });
+    review.open = activeRoute?.entryId === entry.id;
+
+    return review;
+  });
+
+  ui.drawerContent.replaceChildren(...reviews);
+  const openReview = ui.drawerContent.querySelector(".book-review[open]");
+  ui.drawer.classList.toggle("has-expanded-entry", Boolean(openReview));
+  if (openReview) {
+    window.requestAnimationFrame(() => openReview.scrollIntoView({ block: "nearest" }));
+  }
+}
+
 function renderDrawerContent(drawerId) {
   const drawer = DRAWERS[drawerId];
   if (!drawer) return;
@@ -1621,6 +1794,10 @@ function renderDrawerContent(drawerId) {
   }
   if (drawer.supportsMusicReviews) {
     renderMusicReviews();
+    return;
+  }
+  if (drawer.supportsBookReviews) {
+    renderBookReviews();
     return;
   }
 
@@ -1713,16 +1890,21 @@ function renderDrawerContent(drawerId) {
   ui.drawerContent.replaceChildren(empty);
 }
 
-function openDrawer(drawerId) {
+function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
   const drawer = DRAWERS[drawerId];
   if (!drawer) return;
+  if (!preserveContentUrl) {
+    if (drawerId !== "japanese-blog") clearBlogRoute();
+    if (drawerId !== "japanese-book-reviews") clearBookReviewRoute();
+  }
   state.drawerId = drawerId;
   ui.drawerKicker.textContent = drawer.kicker;
   ui.drawerTitle.textContent = drawer.title;
   ui.drawerDescription.textContent = drawer.description;
   ui.drawerDescription.hidden = !drawer.description;
-  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsBlog || drawer.supportsMusicReviews));
+  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsBlog || drawer.supportsMusicReviews || drawer.supportsBookReviews));
   ui.drawer.classList.toggle("is-music-reviews", Boolean(drawer.supportsMusicReviews));
+  ui.drawer.classList.toggle("is-book-reviews", Boolean(drawer.supportsBookReviews));
   ui.drawer.classList.remove("has-expanded-entry");
   renderDrawerContent(drawerId);
   ui.drawer.classList.add("is-open");
@@ -1730,13 +1912,16 @@ function openDrawer(drawerId) {
   window.setTimeout(() => ui.drawerClose.focus({ preventScroll: true }), state.reducedMotion ? 0 : 430);
 }
 
-function closeDrawer({ restoreFocus = false, preserveBlogUrl = false } = {}) {
+function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) {
   const priorDrawerId = state.drawerId;
   ui.drawer.classList.remove("is-open");
   ui.drawer.classList.remove("has-expanded-entry");
   ui.drawer.setAttribute("aria-hidden", "true");
   state.drawerId = null;
-  if (priorDrawerId === "japanese-blog" && !preserveBlogUrl) clearBlogRoute();
+  if (!preserveContentUrl) {
+    if (priorDrawerId === "japanese-blog") clearBlogRoute();
+    if (priorDrawerId === "japanese-book-reviews") clearBookReviewRoute();
+  }
   if (restoreFocus && priorDrawerId) {
     ui.actions.querySelector(`[data-drawer="${priorDrawerId}"]`)?.focus();
   }
@@ -1755,18 +1940,29 @@ function closePanel({ restoreFocus = false } = {}) {
   }
 }
 
-function handleBlogRouteChange() {
-  const route = readBlogRoute();
-  const match = route ? findBlogEntry(route.categoryId, route.entryId) : null;
-  if (!route || !match) {
-    document.title = DEFAULT_DOCUMENT_TITLE;
-    if (state.drawerId === "japanese-blog") closeDrawer({ preserveBlogUrl: true });
+function handleContentRouteChange() {
+  const blogRoute = readBlogRoute();
+  const blogMatch = blogRoute ? findBlogEntry(blogRoute.categoryId, blogRoute.entryId) : null;
+  if (blogMatch) {
+    document.title = `${blogMatch.entry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
+    if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveContentUrl: true });
+    openDrawer("japanese-blog", { preserveContentUrl: true });
     return;
   }
 
-  document.title = `${match.entry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
-  if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveBlogUrl: true });
-  openDrawer("japanese-blog");
+  const bookRoute = readBookReviewRoute();
+  const bookEntry = bookRoute ? findBookReviewEntry(bookRoute.entryId) : null;
+  if (bookEntry) {
+    document.title = `${bookEntry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
+    if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveContentUrl: true });
+    openDrawer("japanese-book-reviews", { preserveContentUrl: true });
+    return;
+  }
+
+  document.title = DEFAULT_DOCUMENT_TITLE;
+  if (state.drawerId === "japanese-blog" || state.drawerId === "japanese-book-reviews") {
+    closeDrawer({ preserveContentUrl: true });
+  }
 }
 
 function bindEvents() {
@@ -1783,7 +1979,7 @@ function bindEvents() {
   });
   ui.locationLinks.forEach((link) => link.addEventListener("click", () => focusLocation(link.dataset.location)));
   window.addEventListener("resize", resize, { passive: true });
-  window.addEventListener("hashchange", handleBlogRouteChange);
+  window.addEventListener("hashchange", handleContentRouteChange);
   window.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.drawerId) closeDrawer({ restoreFocus: true });
@@ -1794,6 +1990,12 @@ function bindEvents() {
 async function init() {
   try {
     if (state.reducedMotion) ui.wordmark.querySelector("svg")?.pauseAnimations();
+    bindEvents();
+    if (!canCreateWebGLContext()) {
+      showFallback("The interactive globe is unavailable, but the portfolio is still open.");
+      handleContentRouteChange();
+      return;
+    }
     setLoadProgress(12, "Starting the renderer");
     const manager = new THREE.LoadingManager();
     manager.onProgress = (_url, loaded, total) => {
@@ -1827,11 +2029,11 @@ async function init() {
       nightTexture,
       cloudTexture,
     );
-    bindEvents();
+    state.globeAvailable = true;
     resize();
     animate();
     closeLoadingScreen();
-    handleBlogRouteChange();
+    handleContentRouteChange();
   } catch (error) {
     console.error(error);
     showFallback("The globe could not be loaded.");
