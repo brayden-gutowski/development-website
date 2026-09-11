@@ -76,14 +76,24 @@ const DRAWERS = {
     title: "Game Development",
     entries: [
       {
+        title: "Rewrite What Was",
+        meta: "Unreal Engine 5; C++",
+        description: "Rewrite What Was is a movement-based game revolving around the fact that your character cannot stand outside for more than 60 seconds at a time.  Due to this fact, you must speed around the map, unlock shortcuts, and rewind time before your 60 seconds are up.  Currently, this game is in relatively early development.  I'm currently working on the art side of it, expect images and a short demo in the coming weeks!",
+        image: "",
+        imageAlt: "Still in early development",
+        href: "",
+        linkLabel: "",
+      },
+      {
         title: "Arcade Adventures",
-        meta: "Roblox Studio; Lua",
+        meta: "Roblox Studio; Lua (Luau)",
         description: "Arcade Adventures was my first, and currently my only, game I have released.  The game was produced within Roblox Studio using Lua, and broadened my views of game development in ways that someone who hasn't developed a game might not understand.  This project taught me how to use Blender extensively, and I plan on releasing the full game sometime in 2026.",
         image: "assets/ArcadeAdventuresWeb.webp",
         imageAlt: "Arcade Adventures game thumbnail showing players at arcade cabinets",
         href: "https://www.roblox.com/games/96313690258281/Arcade-Adventures",
         linkLabel: "Open on Roblox",
       },
+
     ],
   },
   "coding-projects": {
