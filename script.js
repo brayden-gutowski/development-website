@@ -155,8 +155,53 @@ const JAPANESE_BLOG_CATEGORIES = [
     name: "中級日本語",
     entries: [
       {
+        id: "blog-entry-9-11-2026",
+        title: "ジョジョのきみょうなぼうけんパートランキング",
+        date: "2026年9月11日",
+        dateTime: "2026-09-11",
+        body: [
+          "ジョジョのきみょうなぼうけんが大好きです。そのアニメはすごいです。それで、私はパートランキングを作りました。ジョジョのきみょうなぼうけんのパートの中でパート２が一番好きです。パート２はとてもかっこいいですよ。おもしろいし、あたまがいいし、ジョセフ・ジョースター（パート２のしゅじんこう）が好きです。だからパート２が一番好きです。パート２をみてみてください。それから、パート４が二番めに好きです。パート４はハッピーエンドです。うれしいです。でも、ジョースケはうんがよすぎます。一年に一回パート４を見ます。パート６と３と５は同じくらい好きです。でも、パート１はきらいです。パート１はつまらなくて、おそいです。",
+        ],
+        glossary: [
+          ["うんがよすぎる", "Too lucky"],
+          ["ハッピーエンド", "Happy ending"],
+          ["二番めに好き", "Second favorite"],
+          ["おそい", "Slow"],
+          ["同じくらい", "Equally"],
+          ["しゅじんこう", "Protagonist"],
+        ],
+        media: [
+          {
+            src: "assets/blog-2026-09-11-jojos-part-2.jpg",
+            label: "ジョジョのきみょうなぼうけん Part 2 のポスター",
+            side: "left",
+            aspectRatio: "365 / 547",
+          },
+          {
+            src: "assets/blog-2026-09-11-jojos-part-4.jpg",
+            label: "ジョジョのきみょうなぼうけん Part 4 のポスター",
+            side: "right",
+            aspectRatio: "360 / 523",
+          },
+          {
+            src: "assets/blog-2026-09-11-jojos-part-3.jpg",
+            label: "ジョジョのきみょうなぼうけん Part 3 のポスター",
+            side: "left",
+            aspectRatio: "266 / 380",
+          },
+          {
+            src: "assets/blog-2026-09-11-jojos-part-5.jpg",
+            label: "ジョジョのきみょうなぼうけん Part 5 のポスター",
+            side: "right",
+            aspectRatio: "455 / 728",
+          },
+        ],
+      },
+      {
         id: "blog-entry-8-21-2026",
-        title: "初めまして　　2026年8月21日",
+        title: "初めまして",
+        date: "2026年8月21日",
+        dateTime: "2026-08-21",
         body: [
           "こんにちはみなさん。",
           "私の名前はブライデンです。二年生です。せんこうはコンピュータサイエンスです。でも、私のふくせんこうは日本語文学です。しゅっしんはフロリダのメルボルンです。メルボルンにビーチがあります。とてもきれいです。私はビデオゲームをするのがとくいです。でも、今とてもいそがしいです。ファッションが好きです。たのしいですから。",
@@ -1539,6 +1584,13 @@ function renderPrivateBlog() {
         const entryTitle = document.createElement("span");
         entryTitle.textContent = entry.title;
         entrySummary.append(entryTitle);
+        if (entry.date) {
+          const entryDate = document.createElement("time");
+          entryDate.className = "blog-entry__date";
+          entryDate.textContent = entry.date;
+          if (entry.dateTime) entryDate.dateTime = entry.dateTime;
+          entrySummary.append(entryDate);
+        }
 
         const content = document.createElement("div");
         content.className = "blog-entry__content";
