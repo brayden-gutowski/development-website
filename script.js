@@ -1,9 +1,9 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
+import { springStep, resistBoundary } from "./motion.mjs";
 
 const DEFAULT_DOCUMENT_TITLE = document.title;
 const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
 const JAPANESE_WORDMARK = "ブライデン・グトウスキ";
-const WORDMARK_GLITCH_CHARACTERS = ["ア", "ヲ", "7", "#", "?", "▓"];
 
 const CONFIG = {
   globeRadius: 1.72,
@@ -16,7 +16,7 @@ const CONFIG = {
   pinchProgressRate: 0.0045,
   maxPixelRatio: 1.75,
   dragSpeed: 0.0046,
-  focusDuration: 1100,
+  focusDuration: 850,
   solarRefreshInterval: 60_000,
   cloudRotationPeriodMs: 24 * 60 * 1000,
   travelStarCount: 12,
@@ -100,6 +100,25 @@ const DRAWERS = {
     kicker: "Florida / Coding Projects",
     title: "Coding Projects",
     entries: [
+      {
+        title: "SteadyForum",
+        meta: "TypeScript; Swift; React Native; DataBricks; Neon; HuggingFace",
+        award: 'Won 2nd place in "Databricks: Best Use of Databricks" at Knight Hacks IX',
+        description: 'This project was my first attempt at a hackathon project, and it was probably the hardest I\'ve ever worked on a project.  I pulled multiple all-nighters to get it done, and our final push ended up being just 1 minute before the deadline.  For this project, we created an app that tracks and corrects form while in the gym, preventing further injuries.  I worked with an incredible team (me and 3 others) in order to make this come to life.  I worked primarily on integration and front-end for the app, connecting things like Databricks for processing workout data, HuggingFace for AI-generated coaching feedback, and Neon for storing user accounts and workout history.',
+        image: "assets/steadyforum-team.jpg",
+        imageClass: "project-card__image--team",
+        imageAlt: "SteadyForum team and Databricks representatives at Knight Hacks IX",
+        detailImages: [
+          {
+            src: "assets/steadyforum-practice.jpg",
+            alt: "SteadyForum practice screen with a 3D exercise model, rotation controls, and workout navigation",
+          },
+          {
+            src: "assets/steadyforum-workout.png",
+            alt: "SteadyForum tracking a dumbbell lunge with green joint markers and a rep counter",
+          },
+        ],
+      },
       {
         title: "Towski.dev",
         meta: "Javascript; HTML",
@@ -620,11 +639,15 @@ const state = {
   drawerId: null,
   zoomProgress: 0,
   zoomCurrentProgress: 0,
+  zoomVelocity: 0,
+  zoomInputAt: 0,
+  animationAt: 0,
   globeCurrentScale: CONFIG.initialGlobeScale,
   globeTargetScale: CONFIG.initialGlobeScale,
   cameraTargetZ: CONFIG.cameraRestZ,
   cameraCurrentZ: CONFIG.cameraRestZ,
   reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  reducedTransparency: window.matchMedia("(prefers-reduced-transparency: reduce)").matches,
 };
 
 let renderer;
@@ -647,6 +670,86 @@ let nextLocalTimeUpdateAt = 0;
 let markerHitTargets = [];
 let frameId;
 let wordmarkTransitionToken = 0;
+let glassTarget;
+let glassScene;
+let glassCamera;
+let glassMaterial;
+
+function setupGlassRefraction() {
+  glassTarget = new THREE.WebGLRenderTarget(1, 1, {
+    depthBuffer: true,
+    type: renderer.extensions.has("EXT_color_buffer_float") ? THREE.HalfFloatType : THREE.UnsignedByteType,
+  });
+  glassTarget.samples = 2;
+  glassScene = new THREE.Scene();
+  glassCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  glassMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      sceneTexture: { value: glassTarget.texture },
+      viewport: { value: new THREE.Vector2() },
+      panels: { value: [new THREE.Vector4(), new THREE.Vector4()] },
+      strengths: { value: [0, 0] },
+    },
+    depthTest: false,
+    depthWrite: false,
+    vertexShader: `
+      varying vec2 uvScene;
+      void main() {
+        uvScene = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D sceneTexture;
+      uniform vec2 viewport;
+      uniform vec4 panels[2];
+      uniform float strengths[2];
+      varying vec2 uvScene;
+      void main() {
+        vec2 pixel = uvScene * viewport;
+        vec2 bend = vec2(0.0);
+        vec2 fringe = vec2(0.0);
+        for (int i = 0; i < 2; i++) {
+          vec4 panel = panels[i];
+          vec2 local = pixel - panel.xy - panel.zw * 0.5;
+          vec2 q = abs(local) - panel.zw * 0.5 + 26.0;
+          float distanceToEdge = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 26.0;
+          if (strengths[i] > 0.0 && distanceToEdge < 0.0) {
+            vec2 normal = q.x > q.y ? vec2(sign(local.x), 0.0) : vec2(0.0, sign(local.y));
+            if (q.x > 0.0 && q.y > 0.0) normal = normalize(q) * sign(local);
+            float edge = 1.0 - smoothstep(0.0, 32.0, -distanceToEdge);
+            float lens = 1.0 - smoothstep(0.0, 80.0, -distanceToEdge);
+            bend = (normal * lens * lens * 18.0 + local / max(panel.zw * 0.5, vec2(1.0)) * 1.5) * strengths[i] / viewport;
+            fringe = normal * edge * edge * 1.6 * strengths[i] / viewport;
+          }
+        }
+        vec2 sampleUV = clamp(uvScene + bend, 0.0, 1.0);
+        gl_FragColor = vec4(
+          texture2D(sceneTexture, clamp(sampleUV + fringe, 0.0, 1.0)).r,
+          texture2D(sceneTexture, sampleUV).g,
+          texture2D(sceneTexture, clamp(sampleUV - fringe, 0.0, 1.0)).b, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `,
+  });
+  glassScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glassMaterial));
+}
+
+function renderGlassScene() {
+  const elements = [ui.panel, ui.drawer];
+  elements.forEach((element, index) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const opacity = !state.reducedTransparency && style.visibility !== "hidden" ? Number(style.opacity) : 0;
+    glassMaterial.uniforms.panels.value[index].set(rect.left, window.innerHeight - rect.bottom, rect.width, rect.height);
+    glassMaterial.uniforms.strengths.value[index] = opacity;
+  });
+  renderer.setRenderTarget(glassTarget);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  renderer.render(glassScene, glassCamera);
+}
 
 function setLoadProgress(percent, message) {
   ui.progress.style.width = `${Math.max(4, Math.min(100, percent))}%`;
@@ -691,31 +794,6 @@ function setWordmarkAccent(name) {
   ui.wordmarkAccentName.textContent = isJapanese ? "トウスキ" : "towski";
 }
 
-function distributeWordmarkCharacters(characters, slotCount) {
-  const slots = Array(slotCount).fill("");
-  if (characters.length === 1) {
-    slots[Math.floor(slotCount / 2)] = characters[0];
-    return slots;
-  }
-  characters.forEach((character, index) => {
-    const slotIndex = Math.round((index / (characters.length - 1)) * (slotCount - 1));
-    slots[slotIndex] = character;
-  });
-  return slots;
-}
-
-function shuffledWordmarkSlots(slotCount) {
-  const slots = Array.from({ length: slotCount }, (_value, index) => index);
-  for (let index = slots.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [slots[index], slots[swapIndex]] = [slots[swapIndex], slots[index]];
-  }
-  if (slots.every((slot, index) => slot === index) && slots.length > 1) {
-    [slots[0], slots[1]] = [slots[1], slots[0]];
-  }
-  return slots;
-}
-
 function waitForWordmarkFrame(duration, token) {
   return new Promise((resolve) => {
     window.setTimeout(() => resolve(token === wordmarkTransitionToken), duration);
@@ -723,47 +801,17 @@ function waitForWordmarkFrame(duration, token) {
 }
 
 async function transitionWordmarkTo(targetName) {
-  const currentName = ui.wordmarkNames[0]?.textContent || ENGLISH_WORDMARK;
-  const isGlitching = ui.wordmark.classList.contains("is-glitching");
-  const isJapaneseWordmark = ui.wordmark.classList.contains("is-japanese");
-  const targetsJapaneseWordmark = targetName === JAPANESE_WORDMARK;
-  if (!isGlitching && isJapaneseWordmark === targetsJapaneseWordmark) return;
+  if (ui.wordmarkNames[0]?.textContent === targetName && !ui.wordmark.classList.contains("is-switching")) return;
   const token = ++wordmarkTransitionToken;
-
-  if (state.reducedMotion) {
-    setWordmarkName(targetName);
-    setWordmarkAccent(targetName);
-    ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
-    ui.wordmarkTitle.textContent = `${targetName}.dev`;
-    return;
+  if (!state.reducedMotion) {
+    ui.wordmark.classList.add("is-switching");
+    if (!await waitForWordmarkFrame(120, token)) return;
   }
-
-  const sourceCharacters = [...currentName];
-  const targetCharacters = [...targetName];
-  const slotCount = Math.max(sourceCharacters.length, targetCharacters.length);
-  const currentSlots = distributeWordmarkCharacters(sourceCharacters, slotCount);
-  const targetSlots = distributeWordmarkCharacters(targetCharacters, slotCount);
-  const transitionSlots = shuffledWordmarkSlots(slotCount)
-    .filter((slotIndex) => currentSlots[slotIndex] !== targetSlots[slotIndex]);
-  ui.wordmark.classList.add("is-glitching");
-
-  for (let index = 0; index < transitionSlots.length; index += 1) {
-    const slotIndex = transitionSlots[index];
-    const glitchCharacter = WORDMARK_GLITCH_CHARACTERS[index % WORDMARK_GLITCH_CHARACTERS.length];
-    currentSlots[slotIndex] = glitchCharacter;
-    setWordmarkName(currentSlots.join(""));
-    if (!await waitForWordmarkFrame(32, token)) return;
-    currentSlots[slotIndex] = targetSlots[slotIndex];
-    setWordmarkName(currentSlots.join(""));
-    if (!await waitForWordmarkFrame(58, token)) return;
-  }
-
-  if (token !== wordmarkTransitionToken) return;
   setWordmarkName(targetName);
   setWordmarkAccent(targetName);
-  ui.wordmark.classList.remove("is-glitching");
   ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
   ui.wordmarkTitle.textContent = `${targetName}.dev`;
+  ui.wordmark.classList.remove("is-switching");
 }
 
 function chooseEarthTexture() {
@@ -813,6 +861,8 @@ function getFocusCameraZ() {
 }
 
 function globeScaleFromProgress(progress) {
+  if (progress < 0) return CONFIG.initialGlobeScale * Math.exp(progress * 5);
+  if (progress > 1) return CONFIG.maxGlobeScale * (1 + (progress - 1) * 0.65);
   const eased = Math.pow(THREE.MathUtils.clamp(progress, 0, 1), 1.6);
   return THREE.MathUtils.lerp(CONFIG.initialGlobeScale, CONFIG.maxGlobeScale, eased);
 }
@@ -1304,18 +1354,20 @@ function resize() {
   state.cameraTargetZ = state.selectedId ? getFocusCameraZ() : getRestCameraZ();
   renderer.setPixelRatio(pixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  glassTarget.setSize(Math.round(window.innerWidth * pixelRatio), Math.round(window.innerHeight * pixelRatio));
+  glassMaterial.uniforms.viewport.value.set(window.innerWidth, window.innerHeight);
   if (travelStars) travelStars.material.uniforms.uPixelRatio.value = pixelRatio;
 }
 
-function easeInOutCubic(value) {
-  return value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
+function easeOutCubic(value) {
+  return 1 - Math.pow(1 - value, 3);
 }
 
 function updateFocus(now) {
   if (!state.focusActive) return;
   const duration = state.reducedMotion ? 1 : CONFIG.focusDuration;
   const progress = Math.min(1, (now - state.focusStartedAt) / duration);
-  const eased = easeInOutCubic(progress);
+  const eased = easeOutCubic(progress);
   state.currentQuaternion.slerpQuaternions(state.focusStartQuaternion, state.targetQuaternion, eased);
   state.zoomCurrentProgress = THREE.MathUtils.lerp(state.focusStartZoomProgress, 1, eased);
   state.globeCurrentScale = THREE.MathUtils.lerp(state.focusStartGlobeScale, CONFIG.maxGlobeScale, eased);
@@ -1429,6 +1481,8 @@ function updateZoomInterface() {
 
 function animate(now = 0) {
   frameId = requestAnimationFrame(animate);
+  const dt = Math.min((now - (state.animationAt || now)) / 1000, 0.05);
+  state.animationAt = now;
   const focusWasActive = state.focusActive;
   updateFocus(now);
   earthGroup.quaternion.copy(state.currentQuaternion);
@@ -1438,21 +1492,34 @@ function animate(now = 0) {
   updateSolarLighting();
   if (state.selectedId && Date.now() >= nextLocalTimeUpdateAt) updateLocationLocalTime();
   if (!focusWasActive) {
-    state.zoomCurrentProgress += (state.zoomProgress - state.zoomCurrentProgress) * (state.reducedMotion ? 1 : 0.075);
-    state.globeCurrentScale += (state.globeTargetScale - state.globeCurrentScale) * (state.reducedMotion ? 1 : 0.075);
-    state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * (state.reducedMotion ? 1 : 0.075);
+    if (!state.pinching && now - state.zoomInputAt > 140) {
+      state.zoomProgress = THREE.MathUtils.clamp(state.zoomProgress, 0, 1);
+    }
+    const zoom = springStep(state.zoomCurrentProgress, state.zoomVelocity, state.zoomProgress, dt);
+    state.zoomCurrentProgress = state.reducedMotion ? state.zoomProgress : zoom.position;
+    state.zoomVelocity = state.reducedMotion ? 0 : zoom.velocity;
+    state.globeCurrentScale = globeScaleFromProgress(state.zoomCurrentProgress);
+    const blend = state.reducedMotion ? 1 : 1 - Math.exp(-5 * dt);
+    state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * blend;
+  } else {
+    state.zoomVelocity = 0;
   }
   earthGroup.scale.setScalar(state.globeCurrentScale);
-  earthStar.material.opacity = Math.max(0, 0.92 * (1 - state.zoomCurrentProgress / 0.085));
+  earthStar.material.opacity = THREE.MathUtils.clamp(0.92 * (1 - state.zoomCurrentProgress / 0.085), 0, 1);
   earthStar.visible = earthStar.material.opacity > 0.01;
   updateZoomInterface();
   updateWordmarkCurve();
   camera.position.z = state.cameraCurrentZ;
+  const fieldOfView = 38 + Math.max(0, -state.zoomCurrentProgress) * 40;
+  if (Math.abs(camera.fov - fieldOfView) > 0.001) {
+    camera.fov = fieldOfView;
+    camera.updateProjectionMatrix();
+  }
   skySphere.position.copy(camera.position);
-  skySphere.quaternion.slerp(state.currentQuaternion, state.reducedMotion ? 1 : 0.024);
+  skySphere.quaternion.slerp(state.currentQuaternion, state.reducedMotion ? 1 : 1 - Math.exp(-1.45 * dt));
   updateTravelStars(state.zoomCurrentProgress);
   updateMarkers(now);
-  renderer.render(scene, camera);
+  renderGlassScene();
 }
 
 function rotateFromDelta(deltaX, deltaY) {
@@ -1498,7 +1565,8 @@ function onPointerMove(event) {
     const distanceDelta = nextDistance - state.pinchDistance;
     state.pinchDistance = nextDistance;
     if (distanceDelta > 0) alignFirstZoomToFlorida();
-    state.zoomProgress = THREE.MathUtils.clamp(
+    state.zoomInputAt = performance.now();
+    state.zoomProgress = (state.reducedMotion ? THREE.MathUtils.clamp : resistBoundary)(
       state.zoomProgress + distanceDelta * CONFIG.pinchProgressRate,
       0,
       1,
@@ -1547,8 +1615,10 @@ function onWheel(event) {
     closePanel();
     state.zoomProgress = 1;
   }
-  state.zoomProgress = THREE.MathUtils.clamp(
-    state.zoomProgress - event.deltaY * CONFIG.scrollProgressRate,
+  const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1);
+  state.zoomInputAt = performance.now();
+  state.zoomProgress = (state.reducedMotion ? THREE.MathUtils.clamp : resistBoundary)(
+    state.zoomProgress - delta * CONFIG.scrollProgressRate,
     0,
     1,
   );
@@ -1931,7 +2001,7 @@ function renderDrawerContent(drawerId) {
 
       if (entry.image) {
         const image = document.createElement("img");
-        image.className = "project-card__image";
+        image.className = `project-card__image${entry.imageClass ? ` ${entry.imageClass}` : ""}`;
         image.src = entry.image;
         image.alt = entry.imageAlt || "";
         image.loading = "lazy";
@@ -1949,7 +2019,34 @@ function renderDrawerContent(drawerId) {
       const description = document.createElement("p");
       description.className = "project-card__description";
       description.textContent = entry.description;
-      content.append(title, meta, description);
+      content.append(title, meta);
+      if (entry.award) {
+        const award = document.createElement("p");
+        award.className = "project-card__award";
+        const medal = document.createElement("span");
+        medal.textContent = "🥈";
+        const label = document.createElement("span");
+        label.className = "project-card__award-label";
+        label.textContent = entry.award;
+        award.append(medal, label);
+        content.append(award);
+      }
+      content.append(description);
+
+      if (entry.detailImages) {
+        const gallery = document.createElement("div");
+        gallery.className = "project-card__detail-gallery";
+        entry.detailImages.forEach((item) => {
+          const image = document.createElement("img");
+          image.className = "project-card__detail-image";
+          image.src = item.src;
+          image.alt = item.alt;
+          image.loading = "lazy";
+          image.decoding = "async";
+          gallery.append(image);
+        });
+        content.append(gallery);
+      }
 
       const attributions = entry.attributions
         ?? (entry.attribution ? [entry.attribution] : []);
@@ -2032,7 +2129,6 @@ function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
 function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) {
   const priorDrawerId = state.drawerId;
   ui.drawer.classList.remove("is-open");
-  ui.drawer.classList.remove("has-expanded-entry");
   ui.drawer.setAttribute("aria-hidden", "true");
   state.drawerId = null;
   if (!preserveContentUrl) {
@@ -2082,7 +2178,65 @@ function handleContentRouteChange() {
   }
 }
 
+function bindElasticScroll(container, surface) {
+  let position = 0;
+  let velocity = 0;
+  let frame = 0;
+  let previousAt = 0;
+  let inputAt = 0;
+  let touchY = null;
+  let touching = false;
+
+  function settle(now) {
+    const dt = (now - (previousAt || now)) / 1000;
+    previousAt = now;
+    if (!touching && now - inputAt > 100) {
+      ({ position, velocity } = springStep(position, velocity, 0, dt));
+    }
+    surface.style.translate = `0 ${position}px`;
+    if (Math.abs(position) > 0.1 || Math.abs(velocity) > 0.1) {
+      frame = requestAnimationFrame(settle);
+    } else {
+      position = velocity = frame = previousAt = 0;
+      surface.style.translate = "";
+    }
+  }
+
+  function pull(delta, event) {
+    if (state.reducedMotion || event.defaultPrevented || !delta) return;
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+    const atEdge = delta < 0 ? container.scrollTop <= 1 : container.scrollTop >= maxScroll - 1;
+    if (!atEdge) return;
+    event.preventDefault();
+    position = resistBoundary(position - delta * 0.35, 0, 0, 64);
+    velocity = 0;
+    inputAt = performance.now();
+    surface.style.translate = `0 ${position}px`;
+    if (!frame) frame = requestAnimationFrame(settle);
+  }
+
+  container.addEventListener("wheel", (event) => {
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? container.clientHeight : 1;
+    pull(event.deltaY * unit, event);
+  }, { passive: false });
+  container.addEventListener("touchstart", (event) => {
+    touching = event.touches.length === 1;
+    touchY = touching ? event.touches[0].clientY : null;
+  }, { passive: true });
+  container.addEventListener("touchmove", (event) => {
+    if (event.touches.length !== 1 || touchY === null) return;
+    const nextY = event.touches[0].clientY;
+    pull(touchY - nextY, event);
+    touchY = nextY;
+  }, { passive: false });
+  const release = () => { touching = false; touchY = null; };
+  container.addEventListener("touchend", release, { passive: true });
+  container.addEventListener("touchcancel", release, { passive: true });
+}
+
 function bindEvents() {
+  bindElasticScroll(ui.drawer, ui.drawerContent);
+  bindElasticScroll(ui.panel, ui.panel);
   ui.stage.addEventListener("pointerdown", onPointerDown);
   ui.stage.addEventListener("pointermove", onPointerMove);
   ui.stage.addEventListener("pointerup", onPointerUp);
@@ -2147,6 +2301,7 @@ async function init() {
       cloudTexture,
     );
     state.globeAvailable = true;
+    setupGlassRefraction();
     resize();
     animate();
     closeLoadingScreen();
