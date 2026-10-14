@@ -35,8 +35,14 @@ const LOCATIONS = {
     lon: -82.3248,
     description: "I'm currently a player and the market coordinator for UF Valorant Esports.  I'm also a part of the DevLUp game development club at UF.",
     actions: [
-      { label: "Game Development", drawerId: "game-development" },
-      { label: "Coding projects", drawerId: "coding-projects" },
+      {
+        label: "Projects",
+        categories: [
+          { label: "General", drawerId: "coding-projects" },
+          { label: "Game Development", drawerId: "game-development" },
+          { label: "Competition", drawerId: "competition" },
+        ],
+      },
     ],
   },
   nashville: {
@@ -97,28 +103,9 @@ const DRAWERS = {
     ],
   },
   "coding-projects": {
-    kicker: "Florida / Coding Projects",
-    title: "Coding Projects",
+    kicker: "Florida / Projects",
+    title: "General",
     entries: [
-      {
-        title: "SteadyForum",
-        meta: "TypeScript; Swift; React Native; DataBricks; Neon; HuggingFace",
-        award: 'Won 2nd place in "Databricks: Best Use of Databricks" at Knight Hacks IX',
-        description: 'This project was my first attempt at a hackathon project, and it was probably the hardest I\'ve ever worked on a project.  I pulled multiple all-nighters to get it done, and our final push ended up being just 1 minute before the deadline.  For this project, we created an app that tracks and corrects form while in the gym, preventing further injuries.  I worked with an incredible team (me and 3 others) in order to make this come to life.  I worked primarily on integration and front-end for the app, connecting things like Databricks for processing workout data, HuggingFace for AI-generated coaching feedback, and Neon for storing user accounts and workout history.',
-        image: "assets/steadyforum-team.jpg",
-        imageClass: "project-card__image--team",
-        imageAlt: "SteadyForum team and Databricks representatives at Knight Hacks IX",
-        detailImages: [
-          {
-            src: "assets/steadyforum-practice.jpg",
-            alt: "SteadyForum practice screen with a 3D exercise model, rotation controls, and workout navigation",
-          },
-          {
-            src: "assets/steadyforum-workout.png",
-            alt: "SteadyForum tracking a dumbbell lunge with green joint markers and a rep counter",
-          },
-        ],
-      },
       {
         title: "Towski.dev",
         meta: "Javascript; HTML",
@@ -145,6 +132,31 @@ const DRAWERS = {
         title: "AREDL Discord Bot",
         meta: "REST API; Java",
         description: "This discord bot was my biggest dive into using APIs to automate a previously manual task.  This bot searched through the All Rated Extreme Demon List API in order to rank individual members within a discord server.  I implemented features like sorting via hardest level, total points, or extreme demon count for quality of life for users using a cached hash map of the leaderboard.",
+      },
+    ],
+  },
+  "competition": {
+    kicker: "Florida / Projects",
+    title: "Competition",
+    entries: [
+      {
+        title: "SteadyForum",
+        meta: "TypeScript; Swift; React Native; DataBricks; Neon; HuggingFace",
+        award: 'Won 2nd place in "Databricks: Best Use of Databricks" at Knight Hacks IX',
+        description: 'This project was my first attempt at a hackathon project, and it was probably the hardest I\'ve ever worked on a project.  I pulled multiple all-nighters to get it done, and our final push ended up being just 1 minute before the deadline.  For this project, we created an app that tracks and corrects form while in the gym, preventing further injuries.  I worked with an incredible team (me and 3 others) in order to make this come to life.  I worked primarily on integration and front-end for the app, connecting things like Databricks for processing workout data, HuggingFace for AI-generated coaching feedback, and Neon for storing user accounts and workout history.',
+        image: "assets/steadyforum-team.jpg",
+        imageClass: "project-card__image--team",
+        imageAlt: "SteadyForum team and Databricks representatives at Knight Hacks IX",
+        detailImages: [
+          {
+            src: "assets/steadyforum-practice.jpg",
+            alt: "SteadyForum practice screen with a 3D exercise model, rotation controls, and workout navigation",
+          },
+          {
+            src: "assets/steadyforum-workout.png",
+            alt: "SteadyForum tracking a dumbbell lunge with green joint markers and a rep counter",
+          },
+        ],
       },
     ],
   },
@@ -310,6 +322,7 @@ const JAPANESE_BLOG_CATEGORIES = [
 const JAPANESE_BOOK_REVIEWS = [
   {
     id: "akai-sakana-to-kodomo",
+    dateTime: "2026-09-04",
     title: "赤い魚と子ども",
     rating: 4,
     image: "assets/BookCover.webp",
@@ -330,6 +343,7 @@ const JAPANESE_BOOK_REVIEWS = [
   },
     {
     id: "yaseuma",
+    dateTime: "2026-09-18",
     title: "やせうま",
     rating: 5,
     image: "assets/BookCover2.webp",
@@ -346,6 +360,46 @@ const JAPANESE_BOOK_REVIEWS = [
       ["分かりやすい", "Easy to understand"],
       ["ぼし", "Stars"],
     ],
+  },
+  {
+    "id": "maru-megane-ryoubo-san",
+    dateTime: "2026-10-12",
+    "title": "丸メガネ寮母さん",
+    "rating": 3,
+    "image": "assets/book-maru-megane-ryoubo-san.png",
+    "imageAlt": "丸メガネ寮母さんの本の表紙。眼鏡のイラストとレベル２の表示。",
+    "body": [
+      "この本はとてもかわいいですが、つまらないですよ。それから、単語はちょっとむずかしいです。でも、プロットはすごく単純です。奇妙ですね。",
+      "まず、いいところについて話しましょう。えはきれいで、かわいくて、面白いです。だから、ページを読むのはたのしいです。それから、ぶんぽうはむずかしくないですが、かんたんじゃないです。",
+      "次に、悪いところについて話しましょう。時々ページがとても長いです。でも、時々みじかいです。それに、プロットはかわいいですが、プロットが好きでも嫌いでもない。",
+      "全体として、たくさんの時間があるなら、「丸メガネ寮母さん」をよんでみてください。でも、今まで日本語で読んだ本の中で、この本が一番好きではありませんでした。しかし、話は悪くないです。"
+    ],
+    "glossary": [
+      [
+        "について話",
+        "Talk about something"
+      ],
+      [
+        "単純（たんじゅん）",
+        "Simple"
+      ],
+      [
+        "奇妙な（きもうな）",
+        "Weird"
+      ],
+      [
+        "側面（そくめん）",
+        "Aspects"
+      ],
+      [
+        "全体として",
+        "Overall"
+      ],
+      [
+        "しかし",
+        "However"
+      ]
+    ]
   },
 ];
 
@@ -1637,6 +1691,56 @@ function selectMarkerAtPointer(event) {
   if (intersection) focusLocation(intersection.object.userData.locationId);
 }
 
+function setProjectMenuExpanded(menu, expanded) {
+  menu.classList.toggle("is-expanded", expanded);
+  menu.querySelector(".project-menu__toggle").setAttribute("aria-expanded", String(expanded));
+  menu.querySelector(".project-menu__categories").setAttribute("aria-hidden", String(!expanded));
+  menu.querySelectorAll("[data-drawer]").forEach((button) => {
+    button.tabIndex = expanded ? 0 : -1;
+  });
+}
+
+function createProjectMenu(action) {
+  const menu = document.createElement("div");
+  menu.className = "project-menu text-button";
+  menu.setAttribute("role", "group");
+  menu.setAttribute("aria-label", action.label);
+
+  const toggle = document.createElement("button");
+  toggle.className = "project-menu__toggle";
+  toggle.type = "button";
+  toggle.textContent = action.label;
+  toggle.setAttribute("aria-controls", "project-categories");
+
+  const categories = document.createElement("div");
+  categories.id = "project-categories";
+  categories.className = "project-menu__categories";
+  action.categories.forEach((category) => {
+    const button = document.createElement("button");
+    button.className = "project-menu__category";
+    button.type = "button";
+    button.dataset.drawer = category.drawerId;
+    const label = document.createElement("span");
+    label.textContent = category.label;
+    button.append(label);
+    categories.append(button);
+  });
+  menu.append(toggle, categories);
+  setProjectMenuExpanded(menu, false);
+  menu.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") setProjectMenuExpanded(menu, true);
+  });
+  menu.addEventListener("pointerleave", () => {
+    if (!menu.contains(document.activeElement)) setProjectMenuExpanded(menu, false);
+  });
+  menu.addEventListener("focusin", () => setProjectMenuExpanded(menu, true));
+  menu.addEventListener("focusout", (event) => {
+    if (!menu.contains(event.relatedTarget) && !menu.matches(":hover")) setProjectMenuExpanded(menu, false);
+  });
+  toggle.addEventListener("click", () => setProjectMenuExpanded(menu, true));
+  return menu;
+}
+
 function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   const location = LOCATIONS[locationId];
   if (!location) return;
@@ -1665,6 +1769,7 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   ui.detail.textContent = location.detail;
   ui.description.textContent = location.description;
   ui.actions.replaceChildren(...location.actions.map((action) => {
+    if (action.categories) return createProjectMenu(action);
     const button = document.createElement("button");
     button.className = "text-button";
     button.type = "button";
@@ -1905,7 +2010,19 @@ function renderBookReviews() {
     const title = document.createElement("strong");
     title.className = "book-review__title";
     title.textContent = entry.title;
-    summary.append(title, createStarRating(entry.rating));
+    const identity = document.createElement("div");
+    identity.className = "book-review__identity";
+    identity.append(title);
+    if (entry.dateTime) {
+      const date = document.createElement("time");
+      date.className = "book-review__date";
+      date.dateTime = entry.dateTime;
+      date.textContent = new Date(`${entry.dateTime}T12:00:00`).toLocaleDateString("ja-JP", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+      identity.append(date);
+    }
+    summary.append(identity, createStarRating(entry.rating));
 
     const content = document.createElement("div");
     content.className = "book-review__content";
@@ -2248,13 +2365,23 @@ function bindEvents() {
     const button = event.target.closest("[data-drawer]");
     if (button) openDrawer(button.dataset.drawer);
   });
+  document.addEventListener("pointerdown", (event) => {
+    const menu = ui.actions.querySelector(".project-menu.is-expanded");
+    if (menu && !menu.contains(event.target)) setProjectMenuExpanded(menu, false);
+  });
   ui.locationLinks.forEach((link) => link.addEventListener("click", () => focusLocation(link.dataset.location)));
   window.addEventListener("resize", resize, { passive: true });
   window.addEventListener("hashchange", handleContentRouteChange);
   window.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.drawerId) closeDrawer({ restoreFocus: true });
-    else if (state.selectedId) closePanel({ restoreFocus: true });
+    else {
+      const menu = ui.actions.querySelector(".project-menu.is-expanded");
+      if (menu) {
+        menu.querySelector(".project-menu__toggle").focus();
+        setProjectMenuExpanded(menu, false);
+      } else if (state.selectedId) closePanel({ restoreFocus: true });
+    }
   });
 }
 
