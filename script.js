@@ -39,7 +39,7 @@ const LOCATIONS = {
         label: "Projects",
         categories: [
           { label: "General", drawerId: "coding-projects" },
-          { label: "Game Development", drawerId: "game-development" },
+          { label: "Games", drawerId: "game-development" },
           { label: "Competition", drawerId: "competition" },
         ],
       },
@@ -78,8 +78,8 @@ const LOCATIONS = {
 
 const DRAWERS = {
   "game-development": {
-    kicker: "Florida / Game Development",
-    title: "Game Development",
+    kicker: "Florida / Games",
+    title: "Games",
     entries: [
       {
         title: "Rewrite What Was",
@@ -1701,6 +1701,7 @@ function setProjectMenuExpanded(menu, expanded) {
 }
 
 function createProjectMenu(action) {
+  let touchInteraction = false;
   const menu = document.createElement("div");
   menu.className = "project-menu text-button";
   menu.setAttribute("role", "group");
@@ -1727,15 +1728,22 @@ function createProjectMenu(action) {
   });
   menu.append(toggle, categories);
   setProjectMenuExpanded(menu, false);
-  menu.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "mouse") setProjectMenuExpanded(menu, true);
+  menu.addEventListener("pointerdown", (event) => {
+    touchInteraction = event.pointerType === "touch";
   });
-  menu.addEventListener("pointerleave", () => {
-    if (!menu.contains(document.activeElement)) setProjectMenuExpanded(menu, false);
+  menu.addEventListener("keydown", () => { touchInteraction = false; });
+  menu.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      touchInteraction = false;
+      setProjectMenuExpanded(menu, true);
+    }
+  });
+  menu.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse" && !menu.contains(document.activeElement)) setProjectMenuExpanded(menu, false);
   });
   menu.addEventListener("focusin", () => setProjectMenuExpanded(menu, true));
   menu.addEventListener("focusout", (event) => {
-    if (!menu.contains(event.relatedTarget) && !menu.matches(":hover")) setProjectMenuExpanded(menu, false);
+    if (!touchInteraction && !menu.contains(event.relatedTarget) && !menu.matches(":hover")) setProjectMenuExpanded(menu, false);
   });
   toggle.addEventListener("click", () => setProjectMenuExpanded(menu, true));
   return menu;

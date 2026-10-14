@@ -655,15 +655,14 @@ a:focus-visible {
 }
 
 .project-menu__categories {
-  --project-general-width: max(3.5rem, 20cqw);
-  --project-competition-width: 36cqw;
-  --project-game-width: calc(100cqw - var(--project-general-width) - var(--project-competition-width));
+  --project-category-width: calc(100cqw / 3);
   position: relative;
   height: 3.2rem;
   pointer-events: none;
 }
 
 .project-menu__category {
+  --project-label-width: var(--project-category-width);
   --project-offset: 0px;
   --project-overlap: 1.6rem;
   position: absolute;
@@ -682,7 +681,7 @@ a:focus-visible {
   background: var(--glass-control), rgba(255, 255, 255, 0.045);
   box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.45), inset 0 -1px 2px rgba(255, 255, 255, 0.2), -3px 0 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-size: clamp(0.75rem, 4cqw, var(--text-sm));
   font-weight: 600;
   line-height: 1.25;
   transform: translateX(-100cqw);
@@ -690,7 +689,6 @@ a:focus-visible {
 }
 
 .project-menu__category:nth-child(1) {
-  --project-label-width: var(--project-general-width);
   z-index: 1;
 }
 
@@ -702,14 +700,12 @@ a:focus-visible {
 }
 
 .project-menu__category:nth-child(2) {
-  --project-label-width: var(--project-game-width);
-  --project-offset: var(--project-general-width);
+  --project-offset: var(--project-category-width);
   z-index: 2;
 }
 
 .project-menu__category:nth-child(3) {
-  --project-label-width: var(--project-competition-width);
-  --project-offset: calc(var(--project-general-width) + var(--project-game-width));
+  --project-offset: calc(var(--project-category-width) * 2);
   --project-overlap: 0px;
   z-index: 3;
   transition-delay: 35ms, 0ms, 0ms;
