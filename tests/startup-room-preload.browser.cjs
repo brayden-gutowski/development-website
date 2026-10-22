@@ -1,4 +1,4 @@
-// Removing the startup readiness await must fail before the visitor can Explore.
+// A slow Tokyo download must not block the globe; Explore still waits for preparation.
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
@@ -37,14 +37,26 @@ const { chromium } = require('playwright');
         }).observe(ui.loading, { attributes: true, attributeFilter: ['class'] });
       ` });
     });
+    let releaseRoom;
+    const roomDownload = new Promise(resolve => { releaseRoom = resolve; });
+    await page.route('**/JapanRoom.glb*', async route => {
+      await roomDownload;
+      await route.continue();
+    });
     await page.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
-    await page.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 60000 });
+    await page.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 15000 });
     const startup = await page.evaluate(() => window.startupComplete);
     console.log('Cold startup:', { ...startup, programs: startup.programs.length });
-    assert.equal(startup.ready, true, 'The room must finish GPU preparation before the loading screen completes');
-    assert.equal(startup.readersHidden, true, 'Prepared reader pages stay hidden on the globe');
-    assert.equal(startup.videoPaused, true, 'Preloading must not play the hidden room video');
-    assert.equal(startup.audioPaused, true, 'Preloading must not play room audio');
+    assert.equal(startup.ready, false, 'The globe must become usable while Tokyo is still downloading');
+    await page.getByRole('button', { name: /Nashville, Tennessee/ }).click();
+    await page.getByRole('button', { name: 'Music Reviews', exact: true }).waitFor();
+    releaseRoom();
+    await page.waitForFunction(() => window.preloadProbe().ready, null, { timeout: 60000 });
+    const prepared = await page.evaluate(() => window.preloadProbe());
+    assert.equal(prepared.readersHidden, true, 'Prepared reader pages stay hidden on the globe');
+    assert.equal(prepared.videoPaused, true, 'Preloading must not play the hidden room video');
+    assert.equal(prepared.audioPaused, true, 'Preloading must not play room audio');
+
     const requestCount = requests.length;
     const idle = await page.evaluate(() => window.preloadProbe());
     await page.waitForTimeout(500);
@@ -83,9 +95,11 @@ const { chromium } = require('playwright');
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     let startedDownload;
     const downloadStarted = new Promise(resolve => { startedDownload = resolve; });
+    let releaseMobileRoom;
+    const mobileRoomDownload = new Promise(resolve => { releaseMobileRoom = resolve; });
     await mobile.route('**/JapanRoom.glb*', async route => {
       startedDownload();
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await mobileRoomDownload;
       await route.continue();
     });
     await mobile.route('**/script.js*', async route => {
@@ -94,11 +108,12 @@ const { chromium } = require('playwright');
     });
     await mobile.goto((process.env.TEST_URL || 'http://127.0.0.1:4173') + '/#book-review/yaseuma');
     await downloadStarted;
-    assert.equal(await mobile.locator('#loading-screen').evaluate(element => element.classList.contains('is-complete')), false, 'A slow room download must keep the startup loading screen visible');
+    await mobile.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 15000 });
     await mobile.setViewportSize({ width: 430, height: 932 });
+    releaseMobileRoom();
     await mobile.locator('#book-reader[data-phase="reading"][data-book="yaseuma"]').waitFor({ timeout: 60000 });
     assert.equal(await mobile.evaluate(() => window.preloadRoomAspect()), 430 / 932, 'A viewport change during startup must reach the prepared room camera');
     assert.equal(await mobile.locator('#app.is-in-room:not(.is-travelling)').count(), 1, 'A reduced-motion direct link must open its review in the prepared room');
-    console.log('PASS: cold startup prepares the room without later downloads/shaders; mobile resize and direct links remain functional');
+    console.log('PASS: a stalled room cannot block the globe; background preparation, Explore, mobile resize and direct links remain functional');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

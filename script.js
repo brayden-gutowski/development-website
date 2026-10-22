@@ -775,7 +775,8 @@ const roomHint = document.querySelector("#room-hint");
 const roomTransition = document.querySelector("#room-transition");
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261021-client-polish-4"))
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261021-client-polish-4")
+    .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS}))
     .catch(error=>{japanRoomAssets=null;throw error;});
 }
@@ -837,18 +838,21 @@ function loadJapanRoom() {
           performance.mark("room-render-start");
           renderer.render(room.scene, room.camera);
           performance.measure("room-render", {start: "room-render-start", detail: { newPrograms: renderer.info.programs.filter(program => !beforeWarmPrograms.has(program.id)).length }});
+          renderer.setRenderTarget(previousTarget);
           await new Promise(requestAnimationFrame);
           performance.mark("room-shade-start");
           room.shade(renderer, warmTarget);
           performance.measure("room-shade", "room-shade-start");
+          renderer.setRenderTarget(previousTarget);
           await new Promise(requestAnimationFrame);
           room.highlight("music");
           performance.mark("room-outline-start");
           room.outline.render(renderer, warmTarget, warmTarget, 0, false);
           performance.measure("room-outline", "room-outline-start");
           room.highlight(null);
-          // Complete GPU uploads and effects preparation while the loading state
-          // is still visible, before globe animation and room rendering overlap.
+          renderer.setRenderTarget(previousTarget);
+          // Complete GPU work before Explore starts the timed flight. Yield
+          // with the main target restored so the globe can keep rendering.
           const gl = renderer.getContext();
           const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
           gl.flush();
@@ -2992,12 +2996,6 @@ async function init() {
       handleContentRouteChange();
       return;
     }
-    // Fetch module dependencies alongside globe images, without rendering work.
-    japanRoomModule = import("./japan-room.js?v=20261021-client-polish-4");
-    japanRoomModule.catch(()=>{japanRoomModule=null;});
-    fetchJapanRoom().catch(error=>console.warn('Room download deferred',error));
-    ensureDiaryReader().prepare().catch(error=>console.warn('Diary preparation deferred',error));
-    ensureBookReader().prepare().catch(error=>console.warn('Review preparation deferred',error));
     setLoadProgress(12, "Starting the renderer");
     const manager = new THREE.LoadingManager();
     manager.onProgress = (_url, loaded, total) => {
@@ -3035,21 +3033,18 @@ async function init() {
     setupGlassRefraction();
     resize();
     renderGlassScene();
-    setLoadProgress(94, "Preparing the room and its pages");
-    // Finish downloads, GPU uploads, first draws and page layout under the
-    // loading screen. Keep the globe loop stopped while warming render targets.
-    let roomReady = true;
-    await Promise.all([
-      loadJapanRoom().catch(error => {
-        roomReady = false;
-        console.warn("Room preparation failed; Explore will retry", error);
-      }),
-      state.reducedMotion ? null : loadCityFlight(),
-    ]);
     animate();
-    closeLoadingScreen(roomReady ? "Ready" : "Room unavailable · Explore to retry");
+    closeLoadingScreen();
     contentRoutingReady = true;
     handleContentRouteChange();
+    // Show the usable globe first. Tokyo's larger downloads and GPU warmup
+    // run in the background; Explore shares and awaits the same preparation.
+    window.setTimeout(() => {
+      ensureDiaryReader().prepare().catch(error=>console.warn('Diary preparation deferred',error));
+      ensureBookReader().prepare().catch(error=>console.warn('Review preparation deferred',error));
+      loadJapanRoom().catch(error => console.warn("Room preparation failed; Explore will retry", error));
+      if (!state.reducedMotion) loadCityFlight();
+    }, 350);
   } catch (error) {
     console.error(error);
     showFallback("The globe could not be loaded.");
