@@ -1,7 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
 import { springStep, resistBoundary, easeTokyoApproach } from "./motion.mjs?v=20261016-flight-8";
 import { createDiaryReader } from './diary-reader.js?v=20261021-client-polish-4';
-import { createBookReader } from './book-reader.js?v=14';
+import { createBookReader } from './book-reader.js?v=15';
 
 const DEFAULT_DOCUMENT_TITLE = document.title;
 const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
@@ -775,7 +775,7 @@ const roomHint = document.querySelector("#room-hint");
 const roomTransition = document.querySelector("#room-transition");
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261021-client-polish-4")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261022-mobile-room-1")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS}))
     .catch(error=>{japanRoomAssets=null;throw error;});

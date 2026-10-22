@@ -42,18 +42,17 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     const image=element('img');image.src=entry.image;image.alt='';image.draggable=false;button.append(image);root.append(button);return button;
   });
   const close=element('button','review-close','×');close.type='button';close.setAttribute('aria-label','Put books back');root.append(close);
-  const details=element('button','review-details-toggle','表紙・ことば');details.type='button';details.setAttribute('aria-label','Show book cover and vocabulary');root.append(details);
   document.querySelector('#app').append(root);
   let phase='closed',elapsed=0,index=0,reduced=false,clock=0,heldRoom,bindings=[],poses=[],starts=[],opening=[],startOpening=[];
   let prepared,assetsReady=false,layoutKey='',printLayout='',pages=[],textures=[],restoreFocus,token=0,pendingIndex=null;
-  let height=600,width=790,centerX=0,centerY=0,distance=1,units=1,gesture,showDetails=false;
+  let height=600,width=790,centerX=0,centerY=0,distance=1,units=1,gesture;
   let slots=[],targets=[],queuedOpen=null,pendingClose=false,reflow=null;
   let paths=[],motionClock=0;
   const imageSources=new Map();
   const rotationAxis=new THREE.Vector3(0,0,1);
   const pose=b=>({position:b.rest.position.clone(),quaternion:b.rest.quaternion.clone(),scale:b.rest.scale.clone()});
   function shadow(){const sun=heldRoom?.scene.getObjectByName('Window sunlight');if(sun)sun.shadow.needsUpdate=true;}
-  function setPhase(value){phase=value;elapsed=0;root.dataset.phase=value;selectors.forEach(b=>b.disabled=value!=='reading');details.disabled=value!=='reading';if(['flying','switching','returning'].includes(value)&&bindings.length)prepareFlight();}
+  function setPhase(value){phase=value;elapsed=0;root.dataset.phase=value;selectors.forEach(b=>b.disabled=value!=='reading');if(['flying','switching','returning'].includes(value)&&bindings.length)prepareFlight();}
   function buildPage(entry,side){
     const left=side==='left',page=element('section',`diary-page diary-page--${side} review-page review-page--${side}`);
     page.setAttribute('aria-label',left?'Book cover and new words':'Book review');
@@ -80,8 +79,8 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function layout(){
     const mobile=mobileLayout();
-    height=mobile?Math.max(320,Math.min(650,innerHeight-205)):Math.min(700,innerHeight-120,(innerWidth-330)/(.53/.403));
-    width=mobile?(innerWidth-36)*2:height*(.53/.403);centerX=mobile?18+(showDetails?width/2:0):(innerWidth+210)/2;centerY=mobile?145+height/2:innerHeight/2;
+    height=mobile?Math.min(innerHeight-180,(innerWidth-28)/(.53/.403)):Math.min(700,innerHeight-120,(innerWidth-330)/(.53/.403));
+    width=height*(.53/.403);centerX=mobile?innerWidth/2:(innerWidth+210)/2;centerY=mobile?Math.max(145+height/2,innerHeight*.54):innerHeight/2;
     root.classList.toggle('is-mobile',mobile);root.classList.toggle('has-room',Boolean(getRoom()));
     root.classList.toggle('is-short',innerHeight<525);
     surface.style.cssText=`width:${width}px;height:${height}px;left:${centerX-width/2}px;top:${centerY-height/2}px`;
@@ -89,7 +88,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     const fov=heldRoom?.camera.fov||28;distance=.403/(height/innerHeight*2*Math.tan(THREE.MathUtils.degToRad(fov/2)));
     units=.403/height;
     for(let i=0;i<selectors.length;i++){
-      const slot=slots[i],sideHeight=mobile?96:height*.31,sideWidth=sideHeight*.269/.410;
+      const slot=slots[i],sideHeight=mobile?76:height*.31,sideWidth=sideHeight*.269/.410;
       const x=mobile?innerWidth/2+(slot===0?-sideWidth*.8:sideWidth*.8):(centerX-width/2)/2;
       const y=mobile?64:centerY+(slot===0?-.22:.22)*height;
       selectors[i].style.cssText=`width:${sideWidth+12}px;height:${sideHeight+12}px;left:${x-sideWidth/2-6}px;top:${y-sideHeight/2-6}px`;
@@ -101,7 +100,9 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
       spread.replaceChildren(buildPage(entry,'left'),buildPage(entry,'right'));
       const copy=spread.querySelector('.review-copy');let font=parseFloat(getComputedStyle(copy).fontSize);
       while(copy.scrollHeight>copy.clientHeight+1&&font>11.5){font-=.25;copy.style.font=`400 ${font}px/1.85 "Klee One",serif`;}
-      if(copy.scrollHeight>copy.clientHeight+1)copy.style.overflowY='auto';
+      if(copy.scrollHeight>copy.clientHeight+1){copy.style.overflowY='auto';copy.tabIndex=0;copy.setAttribute('aria-label','Scroll book review');}
+      const left=spread.querySelector('.review-page--left');
+      if(mobileLayout()&&left.scrollHeight>left.clientHeight+1)left.tabIndex=0;
       return [...spread.children].map(p=>p.cloneNode(true));
     });
     layoutKey=key;renderPage();
@@ -116,8 +117,8 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function destination(i){
     const active=i===index,mobile=mobileLayout(),slot=slots[i];
-    const smallScale=mobile?96/height:.31;
-    const pixelX=active?centerX:mobile?innerWidth/2+(slot===0?-.8:.8)*(96*.269/.410):(centerX-width/2)/2;
+    const smallScale=mobile?76/height:.31;
+    const pixelX=active?centerX:mobile?innerWidth/2+(slot===0?-.8:.8)*(76*.269/.410):(centerX-width/2)/2;
     const pixelY=active?centerY:mobile?64:centerY+(slot===0?-.22:.22)*height;
     const scale=new THREE.Vector3(active?(mobile?width/height/(.53/.403):1):smallScale,active?1:smallScale,active?.65:.6);
     const localRotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,active?0:slot===0?.12:-.12,active?0:slot===0?-.07:.06));
@@ -213,7 +214,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     target=(target+entries.length)%entries.length;
     if(phase!=='reading'){pendingIndex=target;return;}
     if(target===index)return;
-    snapshot();reflow=null;slots[index]=slots[target];slots[target]=-1;index=target;showDetails=false;details.textContent='表紙・ことば';details.setAttribute('aria-label','Show book cover and vocabulary');renderPage();layout();if(notify)onBook(entries[index]);
+    snapshot();reflow=null;slots[index]=slots[target];slots[target]=-1;index=target;renderPage();layout();if(notify)onBook(entries[index]);
     root.style.setProperty('--review-presence','0');setPhase('switching');
     if(reduced||!bindings.length){settle();}
   }
@@ -237,7 +238,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
       const current=++token;restoreFocus=document.activeElement;root.hidden=false;root.style.setProperty('--review-presence','0');setPhase('loading');
       heldRoom=getRoom();heldRoom?.holdView(true);heldRoom?.highlight(null);
       if(!assetsReady)await (prepared||reader.prepare());if(current!==token)return;
-      index=target;slots=entries.map((_,i)=>i===index?-1:i<index?i:i-1);showDetails=false;details.textContent='表紙・ことば';details.setAttribute('aria-label','Show book cover and vocabulary');preparePages();renderPage();layout();
+      index=target;slots=entries.map((_,i)=>i===index?-1:i<index?i:i-1);preparePages();renderPage();layout();
       if(heldRoom?.reviewBooks?.length){bindings=heldRoom.reviewBooks;if(!textures.length||printLayout!==layoutKey)printPages();poses=bindings.map(pose);opening=bindings.map(()=>0);bindings.forEach(b=>b.restore());snapshot();}
       else bindings=[];
       onBook(entries[index]);setPhase('flying');
@@ -279,7 +280,6 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     },
   };
   root.addEventListener('click',e=>{
-    if(e.target===details){showDetails=!showDetails;details.textContent=showDetails?'レビュー':'表紙・ことば';details.setAttribute('aria-label',showDetails?'Show book review':'Show book cover and vocabulary');layout();if(phase==='reading')settle();return;}
     const selection=e.target.closest('[data-book-index]'),next=e.target.closest('[data-step]');
     if(selection){select(Number(selection.dataset.bookIndex));return;}
     if(next){select(index+Number(next.dataset.step));return;}
@@ -291,7 +291,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   root.addEventListener('keydown',e=>{
     if(!e.altKey&&!e.metaKey&&!e.ctrlKey&&['ArrowRight','ArrowLeft','a','A','d','D'].includes(e.key)){e.preventDefault();select(index+(['ArrowRight','d','D'].includes(e.key)?1:-1));}
     if(e.key==='Tab'){
-      const controls=[...root.querySelectorAll('button:not(:disabled):not([hidden])')].filter(b=>b.getClientRects().length),first=controls[0],last=controls.at(-1);
+      const controls=[...root.querySelectorAll('button:not(:disabled):not([hidden]),[tabindex="0"]')].filter(b=>b.getClientRects().length),first=controls[0],last=controls.at(-1);
       if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
     }
   });

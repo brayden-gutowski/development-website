@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { applyRoomFinish } from './room-finish.js?v=20261020-memory-1';
 import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=13';
-import { createReviewBindings } from './book-reader.js?v=14';
+import { createReviewBindings } from './book-reader.js?v=15';
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js";
 import { OutlinePass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutlinePass.js";
 import { SSAOPass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/SSAOPass.js";
@@ -142,13 +142,11 @@ async function loadPoster() {
 }
 
 async function loadBakedLight(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Room lighting unavailable');
-  // RGBM alpha is a data multiplier; never premultiply it into RGB.
-  const image = await createImageBitmap(await response.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
-  const texture = new THREE.Texture(image);
+  // RGBM alpha stores lighting data. WebKit's ImageBitmap path rounds low-alpha
+  // RGB through premultiplied bytes, producing colored contour bands. Upload
+  // the original image directly with WebGL's premultiplication disabled.
+  const texture = await new THREE.TextureLoader().loadAsync(url);
   texture.flipY = false;
-  texture.needsUpdate = true;
   return texture;
 }
 
@@ -393,6 +391,18 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   sunlight.shadow.radius = 6;
   sunlight.shadow.autoUpdate = false;
   sunlight.shadow.needsUpdate = true;
+  // Portrait framing reveals the near floor beyond the old 9m shadow box.
+  // Uncovered pixels default to fully sunlit, making a hard rectangular edge
+  // through the mist. Fit the shadow camera to the complete authored room.
+  scene.updateMatrixWorld(true);
+  sunlight.shadow.updateMatrices(sunlight);
+  const shadowBounds = new THREE.Box3().setFromObject(gltf.scene).applyMatrix4(sunlight.shadow.camera.matrixWorldInverse);
+  Object.assign(sunlight.shadow.camera, {
+    left: shadowBounds.min.x - .25, right: shadowBounds.max.x + .25,
+    bottom: shadowBounds.min.y - .25, top: shadowBounds.max.y + .25,
+    near: Math.max(.1, -shadowBounds.max.z - .25), far: Math.max(18, -shadowBounds.min.z + .25),
+  });
+  sunlight.shadow.camera.updateProjectionMatrix();
   const targets = [];
   const actionMeshes = {};
   const glassMeshes = [];
