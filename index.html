@@ -11,7 +11,12 @@
     <link rel="shortcut icon" type="image/png" href="assets/towski-dev-logo.png?v=20260820" />
     <link rel="apple-touch-icon" href="assets/towski-dev-logo.png?v=20260820" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20261014-touch-games" />
+    <link rel="preconnect" href="https://cyberjapandata.gsi.go.jp" crossorigin />
+    <link rel="preconnect" href="https://gibs.earthdata.nasa.gov" crossorigin />
+    <link rel="stylesheet" href="style.css?v=20261021-tokyo-star-1" />
+    <script type="importmap">
+      {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}
+    </script>
   </head>
   <body>
     <main class="app" id="app">
@@ -82,6 +87,24 @@
         </div>
       </section>
 
+      <div class="city-flight" id="city-flight" aria-hidden="true"></div>
+
+      <section class="room-hud" id="room-hud" aria-label="Tokyo room" tabindex="-1" hidden>
+        <p class="room-hud__hint" id="room-hint">Hover over objects to explore</p>
+        <nav class="room-hud__actions" aria-label="Room objects">
+          <button type="button" data-room-action="diary" aria-label="Diary · Japanese Blog"><span>01</span> Diary</button>
+          <button type="button" data-room-action="books" aria-label="Books · Japanese Books"><span>02</span> Books</button>
+          <button type="button" data-room-action="music" aria-label="Record player · Play music" aria-pressed="false"><span class="room-hud__record">◉</span> <span id="room-music-label">Play a record</span></button>
+          <button type="button" data-room-action="curtains" aria-label="Curtains · Close curtains" aria-pressed="false">Close curtains</button>
+          <button type="button" data-room-action="door" aria-label="Door · Return to globe">Return to globe <span>↗</span></button>
+        </nav>
+      </section>
+
+      <div class="room-transition" id="room-transition" role="status" aria-live="polite" hidden>
+        <div class="room-transition__mist" aria-hidden="true"></div>
+        <div class="room-transition__white" aria-hidden="true"></div>
+      </div>
+
       <aside class="location-panel" id="location-panel" aria-live="polite" aria-hidden="true">
         <button class="icon-button location-panel__close" id="close-panel" type="button" aria-label="Close location details">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -140,7 +163,7 @@
           <span class="location-link__text">Nashville, Tennessee <span class="location-link__separator" aria-hidden="true">•</span> Music Reviews</span>
         </button>
         <button class="location-link" type="button" data-location="tokyo">
-          <span class="location-link__dot" aria-hidden="true"></span>
+          <svg class="location-link__star" viewBox="0 0 20 20" aria-hidden="true"><path d="m10 1.5 2.6 5.4 5.9.9-4.3 4.2 1 6-5.2-2.8L4.8 18l1-6-4.3-4.2 5.9-.9Z" /></svg>
           <span class="location-link__text">Tokyo, Japan <span class="location-link__separator" aria-hidden="true">•</span> Language Studies</span>
         </button>
       </nav>
@@ -155,6 +178,6 @@
     </main>
 
     <noscript>This interactive globe requires JavaScript.</noscript>
-    <script type="module" src="script.js?v=20261014-touch-games"></script>
+    <script type="module" src="script.js?v=20261021-client-polish-4"></script>
   </body>
 </html>

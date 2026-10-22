@@ -1,6 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { springStep, resistBoundary } from './motion.mjs';
+import { springStep, resistBoundary, easeTokyoApproach } from './motion.mjs';
+
+test('Tokyo arrival starts and settles gently while progressing continuously', () => {
+  assert.equal(easeTokyoApproach(0), 0);
+  assert.equal(easeTokyoApproach(1), 1);
+  assert.ok(easeTokyoApproach(.1) < .004);
+  assert.ok(easeTokyoApproach(.25) < .08);
+  assert.ok(1 - easeTokyoApproach(.9) < .004);
+  let previous = 0;
+  for (let frame = 1; frame <= 100; frame++) {
+    const progress = easeTokyoApproach(frame / 100);
+    assert.ok(progress >= previous && progress <= 1);
+    previous = progress;
+  }
+});
 
 test('spring returns displaced content to rest without depending on refresh rate', () => {
   const settle = (fps) => {

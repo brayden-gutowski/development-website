@@ -1,3 +1,9 @@
+export function easeTokyoApproach(value) {
+  const t = Math.max(0, Math.min(1, value));
+  // Flat velocity, acceleration, and jerk at both ends of the camera approach.
+  return t ** 4 * (35 + t * (-84 + t * (70 - 20 * t)));
+}
+
 export function springStep(position, velocity, target, deltaTime) {
   const dt = Math.max(0, Math.min(deltaTime, 0.05));
   const displacement = position - target;

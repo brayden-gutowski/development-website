@@ -1,5 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
-import { springStep, resistBoundary } from "./motion.mjs";
+import { springStep, resistBoundary, easeTokyoApproach } from "./motion.mjs?v=20261016-flight-8";
+import { createDiaryReader } from './diary-reader.js?v=20261021-client-polish-4';
+import { createBookReader } from './book-reader.js?v=14';
 
 const DEFAULT_DOCUMENT_TITLE = document.title;
 const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
@@ -70,8 +72,7 @@ const LOCATIONS = {
     lon: 139.6503,
     description: "I have been learning Japanese for roughly a year, and have taken 2 courses for Japanese, placing me at around an N5 level.  I'm currently taking a third course, meaning I'm studying toward an N4 level.",
     actions: [
-      { label: "Japanese Blog", drawerId: "japanese-blog" },
-      { label: "Japanese Books", drawerId: "japanese-book-reviews" },
+      { label: "Explore", explore: true },
     ],
   },
 };
@@ -125,6 +126,27 @@ const DRAWERS = {
             sourceLabel: "NASA Earth Observatory",
             sourceHref: "https://visibleearth.nasa.gov/images/144898/earth-at-night-black-marble-2016-color-maps",
             suffix: ", using Suomi NPP VIIRS data (2016).",
+          },
+          {
+            prefix: "Country-scale flight imagery: ",
+            sourceLabel: "Blue Marble · NASA / GIBS",
+            sourceHref: "https://nasa-gibs.github.io/gibs-api-docs/access-basics/",
+            suffix: ". MODIS / NASA Earth Observatory; natural-color imagery.",
+          },
+          {
+            prefix: "Tokyo flight satellite and aerial imagery: ",
+            sourceLabel: "GSI map tiles",
+            sourceHref: "https://maps.gsi.go.jp/development/ichiran.html",
+            suffix: ". Landsat data: GSI, TSIC, GEO Grid/AIST, USGS; seafloor: GEBCO. Prepared as local atlases with continuous water and displayed on the Three.js globe.",
+          },
+          {
+            prefix: "Tokyo window footage by ",
+            sourceLabel: "Nelemson G · Aerial View of Tokyo Skyline at Dusk",
+            sourceHref: "https://www.pexels.com/video/aerial-view-of-tokyo-skyline-at-dusk-31044174/",
+            middle: ", under the ",
+            licenseLabel: "Pexels License",
+            licenseHref: "https://www.pexels.com/license/",
+            suffix: ". Fixed evening skyline, native-speed motion, with a short loop dissolve.",
           },
         ],
       },
@@ -306,7 +328,7 @@ const JAPANESE_BLOG_CATEGORIES = [
             captionPosition: "below",
           },
           {
-            src: "assets/blog-2026-08-21-jojos.jpg",
+            src: "assets/blog-2026-09-11-jojos-part-4.jpg",
             label: "JoJo's Bizarre Adventure: Diamond Is Unbreakable promotional artwork",
             side: "right",
             aspectRatio: "560 / 800",
@@ -670,6 +692,8 @@ const ui = {
   drawerContent: document.querySelector("#drawer-content"),
 };
 
+const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+const transparencyPreference = window.matchMedia("(prefers-reduced-transparency: reduce)");
 const state = {
   selectedId: null,
   globeAvailable: false,
@@ -700,8 +724,8 @@ const state = {
   globeTargetScale: CONFIG.initialGlobeScale,
   cameraTargetZ: CONFIG.cameraRestZ,
   cameraCurrentZ: CONFIG.cameraRestZ,
-  reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  reducedTransparency: window.matchMedia("(prefers-reduced-transparency: reduce)").matches,
+  reducedMotion: motionPreference.matches,
+  reducedTransparency: transparencyPreference.matches,
 };
 
 let renderer;
@@ -722,16 +746,354 @@ const sunDirectionWorld = new THREE.Vector3(0, 0, 1);
 let nextSolarUpdateAt = 0;
 let nextLocalTimeUpdateAt = 0;
 let markerHitTargets = [];
+let markerTravelOpacity = 1;
 let frameId;
 let wordmarkTransitionToken = 0;
+let lastZoomInterfaceKey = "";
+let lastRenderAt = 0;
 let glassTarget;
 let glassScene;
 let glassCamera;
 let glassMaterial;
+let japanRoom;
+let japanRoomPromise;
+let japanRoomModule;
+let japanRoomAssets;
+let diaryReader;
+let bookReader;
+const flightDaylight = { value: 0 };
+let cityFlight;
+let cityFlightPromise;
+let tokyoVisit;
+let roomIsVisible = false;
+let roomIsLoading = false;
+let openContentOnArrival = false;
+let contentRoutingReady = false;
+let roomPointerDown;
+const roomHud = document.querySelector("#room-hud");
+const roomHint = document.querySelector("#room-hint");
+const roomTransition = document.querySelector("#room-transition");
+
+function fetchJapanRoom() {
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261021-client-polish-4"))
+    .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS}))
+    .catch(error=>{japanRoomAssets=null;throw error;});
+}
+
+function loadJapanRoom() {
+  if (!japanRoomPromise) {
+    japanRoomPromise = fetchJapanRoom().then(async room => {
+      try {
+        // Publish the downloaded room for resize and printed-page preparation;
+        // the shared promise still gates entry until GPU warmup has finished.
+        japanRoom = room;
+        room.soundtrack.onended = () => updateMusicControl(false);
+        // Disable unsupported targets before even the material warmup can
+        // trigger Three.js's automatic environment-map conversion.
+        if (!renderer.extensions.has('EXT_color_buffer_float')) await room.prepare(renderer);
+        await Promise.all([ensureDiaryReader().prepare(), ensureBookReader().prepare()]);
+        room.resize(innerWidth, innerHeight);
+        // Compile before the reflection capture triggers any material draws.
+        const textures = new Set();
+        room.scene.traverse(object => {
+          for (const material of [object.material].flat()) {
+            if (material) for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+          }
+        });
+        let uploadStartedAt = performance.now();
+        for (const texture of textures) {
+          renderer.initTexture(texture);
+          if (performance.now() - uploadStartedAt >= 6) {
+            await new Promise(requestAnimationFrame);
+            uploadStartedAt = performance.now();
+          }
+        }
+        performance.mark("room-compile-start");
+        const compileTarget = renderer.getRenderTarget();
+        renderer.setRenderTarget(glassTarget);
+        const compiling = renderer.compileAsync(room.scene, room.camera);
+        renderer.setRenderTarget(compileTarget);
+        await compiling;
+        performance.measure("room-compile", "room-compile-start");
+        performance.mark("room-probe-start");
+        await room.prepare(renderer);
+        performance.measure("room-probe", "room-probe-start");
+        // The captured environment changes CubeUV shader dimensions.
+        performance.mark("room-final-compile-start");
+        const finalCompileTarget = renderer.getRenderTarget();
+        renderer.setRenderTarget(glassTarget);
+        const finalCompiling = renderer.compileAsync(room.scene, room.camera);
+        renderer.setRenderTarget(finalCompileTarget);
+        await finalCompiling;
+        performance.measure("room-final-compile", "room-final-compile-start");
+        await new Promise(requestAnimationFrame);
+        const previousTarget = renderer.getRenderTarget();
+        // Match the live buffer so glass/transmission and post effects allocate
+        // their full-size targets before the timed transition starts.
+        const warmTarget = glassTarget.clone();
+        try {
+          renderer.setRenderTarget(warmTarget);
+          const beforeWarmPrograms = new Set(renderer.info.programs.map(program => program.id));
+          performance.mark("room-render-start");
+          renderer.render(room.scene, room.camera);
+          performance.measure("room-render", {start: "room-render-start", detail: { newPrograms: renderer.info.programs.filter(program => !beforeWarmPrograms.has(program.id)).length }});
+          await new Promise(requestAnimationFrame);
+          performance.mark("room-shade-start");
+          room.shade(renderer, warmTarget);
+          performance.measure("room-shade", "room-shade-start");
+          await new Promise(requestAnimationFrame);
+          room.highlight("music");
+          performance.mark("room-outline-start");
+          room.outline.render(renderer, warmTarget, warmTarget, 0, false);
+          performance.measure("room-outline", "room-outline-start");
+          room.highlight(null);
+          // Complete GPU uploads and effects preparation while the loading state
+          // is still visible, before globe animation and room rendering overlap.
+          const gl = renderer.getContext();
+          const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+          gl.flush();
+          try {
+            while (gl.clientWaitSync(fence, 0, 0) === gl.TIMEOUT_EXPIRED) await new Promise(requestAnimationFrame);
+          } finally { gl.deleteSync(fence); }
+        } finally {
+          renderer.setRenderTarget(previousTarget);
+          warmTarget.dispose();
+        }
+        return room;
+      } catch (error) { japanRoom = null; room.dispose(); throw error; }
+    }).catch(error => { japanRoomPromise = japanRoomAssets = null; throw error; });
+  }
+  return japanRoomPromise;
+}
+
+function loadCityFlight() {
+  if (!cityFlightPromise) {
+    cityFlightPromise = import("./tokyo-flight.js?v=20261018-seamless-3").then(module => module.createTokyoFlight({
+      renderer, earthGroup, radius: CONFIG.globeRadius, location: LOCATIONS.tokyo,
+      globeLighting: earthMaterial.userData.globeLighting,
+    })).then(async flight => {
+      cityFlight = flight;
+      if (flight) {
+        // Flight imagery is drawn into the linear glass buffer, not the screen
+        // used by its module's initial compile. Warm that actual shader variant.
+        const target = renderer.getRenderTarget();
+        let compiling;
+        flight.setOpacity(1);
+        try {
+          renderer.setRenderTarget(glassTarget);
+          compiling = renderer.compileAsync(scene, camera);
+        } finally {
+          renderer.setRenderTarget(target);
+          flight.setOpacity(0);
+        }
+        await compiling;
+      }
+      return flight;
+    }).catch(error => {
+      console.warn("City imagery unavailable; using the globe transition", error);
+      cityFlightPromise = null;
+      return null;
+    });
+  }
+  return cityFlightPromise;
+}
+
+function showRoomView(visible) {
+  roomIsVisible = visible;
+  japanRoom?.setVisible(visible, state.reducedMotion);
+  ui.app.classList.toggle("is-in-room", visible);
+  roomHud.hidden = !visible;
+  ui.stage.setAttribute("aria-label", visible ? "Tokyo room. Move the pointer to look around; click objects to explore." : "Interactive 3D globe");
+}
+
+function setGlobeInterfaceInert(inert) {
+  document.querySelector(".site-header").inert = inert;
+  document.querySelector(".location-nav").inert = inert;
+  ui.panel.inert = inert;
+}
+
+async function exploreTokyo() {
+  if (roomIsLoading || tokyoVisit) return;
+  if (!state.globeAvailable) return;
+  roomIsLoading = true;
+  const button = ui.actions.querySelector("[data-explore]");
+  button.disabled = true;
+  button.textContent = "Preparing room…";
+  ui.panel.querySelector(".room-load-error")?.remove();
+  try {
+    await Promise.all([loadJapanRoom(), state.reducedMotion ? null : loadCityFlight()]);
+    // A visitor may select another location while the room downloads.
+    if (state.selectedId !== "tokyo") return;
+    closeDrawer({ preserveContentUrl: openContentOnArrival });
+    ui.panel.classList.remove("is-open");
+    ui.panel.setAttribute("aria-hidden", "true");
+    state.focusActive = false;
+    state.zoomProgress = state.zoomCurrentProgress = 1;
+    state.zoomVelocity = 0;
+    camera.near = 0.005;
+    camera.updateProjectionMatrix();
+    japanRoom.reset();
+    cityFlight?.resize();
+    cityFlight?.setOpacity(1);
+    tokyoVisit = { direction: "in", startedAt: performance.now(), startZ: state.cameraCurrentZ, startScale: state.globeCurrentScale, startQuaternion: state.currentQuaternion.clone(), startRelief: earthMaterial.displacementScale, startReliefBias: earthMaterial.displacementBias };
+    setGlobeInterfaceInert(true);
+    ui.app.classList.add("is-travelling");
+    roomTransition.hidden = false;
+  roomTransition.setAttribute('aria-label', 'Travelling to Tokyo');
+    roomTransition.focus({ preventScroll: true });
+  } catch (error) {
+    console.error("Tokyo room could not load", error);
+    const message = document.createElement("p");
+    message.className = "room-load-error";
+    message.setAttribute("role", "status");
+    message.textContent = "The room couldn't load. Please try Explore again.";
+    ui.actions.after(message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Explore";
+    roomIsLoading = false;
+  }
+}
+
+function leaveTokyo() {
+  if (!roomIsVisible || tokyoVisit?.direction !== "room") return;
+  bookReader?.close(true);diaryReader?.close(true);closeDrawer();
+  japanRoom.soundtrack.stop();
+  updateMusicControl(false);
+  roomHud.inert = true;
+  cityFlight?.resize();
+  cityFlight?.setOpacity(1);
+  tokyoVisit = { direction: "out", startedAt: performance.now() };
+  ui.app.classList.add("is-travelling");
+  roomTransition.hidden = false;
+  roomTransition.setAttribute('aria-label', 'Returning to the globe');
+  roomTransition.focus({ preventScroll: true });
+}
+
+function updateTokyoTravel(now) {
+  if (!tokyoVisit || tokyoVisit.direction === "room") return;
+  const entering = tokyoVisit.direction === "in";
+  const duration = state.reducedMotion ? 600 : 4800;
+  const p = Math.min(1, (now - tokyoVisit.startedAt) / duration);
+  const smooth = (min, max) => {
+    const t = THREE.MathUtils.clamp((p - min) / (max - min), 0, 1);
+    return t * t * t * (t * (t * 6 - 15) + 10);
+  };
+  markerTravelOpacity = entering ? 1 - smooth(0, .18) : smooth(.72, 1);
+  const surfaceZ = CONFIG.globeRadius * CONFIG.maxGlobeScale;
+  const groundAltitude = cityFlight ? 0.00018 : 0.35;
+  const travel = entering ? easeTokyoApproach(p / 0.9) : 1 - smooth(0.3, 1);
+  const orbitAltitude = (entering ? tokyoVisit.startZ : getRestCameraZ()) - surfaceZ;
+  const altitude = state.reducedMotion ? orbitAltitude : orbitAltitude * Math.pow(groundAltitude / orbitAltitude, travel);
+  const cloudAltitude = (cityFlight?.cloudHeight || 0) * CONFIG.maxGlobeScale;
+  const immersion = cloudAltitude && !state.reducedMotion
+    ? 1 - THREE.MathUtils.smoothstep(altitude, cloudAltitude + 0.00001, cloudAltitude + 0.00018)
+    : entering ? smooth(0.78, 0.9) : 1 - smooth(0.32, 0.5);
+  const cover = entering ? immersion * (1 - smooth(0.92, 1)) : smooth(0, 0.24) * immersion;
+  roomTransition.style.setProperty("--cover", cover);
+  roomTransition.style.setProperty("--flight-fog", cover);
+  const tilt = state.reducedMotion ? 0 : THREE.MathUtils.degToRad(22) * THREE.MathUtils.smoothstep(travel, 0.55, 0.98);
+  // A single camera and coordinate system from orbit to the aerial tiles.
+  camera.position.set(0, -Math.sin(tilt) * altitude, surfaceZ + Math.cos(tilt) * altitude);
+  camera.lookAt(0, 0, surfaceZ);
+  camera.near = Math.max(0.0000005, altitude / 100);
+  camera.updateProjectionMatrix();
+  state.cameraCurrentZ = camera.position.z;
+  if (cityFlight && !state.reducedMotion) {
+    const groundWidth = 2 * altitude * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
+    const zoom = Math.log2(2 * Math.PI * surfaceZ * Math.cos(THREE.MathUtils.degToRad(LOCATIONS.tokyo.lat)) / groundWidth) + Math.log2(innerWidth / 256);
+    cityFlight.setProgress(zoom);
+    cityFlight.update(now / 1000);
+  }
+  if (cloudLayer) cloudLayer.material.opacity = 0.62 * THREE.MathUtils.smoothstep(altitude, 0.025, 0.12);
+  // Remove exaggerated orbit relief gradually, and restore it along the return.
+  earthMaterial.displacementScale = entering ? tokyoVisit.startRelief * (1 - smooth(0, 0.3)) : 0.018 * smooth(0.72, 1);
+  earthMaterial.displacementBias = entering ? tokyoVisit.startReliefBias * (1 - smooth(0, 0.3)) : -0.002 * smooth(0.72, 1);
+  if (entering) {
+    state.globeCurrentScale = THREE.MathUtils.lerp(tokyoVisit.startScale, CONFIG.maxGlobeScale, smooth(0, 0.27));
+    state.currentQuaternion.slerpQuaternions(tokyoVisit.startQuaternion, orientationForLocation(LOCATIONS.tokyo), smooth(0, 0.27));
+    if (p >= 0.9 && !roomIsVisible) {
+      showRoomView(true);
+      roomHud.inert = true;
+    }
+  } else {
+    if (p >= 0.27 && roomIsVisible) {
+      // Reset the pointer camera only after white fully covers the room.
+      japanRoom.reset();
+      showRoomView(false);
+      closePanel();
+    }
+  }
+  if (p === 1) {
+    roomTransition.hidden = true;
+    cityFlight?.setOpacity(0);
+    ui.app.classList.remove("is-travelling");
+    roomHud.inert = false;
+    if (entering) {
+      tokyoVisit = { direction: "room" };
+      const linkedDrawer = openContentOnArrival ? (readBlogRoute() ? "japanese-blog" : readBookReviewRoute() ? "japanese-book-reviews" : null) : null;
+      openContentOnArrival = false;
+      if (linkedDrawer) {
+        openDrawer(linkedDrawer, { preserveContentUrl: true });
+      } else roomHud.focus({ preventScroll: true });
+    } else {
+      tokyoVisit = null;
+      ui.stage.style.cursor = "";
+      setGlobeInterfaceInert(false);
+      state.cameraTargetZ = state.cameraCurrentZ = getRestCameraZ();
+      camera.near = 0.1;
+      camera.position.set(0, 0, state.cameraCurrentZ);
+      camera.quaternion.identity();
+      camera.updateProjectionMatrix();
+      if (cloudLayer) cloudLayer.material.opacity = 0.62;
+      earthMaterial.displacementScale = 0.018;
+      earthMaterial.displacementBias = -0.002;
+      document.querySelector('[data-location="tokyo"]').focus({ preventScroll: true });
+      if (openContentOnArrival) handleContentRouteChange();
+    }
+  }
+}
+
+function updateMusicControl(playing) {
+  const button = roomHud.querySelector('[data-room-action="music"]');
+  button.setAttribute("aria-pressed", String(playing));
+  button.setAttribute("aria-label", `Record player · ${playing ? "Pause" : "Play"} music`);
+  document.querySelector("#room-music-label").textContent = playing ? "Pause the record" : "Play a record";
+}
+
+async function activateRoomObject(action) {
+  if (!roomIsVisible || tokyoVisit?.direction !== "room") return;
+  if (action === "door") leaveTokyo();
+  if (action === "diary") openDrawer("japanese-blog");
+  if (action === "books") openDrawer("japanese-book-reviews");
+  if (action === "curtains") {
+    const closed = japanRoom.toggleCurtains();
+    const button = roomHud.querySelector('[data-room-action="curtains"]');
+    button.setAttribute('aria-pressed', String(closed));
+    button.setAttribute('aria-label', `Curtains · ${closed ? 'Open' : 'Close'} curtains`);
+    button.textContent = closed ? 'Open curtains' : 'Close curtains';
+  }
+  if (action === "music") {
+    try { updateMusicControl(await japanRoom.soundtrack.toggle()); }
+    catch { roomHint.textContent = "Audio couldn't start. Try the record player again."; }
+  }
+}
+
+function pointInRoom(event) {
+  const rect = ui.canvas.getBoundingClientRect();
+  return [((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1];
+}
+
+function hoverRoomObject(action) {
+  japanRoom.highlight(action);
+  const labels = { diary: "Diary · Japanese Blog", books: "Books · Japanese Books", door: "Door · Return to the world", music: "Record player · Play / pause", curtains: "Curtains · Open / close" };
+  roomHint.setAttribute("aria-label", labels[action] || "Hover over objects to explore");
+  ui.stage.style.cursor = action ? "pointer" : "default";
+}
 
 function setupGlassRefraction() {
   glassTarget = new THREE.WebGLRenderTarget(1, 1, {
-    depthBuffer: true,
+    depthBuffer: true, stencilBuffer: true,
     type: renderer.extensions.has("EXT_color_buffer_float") ? THREE.HalfFloatType : THREE.UnsignedByteType,
   });
   glassTarget.samples = 2;
@@ -743,6 +1105,10 @@ function setupGlassRefraction() {
       viewport: { value: new THREE.Vector2() },
       panels: { value: [new THREE.Vector4(), new THREE.Vector4()] },
       strengths: { value: [0, 0] },
+      dream: { value: 0 },
+      sceneDepth: { value: null },
+      dreamBloom: { value: null },
+      focusCamera: { value: new THREE.Vector2(.1,150) },
     },
     depthTest: false,
     depthWrite: false,
@@ -758,6 +1124,10 @@ function setupGlassRefraction() {
       uniform vec2 viewport;
       uniform vec4 panels[2];
       uniform float strengths[2];
+      uniform float dream;
+      uniform sampler2D sceneDepth;
+      uniform sampler2D dreamBloom;
+      uniform vec2 focusCamera;
       varying vec2 uvScene;
       void main() {
         vec2 pixel = uvScene * viewport;
@@ -782,6 +1152,32 @@ function setupGlassRefraction() {
           texture2D(sceneTexture, clamp(sampleUV + fringe, 0.0, 1.0)).r,
           texture2D(sceneTexture, sampleUV).g,
           texture2D(sceneTexture, clamp(sampleUV - fringe, 0.0, 1.0)).b, 1.0);
+        // Match selectable HTML ink and paper to the same physical printed
+        // faces. The FBO alpha marks opaque, ungraded diary surfaces.
+        if(dream>0.0&&texture2D(sceneTexture,sampleUV).a<.5){
+          gl_FragColor=vec4(texture2D(sceneTexture,sampleUV).rgb,1.0);
+          #include <colorspace_fragment>
+          return;
+        }
+        if (dream > 0.0) {
+          // A light diffusion filter blooms luminous surfaces, while a tiny
+          // depth-dependent circle of confusion softens the farther room.
+          float depth=texture2D(sceneDepth,sampleUV).r*2.0-1.0;
+          float distance=2.0*focusCamera.x*focusCamera.y/(focusCamera.y+focusCamera.x-depth*(focusCamera.y-focusCamera.x));
+          float softness=smoothstep(3.5,8.0,distance)*.85;
+          vec3 soft=vec3(0.0);
+          for(int i=0;i<4;i++){
+            float angle=float(i)*1.5707963;
+            soft+=texture2D(sceneTexture,sampleUV+vec2(cos(angle),sin(angle))*softness/viewport).rgb;
+          }
+          gl_FragColor.rgb=mix(gl_FragColor.rgb,soft*.25,.24);
+          gl_FragColor.rgb += texture2D(dreamBloom,sampleUV).rgb * vec3(.24,.21,.175);
+          float luminance=dot(gl_FragColor.rgb,vec3(.2126,.7152,.0722));
+          gl_FragColor.rgb=mix(vec3(luminance),gl_FragColor.rgb,.945);
+          gl_FragColor.rgb*=mix(vec3(.92,.975,1.07),vec3(1.10,1.015,.90),smoothstep(.04,.48,luminance));
+          vec2 centered = uvScene * 2.0 - 1.0;
+          gl_FragColor.rgb *= 1.0 - .055 * dream * smoothstep(.3, 1.5, dot(centered, centered));
+        }
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
@@ -790,7 +1186,13 @@ function setupGlassRefraction() {
   glassScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glassMaterial));
 }
 
-function renderGlassScene() {
+function renderGlassScene(activeScene = scene, activeCamera = camera) {
+  glassMaterial.uniforms.dream.value = activeScene === japanRoom?.scene ? 1 : 0;
+  if(activeScene===japanRoom?.scene){
+    glassMaterial.uniforms.sceneDepth.value=japanRoom.windowLight.uniforms.tDepth.value;
+    glassMaterial.uniforms.dreamBloom.value=japanRoom.bloomTexture;
+    glassMaterial.uniforms.focusCamera.value.set(japanRoom.camera.near,japanRoom.camera.far);
+  }
   const elements = [ui.panel, ui.drawer];
   elements.forEach((element, index) => {
     const rect = element.getBoundingClientRect();
@@ -800,9 +1202,16 @@ function renderGlassScene() {
     glassMaterial.uniforms.strengths.value[index] = opacity;
   });
   renderer.setRenderTarget(glassTarget);
-  renderer.render(scene, camera);
+  renderer.render(activeScene, activeCamera);
+  if (activeScene === japanRoom?.scene) {
+    japanRoom.shade(renderer, glassTarget);
+  }
   renderer.setRenderTarget(null);
   renderer.render(glassScene, glassCamera);
+  // Draw interaction UI after the photographic glow so it stays one crisp line.
+  if (activeScene === japanRoom?.scene) {
+    japanRoom.outline.render(renderer, glassTarget, null, 0, false);
+  }
 }
 
 function setLoadProgress(percent, message) {
@@ -810,14 +1219,15 @@ function setLoadProgress(percent, message) {
   ui.loadStatus.textContent = message;
 }
 
-function closeLoadingScreen() {
-  setLoadProgress(100, "Ready");
+function closeLoadingScreen(message = "Ready") {
+  setLoadProgress(100, message);
   window.setTimeout(() => ui.loading.classList.add("is-complete"), 280);
 }
 
 function showFallback(message) {
   cancelAnimationFrame(frameId);
   state.globeAvailable = false;
+  contentRoutingReady = true;
   ui.app.classList.add("is-static-fallback");
   ui.fallback.hidden = false;
   ui.fallback.querySelector("p").textContent = message;
@@ -1157,8 +1567,8 @@ function updateSolarLighting() {
   }
   sunDirectionWorld.copy(sunDirectionLocal).applyQuaternion(earthGroup.quaternion).normalize();
   sunlight.position.copy(sunDirectionWorld).multiplyScalar(12);
-  const shader = earthMaterial?.userData.shader;
-  if (shader) shader.uniforms.uSunDirection.value.copy(sunDirectionWorld);
+  const lighting = earthMaterial?.userData.globeLighting;
+  if (lighting) lighting.sunDirection.value.copy(sunDirectionWorld);
 }
 
 function orientationForLocation(location) {
@@ -1261,6 +1671,8 @@ function setupScene(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.04;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   raycaster = new THREE.Raycaster();
   travelStars = createTravelStars();
@@ -1319,9 +1731,16 @@ function setupScene(
       displacementScale: 0.018,
       displacementBias: -0.002,
   });
+  // Lighting belongs to the scene, so imagery can warm up before its first render.
+  earthMaterial.userData.globeLighting = {
+    nightMap: { value: nightTexture },
+    sunDirection: { value: sunDirectionWorld.clone() },
+    daylight: flightDaylight,
+  };
   earthMaterial.onBeforeCompile = (shader) => {
-    shader.uniforms.uNightMap = { value: nightTexture };
-    shader.uniforms.uSunDirection = { value: sunDirectionWorld.clone() };
+    shader.uniforms.uNightMap = earthMaterial.userData.globeLighting.nightMap;
+    shader.uniforms.uFlightDaylight = flightDaylight;
+    shader.uniforms.uSunDirection = earthMaterial.userData.globeLighting.sunDirection;
     shader.uniforms.uWordmarkGlowStrength = { value: 0 };
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -1335,7 +1754,7 @@ function setupScene(
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
-        "#include <common>\nuniform sampler2D uNightMap;\nuniform vec3 uSunDirection;\nuniform float uWordmarkGlowStrength;\nvarying vec3 vEarthWorldNormal;",
+        "#include <common>\nuniform sampler2D uNightMap;\nuniform vec3 uSunDirection;\nuniform float uWordmarkGlowStrength;\nuniform float uFlightDaylight;\nvarying vec3 vEarthWorldNormal;",
       )
       .replace(
         "#include <opaque_fragment>",
@@ -1345,7 +1764,7 @@ function setupScene(
           float sunFacing = dot(earthWorldNormal, normalize(uSunDirection));
           float nightAmount = 1.0 - smoothstep(-0.18, 0.12, sunFacing);
           vec3 nightColor = texture2D(uNightMap, vMapUv).rgb * 1.12;
-          outgoingLight = mix(surfaceLight, nightColor, nightAmount);
+          outgoingLight = mix(mix(surfaceLight, nightColor, nightAmount), diffuseColor.rgb, uFlightDaylight);
 
           float wordmarkUpperArc = smoothstep(0.08, 0.68, earthWorldNormal.y);
           float wordmarkRimEntry = smoothstep(-0.025, 0.16, earthWorldNormal.z);
@@ -1363,7 +1782,7 @@ function setupScene(
       );
     earthMaterial.userData.shader = shader;
   };
-  earthMaterial.customProgramCacheKey = () => "live-solar-night-lights-wordmark-v4";
+  earthMaterial.customProgramCacheKey = () => "live-solar-night-lights-wordmark-flight-v5";
 
   const earth = new THREE.Mesh(
     new THREE.SphereGeometry(CONFIG.globeRadius, 192, 128),
@@ -1401,7 +1820,7 @@ function setupScene(
 }
 
 function resize() {
-  if (!renderer || !camera) return;
+  if (!renderer || !camera) { diaryReader?.resize();bookReader?.resize(); return; }
   const pixelRatio = Math.min(window.devicePixelRatio || 1, CONFIG.maxPixelRatio);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -1411,6 +1830,10 @@ function resize() {
   glassTarget.setSize(Math.round(window.innerWidth * pixelRatio), Math.round(window.innerHeight * pixelRatio));
   glassMaterial.uniforms.viewport.value.set(window.innerWidth, window.innerHeight);
   if (travelStars) travelStars.material.uniforms.uPixelRatio.value = pixelRatio;
+  japanRoom?.resize(window.innerWidth, window.innerHeight);
+  diaryReader?.resize();
+  bookReader?.resize();
+  cityFlight?.resize();
 }
 
 function easeOutCubic(value) {
@@ -1436,18 +1859,18 @@ function updateMarkers(now) {
     const worldPosition = new THREE.Vector3();
     child.getWorldPosition(worldPosition);
     const frontness = worldPosition.clone().normalize().dot(cameraDirection);
-    const visible = frontness > 0.14;
-    child.visible = visible;
-    if (!visible) return;
+    const visibility = markerTravelOpacity * THREE.MathUtils.smootherstep(frontness, .08, .22);
+    child.visible = visibility > .0001;
+    if (!child.visible) return;
 
     const phase = child.userData.phase;
     const cycle = (Math.sin(now * 0.0032 + phase) + 1) / 2;
     const dot = child.getObjectByName("signal-dot");
     const glow = child.getObjectByName("signal-glow");
     dot.scale.setScalar(0.82 + cycle * 0.24);
-    dot.material.opacity = 0.18 + cycle * 0.82;
+    dot.material.opacity = (0.18 + cycle * 0.82) * visibility;
     glow.scale.setScalar(0.9 + cycle * 0.24);
-    glow.material.opacity = 0.38 + cycle * 0.2;
+    glow.material.opacity = (0.38 + cycle * 0.2) * visibility;
   });
 }
 
@@ -1535,8 +1958,31 @@ function updateZoomInterface() {
 
 function animate(now = 0) {
   frameId = requestAnimationFrame(animate);
+  // Keep movement responsive; a resting globe needs only 30 draws per second.
+  const moving = tokyoVisit || state.focusActive || state.dragging || state.pinching
+    || Math.abs(state.cameraTargetZ - state.cameraCurrentZ) > .001
+    || Math.abs(state.zoomProgress - state.zoomCurrentProgress) > .0001 || Math.abs(state.zoomVelocity) > .001;
+  if (!moving && now - lastRenderAt < 1000 / 30 - .5) return;
+  lastRenderAt = now;
   const dt = Math.min((now - (state.animationAt || now)) / 1000, 0.05);
   state.animationAt = now;
+  diaryReader?.update(dt, state.reducedMotion);
+  bookReader?.update(dt, state.reducedMotion);
+  updateTokyoTravel(now);
+  if (roomIsVisible) {
+    japanRoom.update(dt, state.reducedMotion);
+    renderGlassScene(japanRoom.scene, japanRoom.camera);
+    return;
+  }
+  if (tokyoVisit && tokyoVisit.direction !== "room") {
+    earthGroup.quaternion.copy(state.currentQuaternion);
+    earthGroup.scale.setScalar(state.globeCurrentScale);
+    skySphere.position.copy(camera.position);
+    updateSolarLighting();
+    updateMarkers(now);
+    renderGlassScene();
+    return;
+  }
   const focusWasActive = state.focusActive;
   updateFocus(now);
   earthGroup.quaternion.copy(state.currentQuaternion);
@@ -1554,20 +2000,25 @@ function animate(now = 0) {
     state.zoomVelocity = state.reducedMotion ? 0 : zoom.velocity;
     state.globeCurrentScale = globeScaleFromProgress(state.zoomCurrentProgress);
     const blend = state.reducedMotion ? 1 : 1 - Math.exp(-5 * dt);
-    state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * blend;
+    if (!tokyoVisit) state.cameraCurrentZ += (state.cameraTargetZ - state.cameraCurrentZ) * blend;
   } else {
     state.zoomVelocity = 0;
   }
   earthGroup.scale.setScalar(state.globeCurrentScale);
   earthStar.material.opacity = THREE.MathUtils.clamp(0.92 * (1 - state.zoomCurrentProgress / 0.085), 0, 1);
   earthStar.visible = earthStar.material.opacity > 0.01;
-  updateZoomInterface();
-  updateWordmarkCurve();
   camera.position.z = state.cameraCurrentZ;
   const fieldOfView = 38 + Math.max(0, -state.zoomCurrentProgress) * 40;
   if (Math.abs(camera.fov - fieldOfView) > 0.001) {
     camera.fov = fieldOfView;
     camera.updateProjectionMatrix();
+  }
+  camera.updateMatrixWorld();
+  const interfaceKey = `${state.zoomCurrentProgress.toFixed(4)}:${innerWidth}:${innerHeight}:${state.selectedId}:${state.cameraCurrentZ.toFixed(4)}:${state.globeCurrentScale.toFixed(4)}:${ui.wordmark.textContent}`;
+  if (interfaceKey !== lastZoomInterfaceKey) {
+    updateZoomInterface();
+    updateWordmarkCurve();
+    lastZoomInterfaceKey = interfaceKey;
   }
   skySphere.position.copy(camera.position);
   skySphere.quaternion.slerp(state.currentQuaternion, state.reducedMotion ? 1 : 1 - Math.exp(-1.45 * dt));
@@ -1585,6 +2036,11 @@ function rotateFromDelta(deltaX, deltaY) {
 }
 
 function onPointerDown(event) {
+  if (roomIsVisible && tokyoVisit?.direction === "room" && !state.drawerId && event.button === 0) {
+    roomPointerDown = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    return;
+  }
+  if (tokyoVisit) return;
   if (event.button !== 0) return;
   state.activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
   ui.stage.setPointerCapture(event.pointerId);
@@ -1609,6 +2065,13 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
+  if (roomIsVisible && tokyoVisit?.direction === "room" && !state.drawerId) {
+    const [x, y] = pointInRoom(event);
+    japanRoom.point(x, y);
+    hoverRoomObject(japanRoom.pick(x, y));
+    return;
+  }
+  if (tokyoVisit) return;
   if (state.activePointers.has(event.pointerId)) {
     state.activePointers.get(event.pointerId).set(event.clientX, event.clientY);
   }
@@ -1641,6 +2104,15 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
+  if (roomIsVisible && tokyoVisit?.direction === "room" && !state.drawerId) {
+    const press = roomPointerDown;
+    roomPointerDown = null;
+    if (event.type === "pointercancel" || !press || event.pointerId !== press.id || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) return;
+    const [x, y] = pointInRoom(event);
+    activateRoomObject(japanRoom.pick(x, y));
+    return;
+  }
+  if (tokyoVisit) return;
   const endedPinch = state.pinching;
   state.activePointers.delete(event.pointerId);
   if (ui.stage.hasPointerCapture(event.pointerId)) ui.stage.releasePointerCapture(event.pointerId);
@@ -1663,6 +2135,7 @@ function onPointerUp(event) {
 
 function onWheel(event) {
   event.preventDefault();
+  if (tokyoVisit) return;
   state.focusActive = false;
   if (event.deltaY < 0) alignFirstZoomToFlorida();
   if (state.selectedId) {
@@ -1750,6 +2223,8 @@ function createProjectMenu(action) {
 }
 
 function focusLocation(locationId, { preserveContentUrl = false } = {}) {
+  if (tokyoVisit) return;
+  if (!preserveContentUrl && openContentOnArrival) { openContentOnArrival = false; clearBlogRoute(); clearBookReviewRoute(); }
   const location = LOCATIONS[locationId];
   if (!location) return;
   closeDrawer({ preserveContentUrl });
@@ -1776,13 +2251,18 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   ui.subheading.textContent = location.subheading;
   ui.detail.textContent = location.detail;
   ui.description.textContent = location.description;
-  ui.actions.replaceChildren(...location.actions.map((action) => {
+  const actions = locationId === "tokyo" && !state.globeAvailable ? [
+    { label: "Japanese Blog", drawerId: "japanese-blog" },
+    { label: "Japanese Books", drawerId: "japanese-book-reviews" },
+  ] : location.actions;
+  ui.actions.replaceChildren(...actions.map((action) => {
     if (action.categories) return createProjectMenu(action);
     const button = document.createElement("button");
     button.className = "text-button";
     button.type = "button";
     button.textContent = action.label;
-    button.dataset.drawer = action.drawerId;
+    if (action.explore) button.dataset.explore = "tokyo";
+    else button.dataset.drawer = action.drawerId;
     return button;
   }));
   ui.panel.classList.add("is-open");
@@ -1790,6 +2270,10 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   ui.locationLinks.forEach((link) => link.classList.toggle("is-active", link.dataset.location === locationId));
 
   window.setTimeout(() => ui.panelClose.focus({ preventScroll: true }), state.reducedMotion ? 0 : 430);
+  if (locationId === "tokyo" && state.globeAvailable) {
+    loadJapanRoom().catch(() => {});
+    if (!state.reducedMotion) loadCityFlight();
+  }
 }
 
 function renderPrivateBlog() {
@@ -2229,9 +2713,62 @@ function renderDrawerContent(drawerId) {
   ui.drawerContent.replaceChildren(empty);
 }
 
+function ensureDiaryReader() {
+  if (!diaryReader) diaryReader = createDiaryReader({
+      categories: JAPANESE_BLOG_CATEGORIES, getRoom: () => roomIsVisible ? japanRoom : null,
+      onPage: match => {
+        if (match) { const route = readBlogRoute(); writeBlogRoute(match.category.id, match.entry.id, { replace: route?.entryId === match.entry.id && route?.categoryId === match.category.id }); }
+        else clearBlogRoute();
+      },
+      onClose: () => {
+        if (state.drawerId === 'japanese-blog') { state.drawerId = null; clearBlogRoute(); roomHud.inert = false; }
+      },
+    });
+  return diaryReader;
+}
+
+function ensureBookReader() {
+  if(!bookReader)bookReader=createBookReader({entries:JAPANESE_BOOK_REVIEWS,getRoom:()=>japanRoom||null,
+    onBook:entry=>writeBookReviewRoute(entry.id,{replace:readBookReviewRoute()?.entryId===entry.id}),
+    onClose:()=>{if(state.drawerId==='japanese-book-reviews'){state.drawerId=null;clearBookReviewRoute();roomHud.inert=false;roomHud.querySelector('[data-room-action="books"]')?.focus({preventScroll:true});}}});
+  return bookReader;
+}
+
 function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
   const drawer = DRAWERS[drawerId];
   if (!drawer) return;
+  if(drawerId==='japanese-book-reviews'){
+    if(!roomIsVisible&&state.globeAvailable){
+      if(!preserveContentUrl)writeBookReviewRoute(JAPANESE_BOOK_REVIEWS[0].id);
+      openContentOnArrival=true;
+      if(state.selectedId!=='tokyo')focusLocation('tokyo',{preserveContentUrl:true});
+      if(!tokyoVisit)exploreTokyo();return;
+    }
+    diaryReader?.close(true);
+    if(!preserveContentUrl)clearBlogRoute();
+    state.drawerId=drawerId;roomHud.inert=true;japanRoom?.highlight(null);
+    ui.drawer.classList.remove('is-open');ui.drawer.setAttribute('aria-hidden','true');
+    ensureBookReader().open(preserveContentUrl?readBookReviewRoute():null,state.reducedMotion).catch(error=>{
+      console.error('Review books could not open',error);bookReader.close(true);
+    });return;
+  }
+  if(bookReader?.isOpen)bookReader.close(true);
+  if (drawerId === 'japanese-blog') {
+    if (!preserveContentUrl) clearBookReviewRoute();
+    ensureDiaryReader();
+    state.drawerId = drawerId; roomHud.inert = true;
+    japanRoom?.highlight(null); ui.drawer.classList.remove('is-open'); ui.drawer.setAttribute('aria-hidden', 'true');
+    diaryReader.open(preserveContentUrl ? readBlogRoute() : null, state.reducedMotion).catch(error => {
+      console.error('Diary could not open', error); diaryReader.close(true);
+    });
+    return;
+  }
+  if (diaryReader?.isOpen) diaryReader.close(true);
+  if (roomIsVisible) {
+    roomHud.inert = true;
+    japanRoom.highlight(null);
+    ui.stage.style.cursor = "default";
+  }
   if (!preserveContentUrl) {
     if (drawerId !== "japanese-blog") clearBlogRoute();
     if (drawerId !== "japanese-book-reviews") clearBookReviewRoute();
@@ -2253,6 +2790,8 @@ function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
 
 function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) {
   const priorDrawerId = state.drawerId;
+  if (priorDrawerId === 'japanese-blog' && diaryReader?.isOpen) { diaryReader.close(); return; }
+  if (priorDrawerId === 'japanese-book-reviews' && bookReader?.isOpen) { bookReader.close(); return; }
   ui.drawer.classList.remove("is-open");
   ui.drawer.setAttribute("aria-hidden", "true");
   state.drawerId = null;
@@ -2260,12 +2799,16 @@ function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) 
     if (priorDrawerId === "japanese-blog") clearBlogRoute();
     if (priorDrawerId === "japanese-book-reviews") clearBookReviewRoute();
   }
+  roomHud.inert = false;
   if (restoreFocus && priorDrawerId) {
-    ui.actions.querySelector(`[data-drawer="${priorDrawerId}"]`)?.focus();
+    const action = priorDrawerId === "japanese-blog" ? "diary" : "books";
+    if (roomIsVisible) roomHud.querySelector(`[data-room-action="${action}"]`)?.focus();
+    else ui.actions.querySelector(`[data-drawer="${priorDrawerId}"]`)?.focus();
   }
 }
 
 function closePanel({ restoreFocus = false } = {}) {
+  if (!tokyoVisit && openContentOnArrival) { openContentOnArrival = false; clearBlogRoute(); clearBookReviewRoute(); }
   const priorId = state.selectedId;
   closeDrawer();
   ui.panel.classList.remove("is-open");
@@ -2279,21 +2822,35 @@ function closePanel({ restoreFocus = false } = {}) {
 }
 
 function handleContentRouteChange() {
+  if (!contentRoutingReady) return;
   const blogRoute = readBlogRoute();
   const blogMatch = blogRoute ? findBlogEntry(blogRoute.categoryId, blogRoute.entryId) : null;
   if (blogMatch) {
     document.title = `${blogMatch.entry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
-    if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveContentUrl: true });
-    openDrawer("japanese-blog", { preserveContentUrl: true });
+    if (roomIsVisible && tokyoVisit?.direction === "room") {
+      openContentOnArrival = false;
+      openDrawer("japanese-blog", { preserveContentUrl: true });
+    } else {
+      openContentOnArrival = state.globeAvailable;
+      if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveContentUrl: true });
+      if (state.globeAvailable) { if (!tokyoVisit) exploreTokyo(); }
+      else openDrawer("japanese-blog", { preserveContentUrl: true });
+    }
     return;
   }
+  openContentOnArrival = false;
 
   const bookRoute = readBookReviewRoute();
   const bookEntry = bookRoute ? findBookReviewEntry(bookRoute.entryId) : null;
   if (bookEntry) {
     document.title = `${bookEntry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
-    if (state.selectedId !== "tokyo") focusLocation("tokyo", { preserveContentUrl: true });
-    openDrawer("japanese-book-reviews", { preserveContentUrl: true });
+    if(roomIsVisible&&tokyoVisit?.direction==='room')openDrawer("japanese-book-reviews", { preserveContentUrl: true });
+    else{
+      openContentOnArrival=state.globeAvailable;
+      if(state.selectedId!=="tokyo")focusLocation("tokyo",{preserveContentUrl:true});
+      if(state.globeAvailable){if(!tokyoVisit)exploreTokyo();}
+      else openDrawer("japanese-book-reviews",{preserveContentUrl:true});
+    }
     return;
   }
 
@@ -2360,6 +2917,19 @@ function bindElasticScroll(container, surface) {
 }
 
 function bindEvents() {
+  motionPreference.addEventListener('change', ({ matches }) => {
+    // Preserve the current flight pose when its duration changes.
+    if (tokyoVisit && tokyoVisit.direction !== 'room') {
+      const now = performance.now(), before = state.reducedMotion ? 600 : 4800;
+      tokyoVisit.startedAt = now - (now - tokyoVisit.startedAt) * (matches ? 600 : 4800) / before;
+    }
+    state.reducedMotion = matches;
+    state.zoomVelocity = 0;
+    const wordmark = ui.wordmark.querySelector('svg');
+    if (matches) wordmark?.pauseAnimations(); else wordmark?.unpauseAnimations();
+    japanRoom?.setVisible(roomIsVisible, matches);
+  });
+  transparencyPreference.addEventListener('change', ({ matches }) => { state.reducedTransparency = matches; });
   bindElasticScroll(ui.drawer, ui.drawerContent);
   bindElasticScroll(ui.panel, ui.panel);
   ui.stage.addEventListener("pointerdown", onPointerDown);
@@ -2370,8 +2940,27 @@ function bindEvents() {
   ui.panelClose.addEventListener("click", () => closePanel({ restoreFocus: true }));
   ui.drawerClose.addEventListener("click", () => closeDrawer({ restoreFocus: true }));
   ui.actions.addEventListener("click", (event) => {
+    if (event.target.closest("[data-explore]")) { exploreTokyo(); return; }
     const button = event.target.closest("[data-drawer]");
     if (button) openDrawer(button.dataset.drawer);
+  });
+  roomTransition.tabIndex = -1;
+  roomHud.addEventListener("click", event => {
+    const button = event.target.closest("[data-room-action]");
+    if (button) activateRoomObject(button.dataset.roomAction);
+  });
+  roomHud.querySelectorAll("[data-room-action]").forEach(button => {
+    const highlight = () => { if (japanRoom) hoverRoomObject(button.dataset.roomAction); };
+    button.addEventListener("pointerenter", highlight);
+    button.addEventListener("focus", highlight);
+    button.addEventListener("pointerleave", () => { if (japanRoom) hoverRoomObject(null); });
+    button.addEventListener("blur", () => { if (japanRoom) hoverRoomObject(null); });
+  });
+  ui.stage.addEventListener("pointerleave", () => {
+    if (roomIsVisible) { japanRoom.point(0, 0); hoverRoomObject(null); }
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && japanRoom) { japanRoom.soundtrack.stop(); updateMusicControl(false); }
   });
   document.addEventListener("pointerdown", (event) => {
     const menu = ui.actions.querySelector(".project-menu.is-expanded");
@@ -2383,6 +2972,7 @@ function bindEvents() {
   window.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.drawerId) closeDrawer({ restoreFocus: true });
+    else if (roomIsVisible) leaveTokyo();
     else {
       const menu = ui.actions.querySelector(".project-menu.is-expanded");
       if (menu) {
@@ -2402,6 +2992,12 @@ async function init() {
       handleContentRouteChange();
       return;
     }
+    // Fetch module dependencies alongside globe images, without rendering work.
+    japanRoomModule = import("./japan-room.js?v=20261021-client-polish-4");
+    japanRoomModule.catch(()=>{japanRoomModule=null;});
+    fetchJapanRoom().catch(error=>console.warn('Room download deferred',error));
+    ensureDiaryReader().prepare().catch(error=>console.warn('Diary preparation deferred',error));
+    ensureBookReader().prepare().catch(error=>console.warn('Review preparation deferred',error));
     setLoadProgress(12, "Starting the renderer");
     const manager = new THREE.LoadingManager();
     manager.onProgress = (_url, loaded, total) => {
@@ -2438,12 +3034,26 @@ async function init() {
     state.globeAvailable = true;
     setupGlassRefraction();
     resize();
+    renderGlassScene();
+    setLoadProgress(94, "Preparing the room and its pages");
+    // Finish downloads, GPU uploads, first draws and page layout under the
+    // loading screen. Keep the globe loop stopped while warming render targets.
+    let roomReady = true;
+    await Promise.all([
+      loadJapanRoom().catch(error => {
+        roomReady = false;
+        console.warn("Room preparation failed; Explore will retry", error);
+      }),
+      state.reducedMotion ? null : loadCityFlight(),
+    ]);
     animate();
-    closeLoadingScreen();
+    closeLoadingScreen(roomReady ? "Ready" : "Room unavailable · Explore to retry");
+    contentRoutingReady = true;
     handleContentRouteChange();
   } catch (error) {
     console.error(error);
     showFallback("The globe could not be loaded.");
+    handleContentRouteChange();
   }
 }
 

@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),{chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({channel:'chrome',headless:true});try{const page=await browser.newPage({viewport:{width:1440,height:900}});
+ await page.route('**/script.js*',async r=>{const s=await r.fetch();await r.fulfill({response:s,body:await s.text()+';window.reader=()=>diaryReader;window.room=()=>japanRoom;'});});
+ await page.goto('http://127.0.0.1:4173/');await page.locator('#loading-screen').waitFor({state:'hidden'});
+ await page.getByRole('button',{name:/Tokyo, Japan/}).click();await page.getByRole('button',{name:'Explore',exact:true}).click();await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
+ const first=await page.evaluate(()=>{const t=performance.now();document.querySelector('[data-room-action="diary"]').click();return{ms:performance.now()-t,phase:document.querySelector('#diary-reader')?.dataset.phase};});
+ console.log('First click',first);assert.equal(first.phase,'flying','The first click must start pickup without waiting for assets or page layout');assert.ok(first.ms<150,'Prepared pickup should not block the UI');
+ await page.evaluate(()=>{window.step=reader().update;reader().update=()=>{};for(let i=0;i<43;i++)step(.05,false);});
+ const composition=await page.locator('.diary-book').evaluate(e=>({opacity:getComputedStyle(e).opacity,style:getComputedStyle(e).transformStyle,fade:Number(getComputedStyle(e.closest('.diary-presentation')).opacity)}));
+ assert.equal(composition.opacity,'1','The 3D book must stay opaque to prevent its compositing context changing at the last frame');assert.equal(composition.style,'preserve-3d');assert.ok(composition.fade>0&&composition.fade<1,'A stable outer layer fades in the entire book');
+ await page.evaluate(()=>{for(let i=0;i<5;i++)step(.05,false);});await page.locator('#diary-reader[data-phase="reading"]').waitFor();
+ console.log('PASS: prepared first pickup and stable 3D handoff layer');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});

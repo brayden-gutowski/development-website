@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),{chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'chrome'});try{const page=await browser.newPage({viewport:{width:390,height:844}});
+ await page.route('**/script.js*',async r=>{const s=await r.fetch();await r.fulfill({response:s,body:await s.text()+';window.reader=()=>diaryReader;'});});
+ await page.goto('http://127.0.0.1:4173/#blog/intermediate-japanese/blog-entry-9-11-2026');await page.locator('#diary-reader[data-phase="reading"]').waitFor({timeout:60000});
+ await page.getByRole('button',{name:'Show diary photographs'}).click();await page.waitForTimeout(100);
+ const positions=await page.evaluate(()=>{const b=document.querySelector('.diary-book'),before=b.getBoundingClientRect().x;reader().close();return{before,after:b.getBoundingClientRect().x};});
+ console.log('Mobile close position:',positions);assert.ok(Math.abs(positions.before-positions.after)<.5,'Closing during a photo transition must preserve the visible paper position');
+ await page.locator('#diary-reader').waitFor({state:'hidden'});assert.equal(await page.locator('.diary-book').evaluate(e=>e.style.transform),'','Release the frozen transform for the next pickup');
+ console.log('PASS: seamless mobile dismissal during the photograph transition');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
