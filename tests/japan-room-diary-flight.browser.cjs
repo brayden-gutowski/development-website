@@ -16,7 +16,7 @@ const{chromium}=require('playwright');
  const button=page.locator('.diary-spread .diary-contents'),left=await page.locator('.diary-spread .diary-page--left').boundingBox(),b=await button.boundingBox();
  assert.ok(b.x>left.x&&b.x<left.x+left.width*.3&&b.y<left.y+60,'Contents belongs at the upper left of the left page');
  assert.equal(await page.locator('.diary-page-controls .diary-contents').count(),0);
- if(viewport.width<700){await page.getByRole('button',{name:'Show diary photographs'}).click();await page.waitForTimeout(400);await button.click();await page.locator('.diary-turn').waitFor({state:'hidden'});await page.keyboard.press('ArrowRight');await page.locator('.diary-turn').waitFor({state:'hidden'});}
+ if(viewport.width<700){await page.getByRole('button',{name:'Left page'}).click();await page.waitForTimeout(400);await button.click();await page.locator('.diary-turn').waitFor({state:'hidden'});await page.keyboard.press('ArrowRight');await page.locator('.diary-turn').waitFor({state:'hidden'});}
  assert.equal(await page.locator('.diary-book').evaluate(e=>getComputedStyle(e,'::after').content),'none','A rectangular page block must not bleed above the curved top edge');
  await page.screenshot({path:`/tmp/diary-flight-reading-${viewport.width}.png`});
  await page.keyboard.press('Escape');await page.evaluate(()=>{for(let i=0;i<10;i++)window.advance(.05,false);});

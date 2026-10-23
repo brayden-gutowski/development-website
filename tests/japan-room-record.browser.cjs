@@ -54,8 +54,8 @@ const { chromium } = require('playwright');
     await page.waitForFunction(() => { const a = document.querySelector('#tokyo-record-track'); return !a.paused && a.currentTime > .25; });
     assert.equal(await page.evaluate(() => window.recordMusicInput.gain.value), 1, 'Fade in the full song after the lead-in');
     const info = await track.evaluate(a => ({ src: a.currentSrc, duration: a.duration, time: a.currentTime }));
-    assert.ok(info.src.includes('scorsese-port-london.mp3'));
-    assert.ok(info.duration > 120 && info.duration < 145);
+    assert.ok(info.src.includes('kroi-spin.m4a'));
+    assert.ok(Math.abs(info.duration - 305.213) < .1, 'Decode the full supplied SPIN recording');
     await activate('Record player · Pause music');
     assert.equal(await track.evaluate(a => a.paused), true);
     await page.waitForFunction(() => window.recordContext.state === 'suspended');
@@ -69,7 +69,7 @@ const { chromium } = require('playwright');
     await activate('Record player · Play music');
     await page.waitForFunction(time => document.querySelector('#tokyo-record-track').currentTime > time + .1, pausedAt);
     // Fully buffer the supplied file for accelerated seeking: the Python
-    // preview server does not implement HTTP range requests for streamed MP3s.
+    // preview server does not implement HTTP range requests for streamed audio.
     await track.evaluate(async a => {
       if (!a.src.startsWith('blob:')) {
         const blob = await fetch(a.currentSrc).then(r => r.blob());
@@ -91,6 +91,6 @@ const { chromium } = require('playwright');
     await page.locator('#app:not(.is-in-room):not(.is-travelling)').waitFor();
     assert.equal(await track.evaluate(a => a.paused && a.dataset.phase === 'stopped'), true);
     assert.deepEqual(errors, []);
-    console.log('PASS: vinyl lead-in and song bed, lead-in cancellation, MP3 pause/resume, natural runout/click, reset and exit cancellation');
+    console.log('PASS: vinyl lead-in and song bed, lead-in cancellation, M4A pause/resume, natural runout/click, reset and exit cancellation');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode=1; });

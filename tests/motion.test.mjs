@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { springStep, resistBoundary, easeTokyoApproach } from './motion.mjs';
+import { springStep, resistBoundary, easeTokyoApproach } from '../motion.mjs';
 
 test('Tokyo arrival starts and settles gently while progressing continuously', () => {
   assert.equal(easeTokyoApproach(0), 0);

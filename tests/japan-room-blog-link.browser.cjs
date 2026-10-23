@@ -27,7 +27,7 @@ const latest='#blog/intermediate-japanese/blog-entry-10-2-2026';
    assert.equal(await page.evaluate(()=>window.bookOutsideRoom),false,'Do not flash a diary over the globe or during arrival');
    const title=reducedMotion==='reduce'?'初めまして':'にゃんこ大戦争';
    await page.getByRole('heading',{name:title,exact:true}).waitFor();
-   assert.equal(await page.evaluate(()=>location.hash),reducedMotion==='reduce'?initial:latest);
+   assert.equal(await page.evaluate(()=>location.hash),(reducedMotion==='reduce'?initial:latest).replace('#blog/','#tokyo/diary/'));
    await page.screenshot({path:`/tmp/blog-link-${reducedMotion}.png`});
    if(reducedMotion==='no-preference'){
     await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>!document.querySelector('.diary-turn').hidden);
@@ -36,10 +36,10 @@ const latest='#blog/intermediate-japanese/blog-entry-10-2-2026';
     assert.equal(await page.locator('.diary-spread .diary-title').textContent(),'初めまして','An old turn must not overwrite a newly linked entry');
     await page.evaluate(()=>history.back());await page.getByRole('heading',{name:'にゃんこ大戦争',exact:true}).waitFor();
    }else{
-    await page.getByRole('button',{name:'Show diary photographs'}).click();
+    await page.getByRole('button',{name:'Left page'}).click();
     await page.evaluate(hash=>{location.hash=hash;},latest);
     await page.getByRole('heading',{name:'にゃんこ大戦争',exact:true}).waitFor();
-    assert.equal(await page.locator('#diary-reader').evaluate(e=>e.classList.contains('is-photo-side')),false,'A linked entry opens to its writing even if the previous phone view showed photographs');
+    assert.equal(await page.locator('#diary-reader').evaluate(e=>e.dataset.pageSide==='left'),false,'A linked entry opens to its writing even if the previous phone view showed photographs');
    }
    await page.evaluate(hash=>{location.hash=hash;},initial);
    await page.getByRole('heading',{name:'初めまして',exact:true}).waitFor();

@@ -29,7 +29,7 @@ const { chromium } = require('playwright');
    const first=await page.locator('.diary-copy').textContent();
    await diary.getByRole('button',{name:'Next diary page'}).click();
    await page.waitForFunction(text=>document.querySelector('.diary-copy').textContent!==text,first);
-   if(viewport.width<700)await page.getByRole('button',{name:'Show diary photographs'}).click();
+   if(viewport.width<700)await page.getByRole('button',{name:'Left page'}).click();
    await diary.getByRole('button',{name:'Diary contents',exact:true}).click();
    await diary.getByRole('heading',{name:'目次',exact:true}).waitFor();
    await page.keyboard.press('Escape');

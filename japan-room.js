@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { applyRoomFinish } from './room-finish.js?v=20261020-memory-1';
 import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=13';
-import { createReviewBindings } from './book-reader.js?v=15';
+import { createReviewBindings } from './review-bindings.js?v=20261023-mobile-1';
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js";
 import { OutlinePass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutlinePass.js";
 import { SSAOPass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/SSAOPass.js";
@@ -151,7 +151,7 @@ async function loadBakedLight(url) {
 }
 
 function createSoundtrack() {
-  const audio = new Audio("assets/scorsese-port-london.mp3");
+  const audio = new Audio("assets/kroi-spin.m4a");
   audio.id = "tokyo-record-track";
   audio.preload = "none";
   audio.volume = .65;
@@ -301,13 +301,13 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   const loaded = await Promise.allSettled([
     new GLTFLoader().loadAsync("assets/JapanRoom.glb?v=20261018-optimized-25"),
     windowBackdrop(),
-    loadBakedLight("assets/room-memory-architecture.png?v=1"),
-    loadBakedLight("assets/room-furniture.png?v=20261018-optimized-25"),
+    loadBakedLight("assets/room-memory-architecture.webp?v=20261023-lossless-1"),
+    loadBakedLight("assets/room-furniture.webp?v=20261023-lossless-1"),
     loadPoster(),
-    loadBakedLight('assets/room-joinery-memory.png?v=1'),
+    loadBakedLight('assets/room-joinery-memory.webp?v=20261023-lossless-1'),
     loadJoineryData('assets/room-joinery-uv.json?v=20261018-golden-2','json'),
     loadJoineryData('assets/room-joinery-uv.bin?v=20261018-golden-2','arrayBuffer'),
-    new THREE.TextureLoader().loadAsync('assets/record-label.png'),
+    new THREE.TextureLoader().loadAsync('assets/kroi-spin-cover.png'),
     loadDiaryAnimation(),
     ...bookCovers.map(entry=>new THREE.TextureLoader().loadAsync(entry.image)),
   ]);
@@ -979,7 +979,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   const doorOutline=new THREE.Mesh(new THREE.BoxGeometry(doorSize.x,doorSize.y,doorSize.z),new THREE.MeshBasicMaterial());
   doorOutline.name='Door outer highlight mask';doorOutline.position.copy(doorBounds.getCenter(new THREE.Vector3()));doorOutline.visible=false;scene.add(doorOutline);
   const drawOutline=outline.render.bind(outline);
-  outline.render=(...args)=>{doorOutline.visible=highlighted==='door';try{drawOutline(...args);}finally{doorOutline.visible=false;}};
+  outline.render=(...args)=>{doorOutline.visible=outline.selectedObjects.includes(doorOutline);try{drawOutline(...args);}finally{doorOutline.visible=false;}};
   const basePosition = camera.position.clone();
   const cameraRight = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
   const baseRotation = camera.quaternion.clone();
@@ -987,6 +987,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   const look = new THREE.Vector2();
   const pointer = new THREE.Vector2();
   let viewHeld = false;
+  const touchInput = matchMedia('(hover: none), (pointer: coarse)');
   const pickPoint = new THREE.Vector2();
   let viewportWidth = innerWidth, viewportHeight = innerHeight;
   const raycaster = new THREE.Raycaster();
@@ -1014,8 +1015,13 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   scene.background.set(0xb9c5d0);
   function highlight(action) {
     highlighted = action;
-    outline.selectedObjects = action==='door'?[...actionMeshes.door,doorOutline]:actionMeshes[action] || [];
+    outline.selectedObjects = viewHeld ? [] : touchInput.matches
+      ? [...Object.values(actionMeshes).flat(), doorOutline]
+      : action==='door'?[...actionMeshes.door,doorOutline]:actionMeshes[action] || [];
   }
+  const updateInput = () => highlight(highlighted);
+  touchInput.addEventListener('change', updateInput);
+  highlight(null);
   return {
     scene, camera, soundtrack, highlight, outline, windowLight, diaryBinding, reviewBooks, bloomTexture:bloomY.texture,
     toggleCurtains() { curtainTarget = 1 - curtainTarget; return curtainTarget === 1; },
@@ -1075,6 +1081,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
     },
     dispose() {
       document.removeEventListener('visibilitychange', syncVideoPlayback);
+      touchInput.removeEventListener('change', updateInput);
       soundtrack.dispose();
       backdrop.disposeVideo();
       outline.dispose(); doorOutline.geometry.dispose(); doorOutline.material.dispose(); occlusion.dispose(); shaftQuad.dispose(); windowLight.dispose();
@@ -1146,7 +1153,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
       occlusion.setSize(Math.round(width * aoScale), Math.round(height * aoScale));
     },
     point(x, y) { pointer.set(x, y); },
-    holdView(held) { viewHeld = held; },
+    holdView(held) { viewHeld = held; highlight(highlighted); },
     pick(x, y) {
       const cast = (px, py) => {
         raycaster.setFromCamera(pickPoint.set(px, py), camera);

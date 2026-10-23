@@ -1,36 +1,13 @@
 import * as THREE from 'three';
-import { createDiaryBinding } from './diary-animation.js?v=13';
 import { createDiaryPrint } from './diary-print.js?v=5';
+import { BOOK_ASPECT, mobileReaderLayout as mobileLayout, ease, element, createPageSides, trapReaderFocus } from './reader-ui.js';
 
 const clamp=THREE.MathUtils.clamp;
-const mobileLayout=()=>innerWidth<760&&innerHeight>=innerWidth;
-const ease=t=>{t=clamp(t,0,1);return t*t*t*(10+t*(-15+6*t));};
-const element=(tag,className,text)=>{const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e;};
-
-// Each shelf book owns its own binding, clip, material and rest transform.
-// These are the same solids on the shelf, in flight, and in the reader.
-export function createReviewBindings(asset,room,source,covers,textures){
-  return covers.map((entry,i)=>{
-    const original=source.getObjectByName(['Cube007','Cube008','Cube009'][i]);
-    if(!original)throw new Error('Review book is missing from the room');
-    room.scene.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(original),size=box.getSize(new THREE.Vector3());
-    const rest={position:box.getCenter(new THREE.Vector3()).add(new THREE.Vector3(0,0,-size.z/2)),
-      quaternion:new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2),
-      scale:new THREE.Vector3(size.z/.269,size.y/.410,Math.min(size.x,.065)/.041),size};
-    textures[i].colorSpace=THREE.SRGBColorSpace;textures[i].flipY=false;textures[i].anisotropy=4;
-    const binding=createDiaryBinding(asset,room,original,{cover:textures[i],action:'books',name:`Review book: ${entry.id}`,rest,closedPaperInset:.075});
-    // Reviews open directly to one spread; the diary's extra turning leaves
-    // would repeat that same review three times during the opening.
-    binding.meshes.filter(mesh=>/^Turning[_ ]leaf/.test(mesh.name)).forEach(mesh=>{mesh.visible=false;});
-    binding.id=entry.id;return binding;
-  });
-}
 
 export function createBookReader({entries,getRoom,onBook,onClose}){
   const root=element('section','review-reader');root.id='book-reader';root.hidden=true;
   root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','Japanese book reviews');
-  root.setAttribute('aria-description','Choose a floating book or use Next book. Arrow keys also change books. Escape or clicking outside puts the books back.');
+  root.setAttribute('aria-description','Choose a floating book or use Next book. On mobile, use Left page and Right page or swipe to view both sides. Arrow keys also change books. Escape or clicking outside puts the books back.');
   root.innerHTML=`<svg width="0" height="0" aria-hidden="true" class="diary-contours"><defs>
     <clipPath id="review-left-curve" clipPathUnits="objectBoundingBox"><path d="M .035 .015 C .3 -.003 .78 .001 1 .022 L 1 .98 C .78 .965 .3 1.006 .035 .986 Q .005 .985 .005 .955 L .005 .045 Q .005 .016 .035 .015 Z"/></clipPath>
     <clipPath id="review-right-curve" clipPathUnits="objectBoundingBox"><path d="M 0 .022 C .22 .001 .7 -.003 .965 .015 Q .995 .016 .995 .045 L .995 .955 Q .995 .985 .965 .986 C .7 1.006 .22 .965 0 .98 Z"/></clipPath>
@@ -41,18 +18,20 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     button.setAttribute('aria-label',`Open ${entry.title}`);
     const image=element('img');image.src=entry.image;image.alt='';image.draggable=false;button.append(image);root.append(button);return button;
   });
-  const close=element('button','review-close','×');close.type='button';close.setAttribute('aria-label','Put books back');root.append(close);
+  const close=element('button','reader-close review-close','×');close.type='button';close.setAttribute('aria-label','Put books back');root.append(close);
   document.querySelector('#app').append(root);
   let phase='closed',elapsed=0,index=0,reduced=false,clock=0,heldRoom,bindings=[],poses=[],starts=[],opening=[],startOpening=[];
   let prepared,assetsReady=false,layoutKey='',printLayout='',pages=[],textures=[],restoreFocus,token=0,pendingIndex=null;
   let height=600,width=790,centerX=0,centerY=0,distance=1,units=1,gesture;
+  let waitingHeight=76,waitingY=64;
   let slots=[],targets=[],queuedOpen=null,pendingClose=false,reflow=null;
   let paths=[],motionClock=0;
+  const sides=createPageSides(root,()=>{if(phase==='reading'){layout();settle();}});
   const imageSources=new Map();
   const rotationAxis=new THREE.Vector3(0,0,1);
   const pose=b=>({position:b.rest.position.clone(),quaternion:b.rest.quaternion.clone(),scale:b.rest.scale.clone()});
   function shadow(){const sun=heldRoom?.scene.getObjectByName('Window sunlight');if(sun)sun.shadow.needsUpdate=true;}
-  function setPhase(value){phase=value;elapsed=0;root.dataset.phase=value;selectors.forEach(b=>b.disabled=value!=='reading');if(['flying','switching','returning'].includes(value)&&bindings.length)prepareFlight();}
+  function setPhase(value){phase=value;elapsed=0;root.dataset.phase=value;sides.refresh();selectors.forEach(b=>b.disabled=value!=='reading');if(['flying','switching','returning'].includes(value)&&bindings.length)prepareFlight();}
   function buildPage(entry,side){
     const left=side==='left',page=element('section',`diary-page diary-page--${side} review-page review-page--${side}`);
     page.setAttribute('aria-label',left?'Book cover and new words':'Book review');
@@ -75,22 +54,26 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function renderPage(){
     spread.replaceChildren(...pages[index].map(p=>p.cloneNode(true)));root.dataset.book=entries[index].id;
+    sides.refresh();
     selectors.forEach((button,i)=>{button.hidden=i===index;button.setAttribute('aria-current',String(i===index));});
   }
   function layout(){
     const mobile=mobileLayout();
-    height=mobile?Math.min(innerHeight-180,(innerWidth-28)/(.53/.403)):Math.min(700,innerHeight-120,(innerWidth-330)/(.53/.403));
-    width=height*(.53/.403);centerX=mobile?innerWidth/2:(innerWidth+210)/2;centerY=mobile?Math.max(145+height/2,innerHeight*.54):innerHeight/2;
+    const short=innerHeight<525;
+    waitingHeight=short?48:76;waitingY=short?34:64;
+    height=mobile?Math.max(120,Math.min(700,innerHeight-(short?142:184),(innerWidth-28)/(BOOK_ASPECT/2))):Math.min(700,innerHeight-120,(innerWidth-330)/BOOK_ASPECT);
+    width=height*BOOK_ASPECT;centerX=mobile?innerWidth/2+(sides.side==='left'?1:-1)*width/4:(innerWidth+210)/2;centerY=mobile?(innerHeight+(short?14:42))/2:innerHeight/2;
     root.classList.toggle('is-mobile',mobile);root.classList.toggle('has-room',Boolean(getRoom()));
     root.classList.toggle('is-short',innerHeight<525);
+    sides.refresh();
     surface.style.cssText=`width:${width}px;height:${height}px;left:${centerX-width/2}px;top:${centerY-height/2}px`;
     root.style.setProperty('--review-font',`${mobile?14.5:clamp(height/38,14,18)}px`);
     const fov=heldRoom?.camera.fov||28;distance=.403/(height/innerHeight*2*Math.tan(THREE.MathUtils.degToRad(fov/2)));
     units=.403/height;
     for(let i=0;i<selectors.length;i++){
-      const slot=slots[i],sideHeight=mobile?76:height*.31,sideWidth=sideHeight*.269/.410;
+      const slot=slots[i],sideHeight=mobile?waitingHeight:height*.31,sideWidth=sideHeight*.269/.410;
       const x=mobile?innerWidth/2+(slot===0?-sideWidth*.8:sideWidth*.8):(centerX-width/2)/2;
-      const y=mobile?64:centerY+(slot===0?-.22:.22)*height;
+      const y=mobile?waitingY:centerY+(slot===0?-.22:.22)*height;
       selectors[i].style.cssText=`width:${sideWidth+12}px;height:${sideHeight+12}px;left:${x-sideWidth/2-6}px;top:${y-sideHeight/2-6}px`;
     }
   }
@@ -117,9 +100,9 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function destination(i){
     const active=i===index,mobile=mobileLayout(),slot=slots[i];
-    const smallScale=mobile?76/height:.31;
-    const pixelX=active?centerX:mobile?innerWidth/2+(slot===0?-.8:.8)*(76*.269/.410):(centerX-width/2)/2;
-    const pixelY=active?centerY:mobile?64:centerY+(slot===0?-.22:.22)*height;
+    const smallScale=mobile?waitingHeight/height:.31;
+    const pixelX=active?centerX:mobile?innerWidth/2+(slot===0?-.8:.8)*(waitingHeight*.269/.410):(centerX-width/2)/2;
+    const pixelY=active?centerY:mobile?waitingY:centerY+(slot===0?-.22:.22)*height;
     const scale=new THREE.Vector3(active?(mobile?width/height/(.53/.403):1):smallScale,active?1:smallScale,active?.65:.6);
     const localRotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,active?0:slot===0?.12:-.12,active?0:slot===0?-.07:.06));
     const position=new THREE.Vector3((pixelX-innerWidth/2)*units,(innerHeight/2-pixelY)*units,-distance);
@@ -210,17 +193,17 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     if(reopen){void reader.open(reopen.route,reopen.reducedMotion);}
     else if(notify){onClose();restoreFocus?.focus({preventScroll:true});}
   }
-  function select(target,notify=true){
+  function select(target,notify=true,pageSide='right'){
     target=(target+entries.length)%entries.length;
-    if(phase!=='reading'){pendingIndex=target;return;}
+    if(phase!=='reading'){pendingIndex={target,pageSide};return;}
     if(target===index)return;
-    snapshot();reflow=null;slots[index]=slots[target];slots[target]=-1;index=target;renderPage();layout();if(notify)onBook(entries[index]);
+    snapshot();reflow=null;slots[index]=slots[target];slots[target]=-1;index=target;sides.set(pageSide,false);renderPage();layout();if(notify)onBook(entries[index]);
     root.style.setProperty('--review-presence','0');setPhase('switching');
     if(reduced||!bindings.length){settle();}
   }
   function settle(){
     bindings.forEach((_,i)=>place(i,i===index?destination(i):hovering(i,destination(i)),i===index?1:0));shadow();
-    root.style.setProperty('--review-presence',reflow?'0':'1');setPhase('reading');spread.querySelector('.review-title').focus({preventScroll:true});
+    root.style.setProperty('--review-presence',reflow?'0':'1');setPhase('reading');if(sides.side==='right')spread.querySelector('.review-title').focus({preventScroll:true});
   }
   const reader={
     get isOpen(){return phase!=='closed';},
@@ -238,7 +221,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
       const current=++token;restoreFocus=document.activeElement;root.hidden=false;root.style.setProperty('--review-presence','0');setPhase('loading');
       heldRoom=getRoom();heldRoom?.holdView(true);heldRoom?.highlight(null);
       if(!assetsReady)await (prepared||reader.prepare());if(current!==token)return;
-      index=target;slots=entries.map((_,i)=>i===index?-1:i<index?i:i-1);preparePages();renderPage();layout();
+      index=target;sides.set('right',false);slots=entries.map((_,i)=>i===index?-1:i<index?i:i-1);preparePages();renderPage();layout();
       if(heldRoom?.reviewBooks?.length){bindings=heldRoom.reviewBooks;if(!textures.length||printLayout!==layoutKey)printPages();poses=bindings.map(pose);opening=bindings.map(()=>0);bindings.forEach(b=>b.restore());snapshot();}
       else bindings=[];
       onBook(entries[index]);setPhase('flying');
@@ -259,7 +242,7 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
       if(phase==='reading'){
         bindings.forEach((b,i)=>{if(i===index&&!reflow)return;place(i,i===index?destination(i):hovering(i,destination(i)),i===index?1:0);});
         if(reflow?.time>=.65){reflow=null;root.style.setProperty('--review-presence','1');}
-        if(pendingIndex!==null){const target=pendingIndex;pendingIndex=null;select(target);}return;
+        if(pendingIndex!==null){const {target,pageSide}=pendingIndex;pendingIndex=null;select(target,true,pageSide);}return;
       }
       const returning=phase==='returning',flying=phase==='flying',duration=flying?2.15:returning?1.95:1.6,t=reduced?1:clamp(elapsed/duration,0,1);
       bindings.forEach((b,i)=>{
@@ -280,20 +263,18 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     },
   };
   root.addEventListener('click',e=>{
+    if(e.target.closest('.reader-page-sides'))return;
     const selection=e.target.closest('[data-book-index]'),next=e.target.closest('[data-step]');
     if(selection){select(Number(selection.dataset.bookIndex));return;}
     if(next){select(index+Number(next.dataset.step));return;}
     if(e.target===close||!e.target.closest('.review-book-surface'))reader.close();
   });
   surface.addEventListener('pointerdown',e=>{if(phase==='reading'&&e.button===0&&!e.target.closest('button'))gesture={id:e.pointerId,x:e.clientX,y:e.clientY};});
-  surface.addEventListener('pointerup',e=>{if(!gesture||e.pointerId!==gesture.id)return;const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;gesture=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)select(index+(dx<0?1:-1));});
+  surface.addEventListener('pointerup',e=>{if(!gesture||e.pointerId!==gesture.id)return;const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;gesture=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4){const direction=dx<0?1:-1;if(!sides.step(direction))select(index+direction,true,direction<0?'left':'right');}});
   surface.addEventListener('pointercancel',()=>{gesture=null;});
   root.addEventListener('keydown',e=>{
     if(!e.altKey&&!e.metaKey&&!e.ctrlKey&&['ArrowRight','ArrowLeft','a','A','d','D'].includes(e.key)){e.preventDefault();select(index+(['ArrowRight','d','D'].includes(e.key)?1:-1));}
-    if(e.key==='Tab'){
-      const controls=[...root.querySelectorAll('button:not(:disabled):not([hidden]),[tabindex="0"]')].filter(b=>b.getClientRects().length),first=controls[0],last=controls.at(-1);
-      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
-    }
+    trapReaderFocus(root,e);
   });
   return reader;
 }

@@ -2295,23 +2295,28 @@ noscript {
 .diary-turn .diary-page { width:100%; height:100%; }
 @property --diary-leaf-shade { syntax:'<number>'; inherits:true; initial-value:0; }
 .diary-turn-front::after,.diary-turn-back::after { opacity:var(--diary-leaf-shade,0); }
-.diary-photo-toggle,.diary-photo-toggle[hidden] { display:none; }
 .diary-reader[data-phase='loading'] .diary-book { visibility:hidden; }
 .diary-reader:not([data-phase='reading']) .diary-book { transition:none; }
-.diary-reader:not([data-phase='reading']) .diary-photo-toggle { visibility:hidden; }
+.diary-reader:not([data-phase='reading']) .reader-page-sides { visibility:hidden; }
 .app:has(.diary-reader:not([hidden])) .room-hud { visibility:hidden; }
-@media(max-width:700px) {
- .diary-viewport { width:calc(100vw - 28px); overflow:hidden; }
- .diary-book { transform:translateX(-50%); transition:transform 350ms ease; }
- .diary-reader.is-photo-side .diary-book { transform:translateX(0); }
- .diary-contents { top:16px;left:21px; }
- .diary-page--left:has(.diary-contents) { padding-top:45px; }
- .diary-page { padding:29px 24px 48px; }.diary-heading { margin-bottom:12px; }.diary-title { font-size:20px; }.diary-date { font-size:10px; }
- .diary-vocabulary { font-size:10.5px; max-height:55%; }.diary-word { gap:8px; }.diary-album { gap:12px; padding:12px 0; }.diary-page--left { gap:14px; }
- .diary-photo { padding:4px 4px 6px; }.diary-photo img { max-height:220px; }.diary-photo figcaption { font-size:8px; }
- .diary-toc-entry { padding:22px 0; }.diary-toc-title { font-size:16px; }
- .diary-photo-toggle { display:block; position:absolute; bottom:8px; border:0; background:none; color:#f0e4ca; cursor:pointer; font:14px/1.5 'Klee One',cursive; padding:4px 18px; text-shadow:0 1px 3px #17120b; }
-}
+.diary-reader.is-mobile .diary-viewport { width:var(--reader-page-width); overflow:hidden; }
+:where(.diary-reader.is-mobile) .diary-book { transform:translateX(-50%); transition:transform 350ms ease; }
+.diary-reader.is-mobile[data-page-side='left'] .diary-book { transform:translateX(0); }
+.diary-reader.is-mobile .diary-contents { top:16px;left:21px; }
+.diary-reader.is-mobile .diary-page--left:has(.diary-contents) { padding-top:45px; }
+.diary-reader.is-mobile .diary-page { padding:29px 24px 48px; }
+.diary-reader.is-mobile .diary-heading { margin-bottom:12px; }
+.diary-reader.is-mobile .diary-title { font-size:20px; }
+.diary-reader.is-mobile .diary-date { font-size:10px; }
+.diary-reader.is-mobile .diary-vocabulary { font-size:12px; max-height:55%; overflow-y:auto; }
+.diary-reader.is-mobile .diary-word { gap:8px; }
+.diary-reader.is-mobile .diary-album { gap:12px; padding:12px 0; }
+.diary-reader.is-mobile .diary-page--left { gap:14px; }
+.diary-reader.is-mobile .diary-photo { padding:4px 4px 6px; }
+.diary-reader.is-mobile .diary-photo img { max-height:220px; }
+.diary-reader.is-mobile .diary-photo figcaption { font-size:10px; }
+.diary-reader.is-mobile .diary-toc-entry { padding:18px 0; }
+.diary-reader.is-mobile .diary-toc-title { font-size:16px; }
 @media(prefers-reduced-motion:reduce) { .diary-book,.site-header,.location-nav { transition:none; } }
 
 /* The moving book is the exported Blender rig; HTML takes over after it lands. */
@@ -2319,15 +2324,15 @@ noscript {
 /* Three independent physical books, with selectable print on the open spread. */
 .review-reader[hidden], .review-floating-cover[hidden] { display:none; }
 .review-reader { position:absolute; inset:0; z-index:31; background:none; color:#493b2d; font-family:'Klee One',serif; }
-.review-book-surface { position:absolute; opacity:var(--review-presence,0); pointer-events:none; }
+.review-book-surface { position:absolute; opacity:var(--review-presence,0); pointer-events:none; touch-action:pan-y; }
 .review-reader[data-phase='reading'] .review-book-surface { pointer-events:auto; }
 .review-spread { display:grid; grid-template-columns:1fr 1fr; height:100%; }
 .review-page { padding:30px 32px 45px; min-width:0; }
 .review-page--left { gap:17px; }
 .review-page--right { display:flex; flex-direction:column; }
-.review-cover-art { flex:1; min-height:60px; width:auto; max-width:78%; margin:8px auto 0; background:none; padding:0; box-shadow:none; }
+.review-cover-art { position:relative; flex:1; min-height:60px; width:78%; max-width:none; margin:8px auto 0; background:none; padding:0; box-shadow:none; }
 .review-cover-art::before,.review-cover-art::after { display:none; }
-.review-cover-art img { display:block; height:100%; max-height:310px; width:100%; object-fit:contain; filter:none; }
+.review-cover-art img { position:absolute; inset:0; display:block; height:100%; max-height:none; width:100%; object-fit:contain; filter:none; }
 .review-vocabulary { flex:none; font-size:12px; line-height:1.6; }
 .review-vocabulary h3 { margin:0 0 7px; font:400 15px/1.5 'Klee One',serif; color:#765d40; }
 .review-vocabulary .diary-word { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:6px 0; border-bottom:1px solid #9b7b4424; }
@@ -2346,34 +2351,40 @@ noscript {
 .review-floating-cover:nth-of-type(2n) { transform:rotate(4deg); }
 .review-floating-cover img { width:100%; height:100%; object-fit:contain; box-shadow:3px 6px 13px #201b1933; }
 .review-reader.has-room .review-floating-cover img { visibility:hidden; }
-.review-floating-cover:hover:not(:disabled),.review-floating-cover:focus-visible { outline:1px solid #f4e5cba6; outline-offset:4px; }
+.review-floating-cover:focus-visible { outline:1px solid #f4e5cba6; outline-offset:4px; }
 .review-floating-cover:disabled { cursor:default; }
-.review-close { position:absolute; right:24px; top:20px; border:0; background:none; color:#f6efdf; text-shadow:0 1px 4px #34271966; font:300 30px/1 serif; cursor:pointer; padding:8px; }
-.review-close:focus-visible,.review-navigation button:focus-visible { outline:1px solid currentColor; outline-offset:3px; }
+.reader-close { position:absolute; right:24px; top:20px; border:0; background:none; color:#f6efdf; text-shadow:0 1px 4px #34271966; font:300 30px/1 serif; cursor:pointer; padding:8px; }
+.reader-close:focus-visible,.review-navigation button:focus-visible { outline:1px solid currentColor; outline-offset:3px; }
 .review-page[tabindex="0"]:focus-visible,.review-copy[tabindex="0"]:focus-visible { outline:1px solid #92724c; outline-offset:-3px; }
-.review-reader.is-mobile .review-page { padding:12px 10px 15px; }
+.review-reader.is-mobile .review-page { padding:24px 22px 26px; }
 .review-reader.is-mobile .review-page--left { gap:8px; overflow-y:auto; touch-action:pan-y; }
-.review-reader.is-mobile .review-cover-art { max-width:95%; margin-top:0; }
-.review-reader.is-mobile .review-cover-art img { max-height:190px; }
-.review-reader.is-mobile .review-title { font-size:14px; line-height:1.25; }
-.review-reader.is-mobile .review-stars { font-size:10px; margin:4px 0 7px; }
-.review-reader.is-mobile .review-date { font-size:8px; margin-bottom:4px; }
-.review-reader.is-mobile .review-vocabulary { font-size:9px; line-height:1.5; }
-.review-reader.is-mobile .review-vocabulary h3 { font-size:12px; }
-.review-reader.is-mobile .review-vocabulary .diary-word { grid-template-columns:1fr; gap:1px; padding:4px 0; }
+.review-reader.is-mobile .review-cover-art { width:85%; max-width:none; flex:none; height:34%; min-height:50px; margin-top:0; }
+.review-reader.is-mobile .review-title { font-size:20px; line-height:1.4; }
+.review-reader.is-mobile .review-stars { font-size:13px; margin:8px 0 10px; }
+.review-reader.is-mobile .review-date { font-size:10px; margin-bottom:6px; }
+.review-reader.is-mobile .review-vocabulary { font-size:13px; line-height:1.5; }
+.review-reader.is-mobile .review-vocabulary h3 { font-size:15px; }
+.review-reader.is-mobile .review-vocabulary .diary-word { grid-template-columns:1fr 1fr; gap:5px; padding:4px 0; }
 .review-reader.is-mobile .review-navigation { font-size:12px; gap:4px; }
-.review-reader.is-mobile .review-close { right:12px; top:15px; }
+.is-mobile .reader-close { right:12px; top:15px; }
 .review-page--left { clip-path:url(#review-left-curve); }
 .review-page--right { clip-path:url(#review-right-curve); }
-.review-cover-art { position:relative; width:78%; max-width:none; }
-.review-cover-art img { position:absolute; inset:0; max-height:none; }
-.review-floating-cover:hover:not(:disabled) { outline:none; }
-.review-floating-cover:focus-visible { outline:1px solid #f4e5cba6; outline-offset:4px; }
 .app:has(.review-reader:not([hidden])) .room-hud { visibility:hidden; }
-.review-reader.is-mobile .review-cover-art { width:85%; max-width:none; flex:none; height:34%; min-height:50px; }
-.review-reader.is-mobile .review-cover-art img { max-height:none; }
-.review-reader.is-mobile .review-vocabulary { font-size:10px; }
-.review-reader.is-mobile .review-vocabulary .diary-word { grid-template-columns:1fr 1fr; gap:5px; padding:4px 0; }
+.review-reader.is-mobile[data-page-side='right'] .review-book-surface { clip-path:inset(0 0 0 50%); }
+.review-reader.is-mobile[data-page-side='left'] .review-book-surface { clip-path:inset(0 50% 0 0); }
+.reader-page-sides[hidden] { display:none; }
+.reader-page-sides { position:absolute; z-index:5; bottom:max(16px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:12px; white-space:nowrap; }
+.reader-page-sides button { min-height:44px; padding:8px 14px; border:1px solid white; border-radius:8px; color:white; background:#201b19e6; font:14px/1.4 system-ui,sans-serif; cursor:pointer; }
+.reader-page-sides button[aria-pressed='true'] { background:#fff; color:#30251b; }
+.reader-page-sides button:focus-visible { outline:2px solid white; outline-offset:3px; }
+.review-reader:not([data-phase='reading']) .reader-page-sides { visibility:hidden; }
+@media (hover:none), (pointer:coarse) {
+  .app { min-height:0; }
+  #app :is(button,a[href],[role='button']):not(:disabled) { outline:1.5px solid #fff; outline-offset:3px; }
+  #app :is(button,a[href],[role='button']):focus-visible { outline:2px solid #fff; outline-offset:4px; }
+  .review-floating-cover:not(:disabled) { outline:1.5px solid #fff; outline-offset:3px; }
+  .diary-page-controls button,.review-navigation button { min-width:44px; min-height:44px; }
+}
 .review-reader.is-short .review-page { padding:12px 16px 18px; }
 .review-reader.is-short .review-page--left { gap:8px; }
 .review-reader.is-short .review-title { font-size:16px; line-height:1.2; }

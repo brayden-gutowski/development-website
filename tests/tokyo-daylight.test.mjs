@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokyoDaylight } from './tokyo-daylight.mjs';
+import { tokyoDaylight } from '../tokyo-daylight.mjs';
 test('Tokyo noon and midnight do not depend on the visitor time zone', () => {
   assert.equal(tokyoDaylight(new Date('2026-01-15T03:00:00Z')).phase, 'day');
   assert.equal(tokyoDaylight(new Date('2026-01-15T15:00:00Z')).phase, 'night');

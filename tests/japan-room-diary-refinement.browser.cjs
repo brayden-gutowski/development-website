@@ -33,9 +33,9 @@ const { chromium } = require('playwright');
     assert.ok(content.font<19);assert.match(content.lines,/repeating-linear-gradient/);
     await page.screenshot({path:`/tmp/diary-refined-${viewport.width}-${i}.png`});
     if(viewport.width<700&&i===0){
-     await page.getByRole('button',{name:'Show diary photographs'}).click();
+     await page.getByRole('button',{name:'Left page'}).click();
      await page.waitForTimeout(400);await page.screenshot({path:'/tmp/diary-refined-mobile-photos.png'});
-     await page.getByRole('button',{name:'Show diary writing'}).click();await page.waitForTimeout(400);
+     await page.getByRole('button',{name:'Right page'}).click();await page.waitForTimeout(400);
     }
     if(i<entries.length-1){
      await page.keyboard.press('d');

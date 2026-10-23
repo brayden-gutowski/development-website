@@ -1,11 +1,6 @@
 import * as THREE from 'three';
 import { createDiaryPrint } from './diary-print.js?v=5';
-
-const ease=t=>{t=THREE.MathUtils.clamp(t,0,1);return t*t*t*(10+t*(-15+6*t));};
-const node = (tag, className, text) => {
-  const e = document.createElement(tag); if (className) e.className = className;
-  if (text !== undefined) e.textContent = text; return e;
-};
+import { BOOK_ASPECT, mobileReaderLayout, ease, element as node, createPageSides, trapReaderFocus } from './reader-ui.js';
 
 export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
   const entries = categories.flatMap(category => (category.entries || []).map(entry => ({entry, category})))
@@ -13,7 +8,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
   const pages = [{entry:null}, ...entries];
   const root = node('section', 'diary-reader'); root.id = 'diary-reader'; root.hidden = true;
   root.setAttribute('role','dialog'); root.setAttribute('aria-modal','true'); root.setAttribute('aria-label','Japanese diary');
-  root.setAttribute('aria-description','Turn pages with arrow keys, A and D, or a horizontal drag. Press Escape or click outside the book to put it back.');
+  root.setAttribute('aria-description','Turn pages with arrow keys, A and D, or a horizontal drag. On mobile, use Left page and Right page or swipe to view both sides. Press Escape or click outside the book to put it back.');
   root.innerHTML = `
     <svg width="0" height="0" aria-hidden="true" class="diary-contours"><defs>
       <clipPath id="diary-left-curve" clipPathUnits="objectBoundingBox"><path d="M .035 .015 C .3 -.003 .78 .001 1 .022 L 1 .98 C .78 .965 .3 1.006 .035 .986 Q .005 .985 .005 .955 L .005 .045 Q .005 .016 .035 .015 Z"/></clipPath>
@@ -21,16 +16,19 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     </defs></svg>
     <div class="diary-surround"><div class="diary-presentation"><div class="diary-viewport"><div class="diary-book">
       <div class="diary-spread"></div><div class="diary-turn" aria-hidden="true" hidden></div>
-    </div></div></div><button type="button" class="diary-photo-toggle" aria-label="Show diary photographs">写真</button></div>`;
+    </div></div></div></div>`;
   document.querySelector('#app').append(root);
   const book = root.querySelector('.diary-book'), spread = root.querySelector('.diary-spread');
-  const sheet = root.querySelector('.diary-turn'), photoToggle = root.querySelector('.diary-photo-toggle'); sheet.inert = true;
+  const sheet = root.querySelector('.diary-turn'); sheet.inert = true;
+  const close=node('button','reader-close','×');close.type='button';close.setAttribute('aria-label','Put diary back');root.append(close);
   let phase='closed', elapsed=0, index=0, reduced=false, turning=false, openToken=0, ready=false;
   let lift, originalPose, rig, motion, printTexture, heldRoom, distance=1, restoreFocus, flipAnimation, gesture;
   let preparation, assetsReady=false, pageLayout='';
   let flightProgress=0, returnStart=1, rigWidthScale=1, flightOffset=0, lastPlacement;
+  const sides=createPageSides(root,()=>{if(phase==='reading')fly(1);});
   function setPhase(value) {
     phase=value; elapsed=0; root.dataset.phase=value;
+    sides.refresh();
     if(value==='reading')book.style.removeProperty('transform');
   }
   function setOpening(amount) {
@@ -39,10 +37,11 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
 
   function refreshShadow() { const light=(getRoom()||heldRoom)?.scene.getObjectByName('Window sunlight'); if(light) light.shadow.needsUpdate=true; }
   function layout() {
-    const mobile=innerWidth<=700;
-    const height=Math.max(280,mobile?Math.min(720,innerHeight-80):Math.min(760,innerHeight-90,(innerWidth-100)/1.45));
-    const width=mobile?(innerWidth-28)*2:height*1.45;
+    const mobile=mobileReaderLayout();
+    const height=mobile?Math.max(120,Math.min(720,innerHeight-120,(innerWidth-28)/(BOOK_ASPECT/2))):Math.min(760,innerHeight-90,(innerWidth-100)/1.45);
+    const width=height*(mobile?BOOK_ASPECT:1.45);
     book.style.height=`${height}px`; book.style.width=`${width}px`;
+    root.style.setProperty('--reader-page-width',`${width/2}px`);sides.refresh();
     root.style.setProperty('--diary-height',`${height}px`);
     root.style.setProperty('--diary-font-size',`${mobile?14:THREE.MathUtils.clamp(height/43,14,18)}px`);
     const fov=getRoom()?.camera.fov||28;
@@ -61,13 +60,13 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     const previous=printTexture;printTexture=createDiaryPrint(spread,book,motion?.edges.paper);motion?.appearance(printTexture);previous?.dispose();
   }
   function bookOffset() {
-    if(innerWidth>700)return 0;
+    if(!mobileReaderLayout())return 0;
     const rect=book.getBoundingClientRect();
     return (rect.left+rect.width/2-innerWidth/2)*.403/rect.height;
   }
   function makeRig() {
     if(!motion)return;
-    preparePrint();flightOffset=innerWidth<=700?-.1325*rigWidthScale:0;
+    preparePrint();flightOffset=mobileReaderLayout()?-.1325*rigWidthScale:0;
   }
   function fly(progress) {
     flightProgress=progress;
@@ -123,6 +122,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     const copy=spread.querySelector('.diary-copy'), words=spread.querySelector('.diary-vocabulary');
     let size=parseFloat(getComputedStyle(copy).fontSize);
     while(copy.scrollHeight>copy.clientHeight+1&&size>10){size-=.25;copy.style.fontSize=`${size}px`;}
+    if(copy.scrollHeight>copy.clientHeight+1){copy.style.overflowY='auto';copy.tabIndex=0;copy.setAttribute('aria-label','Scroll diary writing');}
     if(words){let size=parseFloat(getComputedStyle(words).fontSize);while(words.scrollHeight>words.clientHeight+1&&size>8){size-=.25;words.style.fontSize=`${size}px`;}}
   }
   function preparePages() {
@@ -140,12 +140,8 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     }
   }
   function syncPage(notify=true) {
-    const page=pages[index],photos=Boolean(page.entry)&&root.classList.contains('is-photo-side');
-    book.dataset.page=index;root.classList.toggle('is-photo-side',photos);
-    spread.querySelector('.diary-page--right').inert=photos&&innerWidth<=700;
-    spread.querySelector('.diary-page--left').inert=!photos&&innerWidth<=700;
-    photoToggle.setAttribute('aria-label',photos?'Show diary writing':'Show diary photographs');photoToggle.textContent=photos?'本文':'写真';
-    photoToggle.hidden=!page.entry;
+    const page=pages[index];
+    book.dataset.page=index;sides.refresh();
     if(notify)onPage(page.entry?{entry:page.entry,category:page.category}:null);
   }
   function renderPage(notify=true) {
@@ -153,7 +149,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     syncPage(notify);if(phase==='reading')preparePrint();
   }
   function focusPage() {
-    (root.classList.contains('is-photo-side')?photoToggle:spread.querySelector('.diary-title')).focus({preventScroll:true});
+    (sides.side==='left'&&mobileReaderLayout()?root.querySelector('.reader-page-sides button'):spread.querySelector('.diary-title')).focus({preventScroll:true});
   }
   function endTurn() {
     const animation=flipAnimation;flipAnimation=null;animation?.cancel();
@@ -163,7 +159,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     if(phase!=='reading'||turning||target<0||target>=pages.length||target===index)return;
     const focusInside=book.contains(document.activeElement), forward=target>index, destination=pages[target];
     if(reduced){index=target;renderPage();if(focusInside)focusPage();return;}
-    if(!destination.entry)root.classList.remove('is-photo-side');
+    if(!destination.entry)sides.set('right',false);
     turning=true;sheet.hidden=false;sheet.dataset.direction=forward?'forward':'backward';
     const front=node('div','diary-turn-front'),back=node('div','diary-turn-back');
     front.append(spread.querySelector(forward?'.diary-page--right':'.diary-page--left').cloneNode(true));
@@ -171,7 +167,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     back.append(landing);sheet.replaceChildren(front,back);
     // Reveal the complete destination under the leaf before it starts moving.
     spread.querySelector(forward?'.diary-page--right':'.diary-page--left').replaceWith((forward?destination.right:destination.left).cloneNode(true));
-    spread.querySelector('.diary-page--right').inert=root.classList.contains('is-photo-side')&&innerWidth<=700;
+    sides.refresh();
     flipAnimation=sheet.animate([
       {transform:'rotateY(0deg) skewY(0deg)','--diary-leaf-shade':0},
       {transform:`rotateY(${forward?-82:82}deg) skewY(${forward?-2:2}deg)`,'--diary-leaf-shade':1,offset:.48},
@@ -213,9 +209,9 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     async open(route,reducedMotion){
       reduced=reducedMotion;
       if(phase==='returning')finishClose(false);
-      if(phase!=='closed'){if(ready){endTurn();root.classList.remove('is-photo-side');index=route?Math.max(0,pages.findIndex(p=>p.entry?.id===route.entryId&&p.category?.id===route.categoryId)):0;renderPage();if(phase!=='reading')preparePrint();}return;}
+      if(phase!=='closed'){if(ready){endTurn();sides.set('right',false);index=route?Math.max(0,pages.findIndex(p=>p.entry?.id===route.entryId&&p.category?.id===route.categoryId)):0;renderPage();if(phase!=='reading')preparePrint();}return;}
       restoreFocus=document.activeElement;const token=++openToken;root.hidden=false;setPhase('loading');layout();ready=false;flightProgress=0;flightOffset=0;
-      root.classList.remove('is-photo-side');
+      sides.set('right',false);
       heldRoom=getRoom();heldRoom?.holdView(true);
       root.style.setProperty('--diary-presence','0');setOpening(0);
       // The room warms these assets and page layouts during the approach.
@@ -259,15 +255,10 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     resize(){pageLayout='';if(phase==='closed')return;layout();if(ready){endTurn();prepareLayout();renderPage();if(phase!=='reading')preparePrint();refreshShadow();}},
   };
   root.addEventListener('click',e=>{
-    if(e.target.closest('.diary-photo-toggle'))return;
+    if(e.target.closest('.reader-page-sides'))return;
     const control=e.target.closest('[data-diary-page]');
     if(control){turnTo(Number(control.dataset.diaryPage));return;}
     if(!e.target.closest('.diary-viewport'))reader.close();
-  });
-  photoToggle.addEventListener('click',()=>{
-    const photos=root.classList.toggle('is-photo-side');spread.querySelector('.diary-page--right').inert=photos&&innerWidth<=700;
-    spread.querySelector('.diary-page--left').inert=!photos&&innerWidth<=700;
-    photoToggle.setAttribute('aria-label',photos?'Show diary writing':'Show diary photographs');photoToggle.textContent=photos?'本文':'写真';
   });
   book.addEventListener('pointerdown',e=>{
     if(phase!=='reading'||turning||e.button!==0||e.target.closest('button'))return;
@@ -276,7 +267,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
   book.addEventListener('pointerup',e=>{
     if(!gesture||gesture.id!==e.pointerId)return;
     const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;gesture=null;
-    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)turnTo(index+(dx<0?1:-1));
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){const direction=dx<0?1:-1;if(!sides.step(direction)){turnTo(index+direction);if(direction<0)sides.set('left');}}
   });
   book.addEventListener('pointercancel',()=>{gesture=null;});
   document.addEventListener('keydown',e=>{
@@ -284,13 +275,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     if(!e.altKey&&!e.ctrlKey&&!e.metaKey&&['ArrowRight','ArrowLeft','a','A','d','D'].includes(e.key)){
       e.preventDefault();turnTo(index+(['ArrowRight','d','D'].includes(e.key)?1:-1));
     }
-    if(e.key==='Tab'){
-      const controls=[...root.querySelectorAll('.diary-spread button:not(:disabled),.diary-photo-toggle')].filter(b=>!b.closest('[inert]')&&getComputedStyle(b).display!=='none'&&b.getBoundingClientRect().width>0);
-      const first=controls[0],last=controls.at(-1);if(!first||phase!=='reading'){e.preventDefault();return;}
-      if(!controls.includes(document.activeElement)){e.preventDefault();(e.shiftKey?last:first).focus();}
-      else if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
-      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
-    }
+    trapReaderFocus(root,e);
   },true);
   return reader;
 }

@@ -38,9 +38,9 @@ const {PNG}=require('pngjs');
   await page.waitForFunction(()=>document.querySelector('.diary-book').style.width==='724px');
   await page.keyboard.press('ArrowRight');await page.locator('.diary-turn').waitFor({state:'hidden'});
   await page.getByRole('heading',{name:'初めまして',exact:true}).waitFor();
-  await page.getByRole('button',{name:'Show diary photographs'}).click();await page.waitForTimeout(400);
+  await page.getByRole('button',{name:'Left page'}).click();await page.waitForTimeout(400);
   await page.keyboard.press('ArrowRight');await page.locator('.diary-turn').waitFor({state:'hidden'});
-  assert.equal(await page.locator('#diary-reader').evaluate(e=>e.classList.contains('is-photo-side')),true,'Finishing a turn must retain the phone photo view instead of starting a second pan');
+  assert.equal(await page.locator('#diary-reader').evaluate(e=>e.dataset.pageSide==='left'),true,'Finishing a turn must retain the phone photo view instead of starting a second pan');
   console.log('PASS: forward/backward final frames match their settled pages and retain loaded page surfaces');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

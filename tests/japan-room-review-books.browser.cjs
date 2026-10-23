@@ -34,7 +34,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright'),{PNG
  assert.ok(photoDifference<10,'The animated open book already contains its cover artwork before the HTML handoff');
 
  await root.getByRole('button',{name:'Next book',exact:true}).click();await p.locator('#book-reader[data-phase="reading"][data-book="yaseuma"]').waitFor();
- assert.match(await root.locator('.review-copy').innerText(),/やせうま/);assert.match(p.url(),/#book-review\/yaseuma$/);
+ assert.match(await root.locator('.review-copy').innerText(),/やせうま/);assert.match(p.url(),/#tokyo\/books\/yaseuma$/);
  const floatingCover=await root.getByRole('button',{name:'Open 丸メガネ寮母さん',exact:true}).boundingBox();
  await p.mouse.click(floatingCover.x+floatingCover.width/2,floatingCover.y+floatingCover.height/2);await p.locator('#book-reader[data-phase="reading"][data-book="maru-megane-ryoubo-san"]').waitFor();
  assert.match(await root.locator('.review-vocabulary').innerText(),/単純/);
@@ -60,7 +60,9 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright'),{PNG
  console.log('Mobile page metrics',await mobile.locator('.review-copy').evaluate(e=>({font:getComputedStyle(e).fontSize,height:e.clientHeight,scroll:e.scrollHeight,width:e.clientWidth})));
  assert.ok(await mobile.locator('.review-copy').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=11.5&&(e.scrollHeight<=e.clientHeight+1||getComputedStyle(e).overflowY==='auto')),'Phone review text stays readable and can scroll within its page');
  await mobile.screenshot({path:'/tmp/floating-review-books-mobile.png'});
- assert.ok(await mobile.locator('.review-page--left').evaluate(e=>{const b=e.getBoundingClientRect();return b.x>=0&&b.right<=innerWidth;}),'The left page remains visible alongside the review');
+ await mobile.getByRole('button',{name:'Left page',exact:true}).click();
+ await mobile.waitForFunction(()=>document.querySelector('.review-page--left').getBoundingClientRect().left>=0);
+ assert.ok(await mobile.locator('.review-page--left').evaluate(e=>{const b=e.getBoundingClientRect();return b.x>=0&&b.right<=innerWidth;}),'The left page fits after selecting its mobile tab');
  assert.ok(await mobile.locator('.review-cover-art img').evaluate(e=>e.complete&&e.naturalWidth>0&&e.getBoundingClientRect().width>80),'Cover artwork remains visible in the phone spread');
  await mobile.screenshot({path:'/tmp/floating-review-books-mobile-details.png'});
  await mobile.keyboard.press('Escape');await mobile.locator('#book-reader').waitFor({state:'hidden'});

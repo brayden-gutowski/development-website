@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
  await page.goto('http://127.0.0.1:4173/');await page.locator('#loading-screen').waitFor({state:'hidden'});await page.getByRole('button',{name:/Tokyo, Japan/}).click();await page.getByRole('button',{name:'Explore',exact:true}).click();await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
  const result=await page.evaluate(async()=>{
   const r=room(),vinyl=r.scene.getObjectByName('Vinyl'),labels=[];
-  vinyl.traverse(o=>{if(o.isMesh&&o.material.map?.image?.src?.includes('record-label'))labels.push(o);});
+  vinyl.traverse(o=>{if(o.isMesh&&o.material.map?.image?.src?.includes('kroi-spin-cover'))labels.push(o);});
   const a=document.querySelector('#tokyo-record-track');a.volume=0;
   window.tick=r.update.bind(r);r.update=()=>{};await r.soundtrack.toggle();
   for(let i=0;i<30;i++)tick(.05,false);
@@ -21,9 +21,10 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
   }
   r.soundtrack.stop(false);for(let i=0;i<30;i++)tick(.05,false);const pausedAngle=vinyl.rotation.y;tick(1,false);const paused=vinyl.rotation.y===pausedAngle,parked=arm.phase;
   await r.soundtrack.toggle();for(let i=0;i<30;i++)tick(.05,false);const resumed=arm.yaw;r.soundtrack.stop();
-  return{labels:labels.length,vertexCount:labels.map(o=>o.geometry.attributes.position.count),first,spun,yaws,radii,paused,parked,resumed,progress:r.soundtrack.progress,errors:[]};
+  const sleeve=r.scene.getObjectByName('Record sleeve');
+  return{labels:labels.length,sleeveUsesCover:sleeve.material.some(m=>m.map?.image?.src?.includes('kroi-spin-cover')),vertexCount:labels.map(o=>o.geometry.attributes.position.count),first,spun,yaws,radii,paused,parked,resumed,progress:r.soundtrack.progress,errors:[]};
  });
- console.log(result);assert.equal(result.labels,2,'Map the uploaded image across the existing circular label faces');assert.ok(Math.abs(result.spun-Math.PI*2*33.333333/60*.5)<.01,'Rotate the whole disc at 33⅓ RPM');
+ console.log(result);assert.equal(result.labels,2,'Map the uploaded image across the existing circular label faces');assert.ok(result.sleeveUsesCover,'Use the supplied SPIN cover on the sleeve too');assert.ok(Math.abs(result.spun-Math.PI*2*33.333333/60*.5)<.01,'Rotate the whole disc at 33⅓ RPM');
  assert.ok(result.yaws.every((v,i)=>i===0||v<result.yaws[i-1]),'Track the stylus progressively toward the middle as the song advances');assert.ok(result.first-result.yaws.at(-1)>.4,'Make the full playback arc visible');assert.ok(result.radii.every((v,i)=>i===0||v<result.radii[i-1]),'The actual stylus must approach the record center without lifting off the disc');assert.ok(result.radii.at(-1)<result.radii[0]-.045);assert.ok(result.paused);assert.equal(result.parked,'parked');assert.ok(Math.abs(result.resumed-result.yaws.at(-1))<.002,'Resume at the groove matching the retained song position');assert.deepEqual(errors,[]);
  console.log('PASS: circular uploaded label, visible disc spin, playback-driven inward tracking and parked pause');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,9 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
 import { springStep, resistBoundary, easeTokyoApproach } from "./motion.mjs?v=20261016-flight-8";
-import { createDiaryReader } from './diary-reader.js?v=20261021-client-polish-4';
-import { createBookReader } from './book-reader.js?v=15';
 
-const DEFAULT_DOCUMENT_TITLE = document.title;
+const DEFAULT_DOCUMENT_TITLE = 'Towski.dev';
 const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
 const JAPANESE_WORDMARK = "ブライデン・グトウスキ";
 
@@ -597,7 +595,8 @@ const MUSIC_REVIEW_CATEGORIES = [
 ];
 
 function readBlogRoute() {
-  const match = window.location.hash.match(/^#blog\/([^/]+)\/([^/]+)$/);
+  if (window.location.hash === '#tokyo/diary/table-of-contents') return { contents: true };
+  const match = window.location.hash.match(/^#(?:blog|tokyo\/diary)\/([^/]+)\/([^/]+)$/);
   if (!match) return null;
   try {
     return {
@@ -616,21 +615,22 @@ function findBlogEntry(categoryId, entryId) {
 }
 
 function writeBlogRoute(categoryId, entryId, { replace = false } = {}) {
-  const route = `#blog/${encodeURIComponent(categoryId)}/${encodeURIComponent(entryId)}`;
+  const route = `#tokyo/diary/${encodeURIComponent(categoryId)}/${encodeURIComponent(entryId)}`;
   const match = findBlogEntry(categoryId, entryId);
-  window.history[replace ? "replaceState" : "pushState"](null, "", route);
-  document.title = match ? `${match.entry.title} | ${DEFAULT_DOCUMENT_TITLE}` : DEFAULT_DOCUMENT_TITLE;
+  writePageRoute(route, match ? `${match.entry.title} | Diary | Tokyo, Japan` : 'Diary | Tokyo, Japan', { replace });
+}
+
+function writeDiaryContentsRoute() {
+  writePageRoute('#tokyo/diary/table-of-contents', 'Table of Contents | Diary | Tokyo, Japan', { replace: false });
 }
 
 function clearBlogRoute({ replace = true } = {}) {
   if (!readBlogRoute()) return;
-  const cleanUrl = `${window.location.pathname}${window.location.search}`;
-  window.history[replace ? "replaceState" : "pushState"](null, "", cleanUrl);
-  document.title = DEFAULT_DOCUMENT_TITLE;
+  updateLocationUrl({ force: true, replace });
 }
 
 function readBookReviewRoute() {
-  const match = window.location.hash.match(/^#book-review\/([^/]+)$/);
+  const match = window.location.hash.match(/^#(?:book-review|tokyo\/books)\/([^/]+)$/);
   if (!match) return null;
   try {
     return { entryId: decodeURIComponent(match[1]) };
@@ -644,17 +644,39 @@ function findBookReviewEntry(entryId) {
 }
 
 function writeBookReviewRoute(entryId, { replace = false } = {}) {
-  const route = `#book-review/${encodeURIComponent(entryId)}`;
+  const route = `#tokyo/books/${encodeURIComponent(entryId)}`;
   const entry = findBookReviewEntry(entryId);
-  window.history[replace ? "replaceState" : "pushState"](null, "", route);
-  document.title = entry ? `${entry.title} | ${DEFAULT_DOCUMENT_TITLE}` : DEFAULT_DOCUMENT_TITLE;
+  writePageRoute(route, entry ? `${entry.title} | Books | Tokyo, Japan` : 'Books | Tokyo, Japan', { replace });
 }
 
 function clearBookReviewRoute({ replace = true } = {}) {
   if (!readBookReviewRoute()) return;
-  const cleanUrl = `${window.location.pathname}${window.location.search}`;
-  window.history[replace ? "replaceState" : "pushState"](null, "", cleanUrl);
-  document.title = DEFAULT_DOCUMENT_TITLE;
+  updateLocationUrl({ force: true, replace });
+}
+
+function writePageRoute(hash, title, { replace = true } = {}) {
+  if (window.location.hash !== hash) {
+    window.history[replace ? 'replaceState' : 'pushState'](null, '', `${location.pathname}${location.search}${hash}`);
+  }
+  document.title = title ? `${title} | ${DEFAULT_DOCUMENT_TITLE}` : DEFAULT_DOCUMENT_TITLE;
+}
+
+function readLocationRoute() {
+  return window.location.hash.match(/^#(gainesville|nashville|tokyo)$/)?.[1] || null;
+}
+
+function updateLocationUrl({ force = false, replace = true } = {}) {
+  if (routeLocationAfterTravel !== null || !force && (readBlogRoute() || readBookReviewRoute())) return;
+  const id = roomIsVisible ? 'tokyo' : hoveredLocationId || (state.selectedId !== 'tokyo' ? state.selectedId : null);
+  writePageRoute(id ? `#${id}` : '', id ? LOCATIONS[id].kicker : '', { replace });
+}
+
+function hoverLocation(id) {
+  if (tokyoVisit || state.drawerId || state.dragging || state.pinching) return;
+  const next = id === 'gainesville' || id === 'nashville' ? id : null;
+  if (next === hoveredLocationId) return;
+  hoveredLocationId = next;
+  updateLocationUrl();
 }
 
 const ui = {
@@ -761,6 +783,7 @@ let japanRoomModule;
 let japanRoomAssets;
 let diaryReader;
 let bookReader;
+let readerModules, createDiaryReader, createBookReader;
 const flightDaylight = { value: 0 };
 let cityFlight;
 let cityFlightPromise;
@@ -769,13 +792,30 @@ let roomIsVisible = false;
 let roomIsLoading = false;
 let openContentOnArrival = false;
 let contentRoutingReady = false;
+let hoveredLocationId = null;
+let routeLocationAfterTravel = null;
 let roomPointerDown;
 const roomHud = document.querySelector("#room-hud");
 const roomHint = document.querySelector("#room-hint");
 const roomTransition = document.querySelector("#room-transition");
 
+function loadReaders() {
+  return readerModules ||= Promise.all([
+    import('./diary-reader.js?v=20261023-mobile-1'),
+    import('./book-reader.js?v=20261023-mobile-1'),
+  ]).then(([diary, books]) => {
+    createDiaryReader = diary.createDiaryReader;
+    createBookReader = books.createBookReader;
+  }).catch(error => { readerModules = null; throw error; });
+}
+
+function prepareTokyo() {
+  loadJapanRoom().catch(error => console.warn('Room preparation failed; Explore will retry', error));
+  if (!state.reducedMotion) loadCityFlight();
+}
+
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261022-mobile-room-1")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261023-urls-spin-1")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS}))
     .catch(error=>{japanRoomAssets=null;throw error;});
@@ -792,6 +832,7 @@ function loadJapanRoom() {
         // Disable unsupported targets before even the material warmup can
         // trigger Three.js's automatic environment-map conversion.
         if (!renderer.extensions.has('EXT_color_buffer_float')) await room.prepare(renderer);
+        await loadReaders();
         await Promise.all([ensureDiaryReader().prepare(), ensureBookReader().prepare()]);
         room.resize(innerWidth, innerHeight);
         // Compile before the reflection capture triggers any material draws.
@@ -907,7 +948,11 @@ function showRoomView(visible) {
   japanRoom?.setVisible(visible, state.reducedMotion);
   ui.app.classList.toggle("is-in-room", visible);
   roomHud.hidden = !visible;
-  ui.stage.setAttribute("aria-label", visible ? "Tokyo room. Move the pointer to look around; click objects to explore." : "Interactive 3D globe");
+  const touch = matchMedia('(hover: none), (pointer: coarse)').matches;
+  roomHint.textContent = touch ? 'Tap an outlined object to explore' : 'Hover over objects to explore';
+  ui.stage.setAttribute("aria-label", visible ? (touch ? 'Tokyo room. Tap an outlined object to explore.' : "Tokyo room. Move the pointer to look around; click objects to explore.") : "Interactive 3D globe");
+  hoveredLocationId = null;
+  updateLocationUrl();
 }
 
 function setGlobeInterfaceInert(inert) {
@@ -1055,6 +1100,12 @@ function updateTokyoTravel(now) {
       document.querySelector('[data-location="tokyo"]').focus({ preventScroll: true });
       if (openContentOnArrival) handleContentRouteChange();
     }
+    if (routeLocationAfterTravel !== null) {
+      const id = routeLocationAfterTravel;
+      routeLocationAfterTravel = null;
+      writePageRoute(id ? `#${id}` : '', id ? LOCATIONS[id].kicker : '');
+      handleContentRouteChange();
+    }
   }
 }
 
@@ -1091,7 +1142,7 @@ function pointInRoom(event) {
 function hoverRoomObject(action) {
   japanRoom.highlight(action);
   const labels = { diary: "Diary · Japanese Blog", books: "Books · Japanese Books", door: "Door · Return to the world", music: "Record player · Play / pause", curtains: "Curtains · Open / close" };
-  roomHint.setAttribute("aria-label", labels[action] || "Hover over objects to explore");
+  roomHint.setAttribute("aria-label", labels[action] || roomHint.textContent);
   ui.stage.style.cursor = action ? "pointer" : "default";
 }
 
@@ -1282,28 +1333,17 @@ async function transitionWordmarkTo(targetName) {
   ui.wordmark.classList.remove("is-switching");
 }
 
-function chooseEarthTexture() {
-  const isCompact = window.innerWidth <= 800 || (navigator.deviceMemory && navigator.deviceMemory <= 4);
-  return isCompact ? "assets/earth-2048.webp" : "assets/earth-4096.webp";
-}
-
-function chooseStarTexture() {
-  const isCompact = window.innerWidth <= 800 || (navigator.deviceMemory && navigator.deviceMemory <= 4);
-  if (isCompact) return "assets/stars-2560.webp";
-  if (navigator.deviceMemory && navigator.deviceMemory <= 6) return "assets/stars-4096.webp";
-  return "assets/stars-8192.webp";
-}
-
-function chooseNightTexture() {
-  return window.innerWidth <= 800
-    ? "assets/earth-night-2048.webp"
-    : "assets/earth-night-3600.jpg";
-}
-
-function chooseCloudTexture() {
-  return window.innerWidth <= 800
-    ? "assets/earth-clouds-2048.webp"
-    : "assets/earth-clouds-4096.webp";
+function globeTextureSources() {
+  const compact = innerWidth <= 800 || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  return [
+    compact ? 'assets/earth-2048.webp' : 'assets/earth-4096.webp',
+    'assets/earth-normal-2048.png',
+    'assets/earth-roughness-2048.webp',
+    'assets/earth-height-2048.webp',
+    compact ? 'assets/stars-2560.webp' : navigator.deviceMemory <= 6 ? 'assets/stars-4096.webp' : 'assets/stars-8192.webp',
+    compact ? 'assets/earth-night-2048.webp' : 'assets/earth-night-3600.jpg',
+    compact ? 'assets/earth-clouds-2048.webp' : 'assets/earth-clouds-4096.webp',
+  ];
 }
 
 function getRestCameraZ() {
@@ -2046,6 +2086,7 @@ function onPointerDown(event) {
   }
   if (tokyoVisit) return;
   if (event.button !== 0) return;
+  hoverLocation(null);
   state.activePointers.set(event.pointerId, new THREE.Vector2(event.clientX, event.clientY));
   ui.stage.setPointerCapture(event.pointerId);
 
@@ -2096,7 +2137,8 @@ function onPointerMove(event) {
     return;
   }
 
-  if (!state.dragging || event.pointerId !== state.pointerId) return;
+  if (!state.dragging) { if (state.globeAvailable) hoverLocation(markerAtPointer(event)); return; }
+  if (event.pointerId !== state.pointerId) return;
   const deltaX = event.clientX - state.previousPointer.x;
   const deltaY = event.clientY - state.previousPointer.y;
   if (Math.abs(deltaX) + Math.abs(deltaY) > 2) {
@@ -2140,6 +2182,7 @@ function onPointerUp(event) {
 function onWheel(event) {
   event.preventDefault();
   if (tokyoVisit) return;
+  hoverLocation(null);
   state.focusActive = false;
   if (event.deltaY < 0) alignFirstZoomToFlorida();
   if (state.selectedId) {
@@ -2156,7 +2199,7 @@ function onWheel(event) {
   state.globeTargetScale = globeScaleFromProgress(state.zoomProgress);
 }
 
-function selectMarkerAtPointer(event) {
+function markerAtPointer(event) {
   const bounds = ui.canvas.getBoundingClientRect();
   state.pointerNdc.set(
     ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
@@ -2165,7 +2208,12 @@ function selectMarkerAtPointer(event) {
   raycaster.setFromCamera(state.pointerNdc, camera);
   const visibleTargets = markerHitTargets.filter((target) => target.parent.visible);
   const intersection = raycaster.intersectObjects(visibleTargets, false)[0];
-  if (intersection) focusLocation(intersection.object.userData.locationId);
+  return intersection?.object.userData.locationId || null;
+}
+
+function selectMarkerAtPointer(event) {
+  const id = markerAtPointer(event);
+  if (id) focusLocation(id);
 }
 
 function setProjectMenuExpanded(menu, expanded) {
@@ -2231,6 +2279,7 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   if (!preserveContentUrl && openContentOnArrival) { openContentOnArrival = false; clearBlogRoute(); clearBookReviewRoute(); }
   const location = LOCATIONS[locationId];
   if (!location) return;
+  if (locationId === 'tokyo' && state.globeAvailable) prepareTokyo();
   closeDrawer({ preserveContentUrl });
 
   if (state.globeAvailable) {
@@ -2247,6 +2296,8 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
     state.cameraTargetZ = getFocusCameraZ();
   }
   state.selectedId = locationId;
+  hoveredLocationId = null;
+  if (!preserveContentUrl) updateLocationUrl();
   transitionWordmarkTo(locationId === "tokyo" ? JAPANESE_WORDMARK : ENGLISH_WORDMARK);
 
   ui.kicker.textContent = location.kicker;
@@ -2722,7 +2773,7 @@ function ensureDiaryReader() {
       categories: JAPANESE_BLOG_CATEGORIES, getRoom: () => roomIsVisible ? japanRoom : null,
       onPage: match => {
         if (match) { const route = readBlogRoute(); writeBlogRoute(match.category.id, match.entry.id, { replace: route?.entryId === match.entry.id && route?.categoryId === match.category.id }); }
-        else clearBlogRoute();
+        else writeDiaryContentsRoute();
       },
       onClose: () => {
         if (state.drawerId === 'japanese-blog') { state.drawerId = null; clearBlogRoute(); roomHud.inert = false; }
@@ -2752,18 +2803,19 @@ function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
     if(!preserveContentUrl)clearBlogRoute();
     state.drawerId=drawerId;roomHud.inert=true;japanRoom?.highlight(null);
     ui.drawer.classList.remove('is-open');ui.drawer.setAttribute('aria-hidden','true');
-    ensureBookReader().open(preserveContentUrl?readBookReviewRoute():null,state.reducedMotion).catch(error=>{
-      console.error('Review books could not open',error);bookReader.close(true);
+    const openBook=()=>state.drawerId===drawerId?ensureBookReader().open(preserveContentUrl?readBookReviewRoute():null,state.reducedMotion):Promise.resolve();
+    (createBookReader?openBook():loadReaders().then(openBook)).catch(error=>{
+      console.error('Review books could not open',error);if(bookReader)bookReader.close(true);else{state.drawerId=null;roomHud.inert=false;}
     });return;
   }
   if(bookReader?.isOpen)bookReader.close(true);
   if (drawerId === 'japanese-blog') {
     if (!preserveContentUrl) clearBookReviewRoute();
-    ensureDiaryReader();
     state.drawerId = drawerId; roomHud.inert = true;
     japanRoom?.highlight(null); ui.drawer.classList.remove('is-open'); ui.drawer.setAttribute('aria-hidden', 'true');
-    diaryReader.open(preserveContentUrl ? readBlogRoute() : null, state.reducedMotion).catch(error => {
-      console.error('Diary could not open', error); diaryReader.close(true);
+    const openDiary=()=>state.drawerId===drawerId?ensureDiaryReader().open(preserveContentUrl ? readBlogRoute() : null, state.reducedMotion):Promise.resolve();
+    (createDiaryReader?openDiary():loadReaders().then(openDiary)).catch(error => {
+      console.error('Diary could not open', error);if(diaryReader)diaryReader.close(true);else{state.drawerId=null;roomHud.inert=false;}
     });
     return;
   }
@@ -2819,6 +2871,8 @@ function closePanel({ restoreFocus = false } = {}) {
   ui.panel.setAttribute("aria-hidden", "true");
   ui.locationLinks.forEach((link) => link.classList.remove("is-active"));
   state.selectedId = null;
+  hoveredLocationId = null;
+  updateLocationUrl();
   state.cameraTargetZ = getRestCameraZ();
   if (restoreFocus && priorId) {
     document.querySelector(`[data-location="${priorId}"]`)?.focus();
@@ -2827,10 +2881,12 @@ function closePanel({ restoreFocus = false } = {}) {
 
 function handleContentRouteChange() {
   if (!contentRoutingReady) return;
+  // Every new route replaces any destination queued during the current flight.
+  routeLocationAfterTravel = null;
   const blogRoute = readBlogRoute();
   const blogMatch = blogRoute ? findBlogEntry(blogRoute.categoryId, blogRoute.entryId) : null;
-  if (blogMatch) {
-    document.title = `${blogMatch.entry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
+  if (blogMatch || blogRoute?.contents) {
+    document.title = `${blogMatch ? blogMatch.entry.title : 'Table of Contents'} | Diary | Tokyo, Japan | ${DEFAULT_DOCUMENT_TITLE}`;
     if (roomIsVisible && tokyoVisit?.direction === "room") {
       openContentOnArrival = false;
       openDrawer("japanese-blog", { preserveContentUrl: true });
@@ -2847,7 +2903,7 @@ function handleContentRouteChange() {
   const bookRoute = readBookReviewRoute();
   const bookEntry = bookRoute ? findBookReviewEntry(bookRoute.entryId) : null;
   if (bookEntry) {
-    document.title = `${bookEntry.title} | ${DEFAULT_DOCUMENT_TITLE}`;
+    document.title = `${bookEntry.title} | Books | Tokyo, Japan | ${DEFAULT_DOCUMENT_TITLE}`;
     if(roomIsVisible&&tokyoVisit?.direction==='room')openDrawer("japanese-book-reviews", { preserveContentUrl: true });
     else{
       openContentOnArrival=state.globeAvailable;
@@ -2858,10 +2914,22 @@ function handleContentRouteChange() {
     return;
   }
 
-  document.title = DEFAULT_DOCUMENT_TITLE;
+  const locationId = readLocationRoute();
+  document.title = locationId ? `${LOCATIONS[locationId].kicker} | ${DEFAULT_DOCUMENT_TITLE}` : DEFAULT_DOCUMENT_TITLE;
   if (state.drawerId === "japanese-blog" || state.drawerId === "japanese-book-reviews") {
     closeDrawer({ preserveContentUrl: true });
   }
+  if (locationId === 'tokyo') {
+    if (tokyoVisit?.direction === 'out') routeLocationAfterTravel = 'tokyo';
+    else if (!roomIsVisible && !tokyoVisit) {
+      focusLocation('tokyo', { preserveContentUrl: true });
+      if (state.globeAvailable) exploreTokyo();
+    }
+  } else if (tokyoVisit) {
+    routeLocationAfterTravel = locationId || '';
+    if (tokyoVisit.direction === 'room') leaveTokyo();
+  } else if (locationId) focusLocation(locationId, { preserveContentUrl: true });
+  else if (state.selectedId) closePanel();
 }
 
 function bindElasticScroll(container, surface) {
@@ -2962,6 +3030,7 @@ function bindEvents() {
   });
   ui.stage.addEventListener("pointerleave", () => {
     if (roomIsVisible) { japanRoom.point(0, 0); hoverRoomObject(null); }
+    else hoverLocation(null);
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && japanRoom) { japanRoom.soundtrack.stop(); updateMusicControl(false); }
@@ -2970,7 +3039,13 @@ function bindEvents() {
     const menu = ui.actions.querySelector(".project-menu.is-expanded");
     if (menu && !menu.contains(event.target)) setProjectMenuExpanded(menu, false);
   });
-  ui.locationLinks.forEach((link) => link.addEventListener("click", () => focusLocation(link.dataset.location)));
+  ui.locationLinks.forEach((link) => {
+    link.addEventListener('click', () => focusLocation(link.dataset.location));
+    link.addEventListener('pointerenter', event => { if(event.pointerType === 'mouse') hoverLocation(link.dataset.location); });
+    link.addEventListener('pointerleave', () => hoverLocation(null));
+    link.addEventListener('focus', () => hoverLocation(link.dataset.location));
+    link.addEventListener('blur', () => hoverLocation(null));
+  });
   window.addEventListener("resize", resize, { passive: true });
   window.addEventListener("hashchange", handleContentRouteChange);
   window.addEventListener("keydown", (event) => {
@@ -3010,15 +3085,7 @@ async function init() {
       starsTexture,
       nightTexture,
       cloudTexture,
-    ] = await Promise.all([
-      textureLoader.loadAsync(chooseEarthTexture()),
-      textureLoader.loadAsync("assets/earth-normal-2048.png"),
-      textureLoader.loadAsync("assets/earth-roughness-2048.webp"),
-      textureLoader.loadAsync("assets/earth-height-2048.webp"),
-      textureLoader.loadAsync(chooseStarTexture()),
-      textureLoader.loadAsync(chooseNightTexture()),
-      textureLoader.loadAsync(chooseCloudTexture()),
-    ]);
+    ] = await Promise.all(globeTextureSources().map(source => textureLoader.loadAsync(source)));
     setLoadProgress(92, "Positioning signals");
     setupScene(
       earthTexture,
@@ -3037,14 +3104,8 @@ async function init() {
     closeLoadingScreen();
     contentRoutingReady = true;
     handleContentRouteChange();
-    // Show the usable globe first. Tokyo's larger downloads and GPU warmup
-    // run in the background; Explore shares and awaits the same preparation.
-    window.setTimeout(() => {
-      ensureDiaryReader().prepare().catch(error=>console.warn('Diary preparation deferred',error));
-      ensureBookReader().prepare().catch(error=>console.warn('Review preparation deferred',error));
-      loadJapanRoom().catch(error => console.warn("Room preparation failed; Explore will retry", error));
-      if (!state.reducedMotion) loadCityFlight();
-    }, 350);
+    // Tokyo selection starts its shared preparation; unrelated visits download
+    // only the globe. Direct reader links take the same selection/Explore path.
   } catch (error) {
     console.error(error);
     showFallback("The globe could not be loaded.");
