@@ -3,7 +3,7 @@ import { applyRoomFinish } from './room-finish.js?v=20261020-memory-1';
 import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=13';
 import { createReviewBindings } from './review-bindings.js?v=20261023-mobile-1';
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js";
-import { OutlinePass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutlinePass.js";
+import { createRoomOutline } from './room-outline.js?v=20261024-native-1';
 import { SSAOPass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/SSAOPass.js";
 import { FullScreenQuad } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/Pass.js";
 import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/OBJLoader.js";
@@ -947,47 +947,9 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       }`,
   });
   const diffusionQuad=new FullScreenQuad(diffusion);
-  const outline = new OutlinePass(new THREE.Vector2(innerWidth, innerHeight), scene, camera);
-  outline.renderTargetDepthBuffer.texture.type = THREE.UnsignedByteType;
-  // Read hardware depth directly: packed RGBA and view-Z reconstruction can
-  // lose precision on mobile GPUs, cutting moving objects' contours apart.
-  const outlineDepth=outline.renderTargetDepthBuffer;
-  outlineDepth.depthTexture=new THREE.DepthTexture(outlineDepth.width,outlineDepth.height,THREE.UnsignedIntType);
-  outline.prepareMaskMaterial.uniforms.occlusionDepth={value:outlineDepth.depthTexture};
-  outline.prepareMaskMaterial.fragmentShader=outline.prepareMaskMaterial.fragmentShader
-    .replace('uniform sampler2D depthTexture;','uniform sampler2D depthTexture, occlusionDepth;')
-    .replace('unpackRGBAToDepth(texture2DProj( depthTexture, projTexCoord ))','texture2DProj(occlusionDepth,projTexCoord).r')
-    .replace('(-vPosition.z > viewZ)','(gl_FragCoord.z > depth + 0.000001)');
-  outline.visibleEdgeColor.set(0xffffff);
-  outline.hiddenEdgeColor.set(0x000000);
-  outline.edgeStrength = 8;
-  outline.edgeGlow = 0;
-  outline.edgeThickness = 4;
-  outline.downSampleRatio = 3;
-  // Use OutlinePass's occlusion-aware selection mask, then draw an opaque
-  // contour around the union of selected meshes. No additive blur or bloom.
-  outline.overlayMaterial.blending = THREE.NormalBlending;
-  outline.overlayMaterial.uniforms.strokeTexel = { value: new THREE.Vector2() };
-  outline.overlayMaterial.fragmentShader = `
-    varying vec2 vUv;
-    uniform sampler2D maskTexture, edgeTexture1;
-    uniform vec2 strokeTexel;
-    void main() {
-      vec4 mask = texture2D(maskTexture, vUv);
-      if ((1.0 - mask.r) * (1.0 - mask.g) > .5) discard;
-      if (mask.r > .5 && texture2D(edgeTexture1, vUv).r < .0001) discard;
-      float contour = 0.0;
-      for (int i = 0; i < 16; i++) {
-        float angle = float(i) * 6.28318530718 / 16.0;
-        vec4 neighbor = texture2D(maskTexture, vUv + vec2(cos(angle), sin(angle)) * strokeTexel * 4.0);
-        contour = max(contour, (1.0 - neighbor.r) * (1.0 - neighbor.g));
-      }
-      float coverage = smoothstep(.2, .8, contour);
-      if (coverage <= 0.0) discard;
-      gl_FragColor = vec4(vec3(8.0), coverage);
-    }`;
+  const outline = createRoomOutline(scene, camera);
   // A filled mask keeps recessed door panels out of the hover contour. It is
-  // present only during OutlinePass, never in the room, its shadows or its AO.
+  // present only during the interaction mask, never in the room, its shadows or its AO.
   const doorBounds=new THREE.Box3();
   for(const mesh of actionMeshes.door||[])doorBounds.expandByObject(mesh);
   const doorSize=doorBounds.getSize(new THREE.Vector3());

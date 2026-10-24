@@ -10,7 +10,7 @@ const {chromium,webkit}=require('playwright');
     const results=await page.evaluate(async()=>{
       const T=await import('three'),{createJapanRoom}=await import('/japan-room.js');
       const room=await createJapanRoom();room.resize(393,780);room.setVisible(true,false);
-      if(!room.outline.renderTargetDepthBuffer.depthTexture)throw new Error('Use native depth for mobile contour visibility');
+      if(!room.outline.renderTargetMaskBuffer.depthBuffer)throw new Error('Use hardware depth testing for the interaction mask');
       const renderer=new T.WebGLRenderer();renderer.setSize(393,780);renderer.setPixelRatio(1.75);
       const w=room.outline.renderTargetMaskBuffer.width,h=room.outline.renderTargetMaskBuffer.height;
       const target=new T.WebGLRenderTarget(w,h),mask=new Uint8Array(w*h*4),reference=new Uint8Array(mask.length);
@@ -50,6 +50,6 @@ const {chromium,webkit}=require('playwright');
       target.dispose();room.dispose();renderer.dispose();return results;
     });
     for(const result of results)assert.ok(result.mismatch<25,`Contour must follow visible animated geometry: ${JSON.stringify(result)}`);
-    console.log('PASS: native mobile depth masks match the curtain and record geometry',results);
+    console.log('PASS: hardware depth masks match the curtain and record geometry',results);
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

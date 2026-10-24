@@ -830,6 +830,7 @@ let openContentOnArrival = false;
 let contentRoutingReady = false;
 let globePromise;
 let loadingProgress = 0;
+let resetPanelScroll, resetDrawerScroll;
 let renderScale = 1;
 let slowFrameTime = 0;
 let qualityCheckAfter = 0;
@@ -856,7 +857,7 @@ function prepareTokyo() {
 }
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261023-loading-1")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261024-outline-1")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS,
       onProgress: (ready, total) => setLoadProgress(8 + ready / total * 57,
@@ -2380,6 +2381,17 @@ function createProjectMenu(action) {
   return menu;
 }
 
+function focusAfterReveal(element, surface, isCurrent) {
+  const focus = () => {
+    if (!element?.isConnected || !isCurrent()) return;
+    const style = getComputedStyle(surface);
+    if (style.visibility === 'visible' && Number(style.opacity) >= .99) {
+      element.focus({ preventScroll: true });
+    } else requestAnimationFrame(focus);
+  };
+  requestAnimationFrame(focus);
+}
+
 function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   if (tokyoVisit) return;
   if (!preserveContentUrl && openContentOnArrival) { openContentOnArrival = false; clearBlogRoute(); clearBookReviewRoute(); }
@@ -2428,9 +2440,11 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   }));
   ui.panel.classList.add("is-open");
   ui.panel.setAttribute("aria-hidden", "false");
+  resetPanelScroll?.();
   ui.locationLinks.forEach((link) => link.classList.toggle("is-active", link.dataset.location === locationId));
 
-  window.setTimeout(() => ui.panelClose.focus({ preventScroll: true }), state.reducedMotion ? 0 : 430);
+  focusAfterReveal(ui.panelClose, ui.panel,
+    () => state.selectedId === locationId && !state.drawerId && ui.panel.classList.contains('is-open'));
   if (locationId === "tokyo" && state.globeAvailable) {
     loadJapanRoom().catch(() => {});
     if (!state.reducedMotion) loadCityFlight();
@@ -2945,9 +2959,11 @@ function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
   ui.drawer.classList.toggle("is-book-reviews", Boolean(drawer.supportsBookReviews));
   ui.drawer.classList.remove("has-expanded-entry");
   renderDrawerContent(drawerId);
+  resetDrawerScroll?.();
   ui.drawer.classList.add("is-open");
   ui.drawer.setAttribute("aria-hidden", "false");
-  window.setTimeout(() => ui.drawerClose.focus({ preventScroll: true }), state.reducedMotion ? 0 : 430);
+  focusAfterReveal(ui.drawerClose, ui.drawer,
+    () => state.drawerId === drawerId && ui.drawer.classList.contains('is-open'));
 }
 
 function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) {
@@ -2956,6 +2972,7 @@ function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) 
   if (priorDrawerId === 'japanese-book-reviews' && bookReader?.isOpen) { bookReader.close(); return; }
   ui.drawer.classList.remove("is-open");
   ui.drawer.setAttribute("aria-hidden", "true");
+  resetDrawerScroll?.();
   state.drawerId = null;
   if (!preserveContentUrl) {
     if (priorDrawerId === "japanese-blog") clearBlogRoute();
@@ -2965,7 +2982,14 @@ function closeDrawer({ restoreFocus = false, preserveContentUrl = false } = {}) 
   if (restoreFocus && priorDrawerId) {
     const action = priorDrawerId === "japanese-blog" ? "diary" : "books";
     if (roomIsVisible) roomHud.querySelector(`[data-room-action="${action}"]`)?.focus();
-    else ui.actions.querySelector(`[data-drawer="${priorDrawerId}"]`)?.focus();
+    else {
+      const actionButton = ui.actions.querySelector(`[data-drawer="${priorDrawerId}"]`);
+      const menu = actionButton?.closest('.project-menu');
+      const focusTarget = menu && !menu.classList.contains('is-expanded') ? menu.querySelector('.project-menu__toggle') : actionButton;
+      const locationId = state.selectedId;
+      focusAfterReveal(focusTarget, ui.panel,
+        () => !state.drawerId && state.selectedId === locationId && ui.panel.classList.contains('is-open'));
+    }
   }
 }
 
@@ -2975,6 +2999,7 @@ function closePanel({ restoreFocus = false } = {}) {
   closeDrawer();
   ui.panel.classList.remove("is-open");
   ui.panel.setAttribute("aria-hidden", "true");
+  resetPanelScroll?.();
   ui.locationLinks.forEach((link) => link.classList.remove("is-active"));
   state.selectedId = null;
   hoveredLocationId = null;
@@ -3044,13 +3069,11 @@ function bindElasticScroll(container, surface) {
   let frame = 0;
   let previousAt = 0;
   let inputAt = 0;
-  let touchY = null;
-  let touching = false;
 
   function settle(now) {
     const dt = (now - (previousAt || now)) / 1000;
     previousAt = now;
-    if (!touching && now - inputAt > 100) {
+    if (now - inputAt > 100) {
       ({ position, velocity } = springStep(position, velocity, 0, dt));
     }
     surface.style.translate = `0 ${position}px`;
@@ -3079,19 +3102,14 @@ function bindElasticScroll(container, surface) {
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? container.clientHeight : 1;
     pull(event.deltaY * unit, event);
   }, { passive: false });
-  container.addEventListener("touchstart", (event) => {
-    touching = event.touches.length === 1;
-    touchY = touching ? event.touches[0].clientY : null;
-  }, { passive: true });
-  container.addEventListener("touchmove", (event) => {
-    if (event.touches.length !== 1 || touchY === null) return;
-    const nextY = event.touches[0].clientY;
-    pull(touchY - nextY, event);
-    touchY = nextY;
-  }, { passive: false });
-  const release = () => { touching = false; touchY = null; };
-  container.addEventListener("touchend", release, { passive: true });
-  container.addEventListener("touchcancel", release, { passive: true });
+  // Touch scrolling and overscroll stay native. Translating a whole scroller
+  // during a touch gesture can strand its content when that content changes.
+  return () => {
+    cancelAnimationFrame(frame);
+    position = velocity = frame = previousAt = inputAt = 0;
+    surface.style.translate = '';
+    container.scrollTop = 0;
+  };
 }
 
 function bindEvents() {
@@ -3108,8 +3126,8 @@ function bindEvents() {
     japanRoom?.setVisible(roomIsVisible, matches);
   });
   transparencyPreference.addEventListener('change', ({ matches }) => { state.reducedTransparency = matches; });
-  bindElasticScroll(ui.drawer, ui.drawerContent);
-  bindElasticScroll(ui.panel, ui.panel);
+  resetDrawerScroll = bindElasticScroll(ui.drawer, ui.drawerContent);
+  resetPanelScroll = bindElasticScroll(ui.panel, ui.panel);
   ui.stage.addEventListener("pointerdown", onPointerDown);
   ui.stage.addEventListener("pointermove", onPointerMove);
   ui.stage.addEventListener("pointerup", onPointerUp);

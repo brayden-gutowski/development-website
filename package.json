@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tools/test-browser.cjs"
+    "test:browser": "node tools/test-browser.cjs",
+    "test:mobile": "node tools/test-browser.cjs mobile-navigation mobile-reader mobile-room-layout book-reader-landscape japan-room-diary-mobile-close mobile-discovery mobile-outline-depth mobile-outline-motion"
   },
   "devDependencies": {
     "playwright": "1.62.1",

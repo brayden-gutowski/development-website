@@ -6,7 +6,7 @@ const root = resolve(__dirname, '..');
 const focused = [
   'tokyo-direct-entry', 'render-budget', 'loading-progress',
   'location-urls', 'route-retarget', 'japan-room-vinyl-playback', 'japan-room-record',
-  'mobile-reader', 'mobile-discovery', 'mobile-outline-depth', 'spin-window', 'spin-sandstorm', 'startup-room-preload',
+  'mobile-navigation', 'mobile-reader', 'mobile-discovery', 'mobile-outline-depth', 'mobile-outline-motion', 'spin-window', 'spin-sandstorm', 'startup-room-preload',
   'japan-room-review-books', 'book-reader-landscape',
   'japan-room-diary-mobile-close', 'japan-room-diary-ready',
   'japan-room-blog-link', 'japan-room-outlines', 'japan-room-retry',
