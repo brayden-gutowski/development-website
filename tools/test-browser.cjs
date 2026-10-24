@@ -5,7 +5,7 @@ const { resolve } = require('node:path');
 const root = resolve(__dirname, '..');
 const focused = [
   'location-urls', 'route-retarget', 'japan-room-vinyl-playback', 'japan-room-record',
-  'mobile-reader', 'mobile-discovery', 'startup-room-preload',
+  'mobile-reader', 'mobile-discovery', 'mobile-outline-depth', 'spin-window', 'spin-sandstorm', 'startup-room-preload',
   'japan-room-review-books', 'book-reader-landscape',
   'japan-room-diary-mobile-close', 'japan-room-diary-ready',
   'japan-room-blog-link', 'japan-room-outlines', 'japan-room-retry',

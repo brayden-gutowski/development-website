@@ -2380,9 +2380,6 @@ noscript {
 .review-reader:not([data-phase='reading']) .reader-page-sides { visibility:hidden; }
 @media (hover:none), (pointer:coarse) {
   .app { min-height:0; }
-  #app :is(button,a[href],[role='button']):not(:disabled) { outline:1.5px solid #fff; outline-offset:3px; }
-  #app :is(button,a[href],[role='button']):focus-visible { outline:2px solid #fff; outline-offset:4px; }
-  .review-floating-cover:not(:disabled) { outline:1.5px solid #fff; outline-offset:3px; }
   .diary-page-controls button,.review-navigation button { min-width:44px; min-height:44px; }
 }
 .review-reader.is-short .review-page { padding:12px 16px 18px; }

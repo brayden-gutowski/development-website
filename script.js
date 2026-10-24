@@ -206,6 +206,36 @@ const JAPANESE_BLOG_CATEGORIES = [
     name: "中級日本語",
     entries: [
       {
+        id: "blog-entry-10-23-2026",
+        title: "ゲームを作るのが好きです",
+        date: "2026年10月23日",
+        dateTime: "2026-10-23",
+        body: [
+          "今、ゲームを二つも作っています。一つ目のゲームの名前は「REWRITE WHAT WAS」です。このゲームでは、時を戻せます。主人公は一分間のタイムループの中にいます。ゲームエンジンは「UNREAL ENGINE 5」です。とてもむずかしいですが、楽しいです。このゲームをする時、一分しかないので、スピードランをしなきゃいけません。このゲームでは、スライディングしたり、壁ジャンプしたり、走ったりできます。二つ目のゲームの名前は「ARCADE ADVENTURES」です。このゲームのエンジンは「ROBLOX STUDIOS」です。とてもかんたんですが、制限がたくさんあります。このゲームはタイクーンです。でも、お客さんのAIはちょっと高度ですよ。「ARCADE ADVENTURES」をしてみてください。でも、バグがたくさんあります。「ARCADE ADVENTURES」より「REWRITE WHAT WAS」のほうがすきですよ。",
+        ],
+        glossary: [
+          ["時を戻す（ときをもどす）", "Rewind time"],
+          ["主人公（しゅじんこう）", "Main character"],
+          ["カベジャンプ", "Wall jump"],
+          ["制限（せいげん）", "restriction; limitation"],
+          ["高度な（こうどな）", "Advanced"],
+        ],
+        media: [
+          {
+            src: "assets/blog-2026-10-23-arcade-adventures-icon.png",
+            label: "ARCADE ADVENTURES icon with a Roblox character and arcade cabinet",
+            side: "left",
+            aspectRatio: "1280 / 1280",
+          },
+          {
+            src: "assets/blog-2026-10-23-arcade-adventures-gameplay.png",
+            label: "ARCADE ADVENTURES gameplay showing arcade machines and +700 Tickets",
+            side: "right",
+            aspectRatio: "980 / 518",
+          },
+        ],
+      },
+      {
         id: "blog-entry-10-2-2026",
         title: "にゃんこ大戦争",
         date: "2026年10月2日",
@@ -815,7 +845,7 @@ function prepareTokyo() {
 }
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261023-urls-spin-1")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261023-spin-sandstorm-1")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS}))
     .catch(error=>{japanRoomAssets=null;throw error;});

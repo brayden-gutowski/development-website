@@ -30,7 +30,7 @@ Gainesville/Nashville previews update on map or navigation hover/focus and resto
 
 ## Mobile interactions
 
-Touch devices show white outlines on buttons, links, and all five interactive room objects: diary, books, record player, curtains, and door. Desktop retains hover/focus contours. Opening a reader clears the room contours until it closes.
+Touch devices show persistent white outlines only on the five interactive room objects: diary, books, record player, curtains, and door. Desktop retains hover/focus contours. Opening a reader clears the room contours until it closes. Contour visibility uses native GPU depth, avoiding packed-depth reconstruction on mobile.
 
 Books and diary show one fitted page on a phone, including landscape. Use **Left page / Right page** or swipe horizontally to inspect both sides. Continue swiping to move between entries/books. Existing page/book navigation and keyboard shortcuts remain available. Text that exceeds a small screen scrolls inside its page. The × control or Escape returns the book to the room.
 
@@ -66,3 +66,7 @@ Do not add props in code: room contents come from the authored Blender scene. Pr
 The active RGBM source PNGs live in `art/lightmaps/`. After rebaking, run `python3 tools/pack-lightmaps.py` with Pillow available. It checks every RGBA byte before replacing runtime WebP files, including the alpha channel that stores light intensity.
 
 The room plays the supplied **Kroi — SPIN** recording from `assets/kroi-spin.m4a`, copied without transcoding. `assets/kroi-spin-cover.png` is the supplied artwork on both the circular vinyl label and the record sleeve. Playback retains the existing needle lead-in, pause/resume, surface noise and ending runout.
+
+While SPIN itself plays, the original city/apartment view takes on warm Western sunlight and a sandstorm: fast sideways grains at two depths, swirling gusts, and a rolling dust veil. The city remains visible behind it. All storm layers render on the outdoor plane, so walls, glass framing, and curtains naturally hide the flying sand. The fully buffered 27-second city video loops continuously throughout the full 305-second song; there is no separate short replacement clip or extra media download. Pausing, ending, hiding the tab, or leaving restores the ordinary lighting. Reduced motion freezes the footage and storm. The genuine city still remains the video fallback. See [footage source and license](assets/tokyo-window.credit.md).
+
+Never add AI-generated artwork, photos, or video. Use owner-supplied media or genuine openly licensed/public-domain media and retain credits; see [the repository media policy](AGENTS.md).

@@ -8,7 +8,7 @@ import { SSAOPass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/js
 import { FullScreenQuad } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/Pass.js";
 import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/OBJLoader.js";
 import { createRecordPlayer } from './record-player.js?v=2';
-import { createTokyoExterior } from './tokyo-exterior.js?v=20261020-memory-1';
+import { createTokyoExterior } from './tokyo-exterior.js?v=20261023-spin-sandstorm-1';
 
 // Interaction metadata is exported from the separate Blender copy; materials
 // and the default camera belong to the authored scene.
@@ -219,6 +219,7 @@ function createSoundtrack() {
 
   const playback = {
     get playing() { return playing; },
+    get songPlaying() { return playing && audio.dataset.phase==='song' && !audio.paused && !audio.ended; },
     get progress() { return Number.isFinite(audio.duration)&&audio.duration>0?THREE.MathUtils.clamp(audio.currentTime/audio.duration,0,1):0; },
     onended: null,
     async toggle() {
@@ -942,6 +943,15 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   const diffusionQuad=new FullScreenQuad(diffusion);
   const outline = new OutlinePass(new THREE.Vector2(innerWidth, innerHeight), scene, camera);
   outline.renderTargetDepthBuffer.texture.type = THREE.UnsignedByteType;
+  // Read hardware depth directly: packed RGBA and view-Z reconstruction can
+  // lose precision on mobile GPUs, cutting moving objects' contours apart.
+  const outlineDepth=outline.renderTargetDepthBuffer;
+  outlineDepth.depthTexture=new THREE.DepthTexture(outlineDepth.width,outlineDepth.height,THREE.UnsignedIntType);
+  outline.prepareMaskMaterial.uniforms.occlusionDepth={value:outlineDepth.depthTexture};
+  outline.prepareMaskMaterial.fragmentShader=outline.prepareMaskMaterial.fragmentShader
+    .replace('uniform sampler2D depthTexture;','uniform sampler2D depthTexture, occlusionDepth;')
+    .replace('unpackRGBAToDepth(texture2DProj( depthTexture, projTexCoord ))','texture2DProj(occlusionDepth,projTexCoord).r')
+    .replace('(-vPosition.z > viewZ)','(gl_FragCoord.z > depth + 0.000001)');
   outline.visibleEdgeColor.set(0xffffff);
   outline.hiddenEdgeColor.set(0x000000);
   outline.edgeStrength = 8;
@@ -1001,7 +1011,15 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   let environmentTarget;
   let environmentDirty = true;
   let preparationPromise;
+  const ordinarySun=sunlight.color.clone(),westernSun=new THREE.Color(0xffad62);
+  const ordinarySky=skyFill.color.clone(),westernSky=new THREE.Color(0xffdab1);
+  function applySongLight(){
+    sunlight.color.lerpColors(ordinarySun,westernSun,exterior.blend);
+    skyFill.color.lerpColors(ordinarySky,westernSky,exterior.blend*.45);
+  }
   function syncVideoPlayback() {
+    if(document.hidden)exterior.reset();
+    applySongLight();
     if (backdrop.ready && roomVisible && !stillView && !document.hidden) {
       backdrop.video.play().catch(() => {});
     } else backdrop.video.pause();
@@ -1023,7 +1041,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   touchInput.addEventListener('change', updateInput);
   highlight(null);
   return {
-    scene, camera, soundtrack, highlight, outline, windowLight, diaryBinding, reviewBooks, bloomTexture:bloomY.texture,
+    scene, camera, soundtrack, highlight, outline, exterior, windowLight, diaryBinding, reviewBooks, bloomTexture:bloomY.texture,
     toggleCurtains() { curtainTarget = 1 - curtainTarget; return curtainTarget === 1; },
     prepare(renderer) {
       if (preparationPromise) return preparationPromise;
@@ -1095,6 +1113,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
     setVisible(visible, reducedMotion) {
       roomVisible = visible;
       stillView = reducedMotion;
+      if(!visible)exterior.reset();
       syncVideoPlayback();
     },
     shade(renderer, target) {
@@ -1175,6 +1194,8 @@ export async function createJapanRoom({bookCovers=[]}={}) {
     },
     update(dt, reducedMotion) {
       if (stillView !== reducedMotion) { stillView = reducedMotion; syncVideoPlayback(); }
+      exterior.update(dt,roomVisible&&soundtrack.songPlaying,reducedMotion);
+      applySongLight();
       const blend = reducedMotion ? 1 : 1 - Math.exp(-3 * dt);
       const target = reducedMotion ? new THREE.Vector2() : pointer;
       if (!viewHeld) look.lerp(target, blend);
@@ -1228,6 +1249,6 @@ export async function createJapanRoom({bookCovers=[]}={}) {
         sunlight.shadow.needsUpdate=true;recordShadowYaw=recordPlayer.state.yaw;
       }
     },
-    reset() { pointer.set(0, 0); look.set(0, 0); highlight(null); soundtrack.stop(); recordPlayer?.reset(); sunlight.shadow.needsUpdate=true; camera.quaternion.copy(baseRotation); camera.position.copy(basePosition); },
+    reset() { pointer.set(0, 0); look.set(0, 0); highlight(null); soundtrack.stop(); exterior.reset(); syncVideoPlayback(); recordPlayer?.reset(); sunlight.shadow.needsUpdate=true; camera.quaternion.copy(baseRotation); camera.position.copy(basePosition); },
   };
 }
