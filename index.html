@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="assets/towski-dev-logo.png?v=20260820" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" crossorigin />
-    <link rel="stylesheet" href="style.css?v=20261023-spin-sandstorm-1" />
+    <link rel="stylesheet" href="style.css?v=20261023-loading-1" />
     <script type="importmap">
       {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}
     </script>
@@ -78,7 +78,7 @@
         </a>
       </header>
 
-      <section class="globe-stage" id="globe-stage" aria-label="Interactive 3D globe">
+      <section class="globe-stage" id="globe-stage" aria-label="Interactive 3D globe" aria-busy="true">
         <canvas id="globe-canvas"></canvas>
         <div class="canvas-fallback" id="canvas-fallback" hidden>
           <p>The interactive globe is unavailable.</p>
@@ -167,16 +167,22 @@
         </button>
       </nav>
 
-      <div class="loading-screen" id="loading-screen" role="status" aria-live="polite">
+      <div class="loading-screen" id="loading-screen" data-stage="download">
         <div class="loading-screen__content">
           <p class="loading-screen__title">Loading Towski.dev</p>
-          <div class="progress-track" aria-hidden="true"><span id="load-progress"></span></div>
-          <p class="loading-screen__status" id="load-status">Preparing the scene</p>
+          <ol class="loading-stages" aria-label="Loading stages">
+            <li data-stage="download" aria-current="step">Download</li>
+            <li data-stage="prepare">Prepare</li>
+            <li data-stage="ready">Ready</li>
+          </ol>
+          <div class="progress-track" role="progressbar" aria-label="Scene loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Starting the scene"><span id="load-progress"></span></div>
+          <p class="loading-screen__status" id="load-status" role="status" aria-live="polite">Starting the scene</p>
+          <p class="loading-screen__detail" id="load-detail">Getting ready for your visit</p>
         </div>
       </div>
     </main>
 
     <noscript>This interactive globe requires JavaScript.</noscript>
-    <script type="module" src="script.js?v=20261023-diary-games-2"></script>
+    <script type="module" src="script.js?v=20261023-loading-1"></script>
   </body>
 </html>

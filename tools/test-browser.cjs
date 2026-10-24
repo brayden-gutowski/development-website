@@ -4,6 +4,7 @@ const { resolve } = require('node:path');
 
 const root = resolve(__dirname, '..');
 const focused = [
+  'tokyo-direct-entry', 'render-budget', 'loading-progress',
   'location-urls', 'route-retarget', 'japan-room-vinyl-playback', 'japan-room-record',
   'mobile-reader', 'mobile-discovery', 'mobile-outline-depth', 'spin-window', 'spin-sandstorm', 'startup-room-preload',
   'japan-room-review-books', 'book-reader-landscape',

@@ -13,10 +13,11 @@ const latest='#blog/intermediate-japanese/blog-entry-10-2-2026';
     new MutationObserver(()=>{const diary=document.querySelector('#diary-reader');if(diary&&!diary.hidden&&!document.querySelector('#app.is-in-room:not(.is-travelling)'))window.bookOutsideRoom=true;}).observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden']});
    });
    if(reducedMotion==='no-preference')await page.route('**/JapanRoom.glb*',async route=>{await new Promise(resolve=>setTimeout(resolve,1200));await route.continue();});
+   const roomRequested=page.waitForRequest('**/JapanRoom.glb*',{timeout:15000});
    await page.goto((process.env.TEST_URL||'http://127.0.0.1:4173')+initial);
    if(reducedMotion==='no-preference'){
     const start=await Promise.race([
-     page.waitForRequest('**/JapanRoom.glb*',{timeout:15000}).then(()=>'room'),
+     roomRequested.then(()=>'room'),
      page.locator('#diary-reader[data-phase="reading"]').waitFor({timeout:15000}).then(()=>'book'),
     ]);
     assert.equal(start,'room','A blog URL must load the room before showing the book');

@@ -111,7 +111,7 @@ const { chromium } = require('playwright');
     });
     await mobile.goto((process.env.TEST_URL || 'http://127.0.0.1:4173') + '/#book-review/yaseuma');
     await downloadStarted;
-    await mobile.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 15000 });
+    assert.equal(await mobile.locator('#loading-screen').isVisible(), true, 'A direct room link waits for its room instead of displaying the globe');
     await mobile.setViewportSize({ width: 430, height: 932 });
     releaseMobileRoom();
     await mobile.locator('#book-reader[data-phase="reading"][data-book="yaseuma"]').waitFor({ timeout: 60000 });

@@ -46,7 +46,7 @@ function disposeScene(root) {
 
 async function windowBackdrop() {
   const posterURL = 'assets/tokyo-window-evening.jpg?v=20261018-golden-2';
-  const videoURL = 'assets/tokyo-window-evening.mp4?v=20261018-golden-2';
+  const videoURL = 'assets/tokyo-window-evening.mp4?v=20261023-compact-1';
   const poster = await new THREE.TextureLoader().loadAsync(posterURL);
   poster.colorSpace = THREE.SRGBColorSpace;
   const video = document.createElement('video');
@@ -298,8 +298,8 @@ function createSoundtrack() {
   return playback;
 }
 
-export async function createJapanRoom({bookCovers=[]}={}) {
-  const loaded = await Promise.allSettled([
+export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
+  const assets = [
     new GLTFLoader().loadAsync("assets/JapanRoom.glb?v=20261018-optimized-25"),
     windowBackdrop(),
     loadBakedLight("assets/room-memory-architecture.webp?v=20261023-lossless-1"),
@@ -311,7 +311,13 @@ export async function createJapanRoom({bookCovers=[]}={}) {
     new THREE.TextureLoader().loadAsync('assets/kroi-spin-cover.png'),
     loadDiaryAnimation(),
     ...bookCovers.map(entry=>new THREE.TextureLoader().loadAsync(entry.image)),
-  ]);
+  ];
+  let completed = 0;
+  onProgress(0, assets.length);
+  const loaded = await Promise.allSettled(assets.map(asset => asset.then(value => {
+    onProgress(++completed, assets.length);
+    return value;
+  })));
   let failure = loaded.find(result => result.status === 'rejected');
   if (!failure) {
     try {
@@ -1000,6 +1006,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
   const touchInput = matchMedia('(hover: none), (pointer: coarse)');
   const pickPoint = new THREE.Vector2();
   let viewportWidth = innerWidth, viewportHeight = innerHeight;
+  let contactShading = true;
   const raycaster = new THREE.Raycaster();
   let highlighted = null;
   const soundtrack = createSoundtrack();
@@ -1130,7 +1137,7 @@ export async function createJapanRoom({bookCovers=[]}={}) {
       }finally{
         scene.overrideMaterial=override;scene.background=background;renderer.autoClear=depthAutoClear;
       }
-      occlusion.render(renderer, target, target);
+      if (contactShading) occlusion.render(renderer, target, target);
       depthExcluded.forEach((object, i) => { object.visible = visible[i]; });
       windowLight.uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);
       windowLight.uniforms.cameraWorld.value.copy(camera.matrixWorld);
@@ -1152,10 +1159,11 @@ export async function createJapanRoom({bookCovers=[]}={}) {
       renderer.setRenderTarget(bloomY);diffusionQuad.render(renderer);
       renderer.setRenderTarget(target);
     },
-    resize(width, height) {
-      const depthRatio=Math.min(devicePixelRatio||1,1.75);
-      atmosphereDepth.setSize(Math.round(width*depthRatio),Math.round(height*depthRatio));
-      atmosphereTarget.setSize(Math.max(1,Math.round(width/2)),Math.max(1,Math.round(height/2)));
+    resize(width, height, pixelRatio = Math.min(devicePixelRatio || 1, 1.75), quality = 1) {
+      contactShading = quality >= .85;
+      atmosphereDepth.setSize(Math.round(width*pixelRatio),Math.round(height*pixelRatio));
+      const effectScale = Math.min(1, pixelRatio);
+      atmosphereTarget.setSize(Math.max(1,Math.round(width*effectScale/2)),Math.max(1,Math.round(height*effectScale/2)));
       atmosphereComposite.uniforms.size.value.set(atmosphereTarget.width,atmosphereTarget.height);
       bloomX.setSize(Math.max(1,Math.round(width/4)),Math.max(1,Math.round(height/4)));
       bloomY.setSize(bloomX.width,bloomX.height);
@@ -1164,7 +1172,6 @@ export async function createJapanRoom({bookCovers=[]}={}) {
       // Preserve the full room on narrow displays instead of cropping the interactable objects.
       camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(baseFov / 2)) / Math.min(1, camera.aspect / authoredAspect)));
       camera.updateProjectionMatrix();
-      const pixelRatio = Math.min(devicePixelRatio || 1, 1.75);
       dustMaterial.uniforms.pixelRatio.value = pixelRatio;
       outline.setSize(Math.round(width * pixelRatio), Math.round(height * pixelRatio));
       outline.overlayMaterial.uniforms.strokeTexel.value.set(1 / width, 1 / height);

@@ -24,7 +24,7 @@ const { chromium } = require('playwright');
     assert.equal(initial.paused, false);
     assert.ok(initial.muted && initial.loop && initial.inline);
     assert.equal(await video.evaluate(v=>v.playbackRate),1,'Keep native motion timing');
-    assert.equal(initial.width, 2560);
+    assert.equal(initial.width, 1280);
     await page.waitForFunction(start => {
       const v = document.querySelector('#tokyo-window-video');
       return v.currentTime > start.time + .6 && v.getVideoPlaybackQuality().totalVideoFrames > start.frames + 10;
