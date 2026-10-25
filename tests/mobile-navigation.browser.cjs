@@ -86,20 +86,11 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
       await page.getByRole('button', { name: /Gainesville, Florida/ }).tap();
       await settled('#location-panel');
       await atTop(panel, page.getByRole('heading', { name: 'Education', exact: true }));
-      for (const category of ['Games', 'General', 'Competition']) {
-        const projects = page.getByRole('button', { name: 'Projects', exact: true });
-        if (await projects.getAttribute('aria-expanded') !== 'true') await projects.tap();
-        await page.getByRole('button', { name: category, exact: true }).tap();
-        await settled('#content-drawer');
-        await atTop(drawer, page.locator('#drawer-title'));
-        if (category === 'General') await page.waitForFunction(() => document.activeElement === document.querySelector('#close-drawer'));
-        await drawer.evaluate(el => { el.scrollTop = el.scrollHeight; });
-        await page.getByRole('button', { name: 'Close portfolio drawer', exact: true }).tap();
-        await settled('#location-panel');
-        await page.waitForFunction(() => !document.activeElement?.closest('[aria-hidden="true"]'), null, { timeout: 3000 });
-        const focus = await page.evaluate(() => ({ label: document.activeElement?.outerHTML, hidden: !!document.activeElement?.closest('[aria-hidden="true"]') }));
-        assert.equal(focus.hidden, false, `Closing a drawer must restore focus to visible controls: ${focus.label}`);
-      }
+      assert.equal(await page.getByRole('button', { name: 'Projects', exact: true }).count(), 0, 'Projects are accessed from the room computer');
+      const explore = page.getByRole('button', { name: 'Explore', exact: true });
+      await explore.scrollIntoViewIfNeeded();
+      const exploreBounds = await explore.boundingBox();
+      assert.ok(exploreBounds.y >= 0 && exploreBounds.y + exploreBounds.height <= size.height, 'Gainesville Explore remains reachable');
       await page.getByRole('button', { name: 'Close location details', exact: true }).tap();
       await page.getByRole('button', { name: /Gainesville, Florida/ }).tap();
       await settled('#location-panel');

@@ -1,3 +1,4 @@
+import { createModelTextureResidency, disposeRoomScene as disposeScene } from './room-texture-residency.js?v=20261025-leak-audit-2';
 import * as THREE from "three";
 import { applyRoomFinish } from './room-finish.js?v=20261020-memory-1';
 import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=13';
@@ -25,23 +26,6 @@ function ambientSky() {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.mapping = THREE.EquirectangularReflectionMapping;
   return texture;
-}
-
-function disposeScene(root) {
-  const geometries = new Set(), materials = new Set(), textures = new Set();
-  root.traverse(object => {
-    if (object.isInstancedMesh) object.dispose();
-    if (object.geometry) geometries.add(object.geometry);
-    for (const material of [object.material, object.customDepthMaterial].flat()) {
-      if (!material) continue;
-      materials.add(material);
-      for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
-    }
-    object.shadow?.dispose();
-  });
-  textures.forEach(texture => texture.dispose());
-  materials.forEach(material => material.dispose());
-  geometries.forEach(geometry => geometry.dispose());
 }
 
 async function windowBackdrop() {
@@ -300,7 +284,7 @@ function createSoundtrack() {
 
 export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
   const assets = [
-    new GLTFLoader().loadAsync("assets/JapanRoom.glb?v=20261018-optimized-25"),
+    new GLTFLoader().loadAsync("assets/JapanRoom.glb?v=20261025-memory-2"),
     windowBackdrop(),
     loadBakedLight("assets/room-memory-architecture.webp?v=20261023-lossless-1"),
     loadBakedLight("assets/room-furniture.webp?v=20261023-lossless-1"),
@@ -335,7 +319,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
     for (const result of loaded) {
       if (result.status !== 'fulfilled') continue;
       const value = result.value;
-      if (value.scene) disposeScene(value.scene);
+      if (value.scene) disposeScene(value.scene, value.parser?.associations.keys());
       if (value.isObject3D) disposeScene(value);
       if (value.isTexture) value.dispose();
       if (value.video) {
@@ -763,6 +747,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
 
   // Half-resolution contact shading adds depth without reducing scene detail.
   const occlusion = new SSAOPass(scene, camera, 720, 450, 16);
+  occlusion.ssaoRenderTarget.depthBuffer=occlusion.blurRenderTarget.depthBuffer=false;
   // Folded double-sided linen must also occlude atmosphere from its back
   // faces; a front-only normal pass let fog integrate through the curtains.
   occlusion.normalMaterial.side = THREE.DoubleSide;
@@ -976,7 +961,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
   let stillView = false;
   let clothTime = 0;
   let curtainTarget = 0, curtainProgress = 0;
-  let prepared = false;
+  let prepared = false, disposed = false;
   let environmentTarget;
   let environmentDirty = true;
   let preparationPromise;
@@ -1009,10 +994,23 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
   const updateInput = () => highlight(highlighted);
   touchInput.addEventListener('change', updateInput);
   highlight(null);
-  return {
+  let modelTextures;
+  let effectsSuspended=false;
+  const room = {
+    get texturesSuspended(){return modelTextures.suspended;},
+    prepareTextures:()=>modelTextures.prepare(),
+    suspendTextures:()=>modelTextures.suspend(),
+    get effectsSuspended(){return effectsSuspended;},
+    suspendEffects(){
+      if(effectsSuspended)return;
+      for(const target of [atmosphereDepth,atmosphereTarget,bloomX,bloomY,outline.renderTargetMaskBuffer,occlusion.normalRenderTarget,occlusion.ssaoRenderTarget,occlusion.blurRenderTarget])target.dispose();
+      sunlight.shadow.map?.dispose();sunlight.shadow.map=null;sunlight.shadow.needsUpdate=true;
+      effectsSuspended=true;
+    },
     scene, camera, soundtrack, highlight, outline, exterior, windowLight, diaryBinding, reviewBooks, bloomTexture:bloomY.texture,
     toggleCurtains() { curtainTarget = 1 - curtainTarget; return curtainTarget === 1; },
     prepare(renderer) {
+      if (disposed) return Promise.reject(new Error('Room has been disposed'));
       if (preparationPromise) return preparationPromise;
       if (prepared && !environmentDirty) return Promise.resolve();
       environmentDirty = false;
@@ -1043,6 +1041,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
         try {
           capture.texture.generateMipmaps = false;
           for (let face = 0; face < 6; face++) {
+            if (disposed) return;
             const target = renderer.getRenderTarget();
             const visible = glass.map(object => object.visible);
             glass.forEach(object => { object.visible = false; });
@@ -1056,6 +1055,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
             }
             await new Promise(requestAnimationFrame);
           }
+          if (disposed) return;
           const previousEnvironment = environmentTarget;
           environmentTarget = pmrem.fromCubemap(capture.texture);
           if (previousEnvironment) previousEnvironment.dispose(); else scene.environment.dispose();
@@ -1067,6 +1067,9 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       return preparationPromise;
     },
     dispose() {
+      if (disposed) return;
+      disposed = true;
+      modelTextures?.dispose();
       document.removeEventListener('visibilitychange', syncVideoPlayback);
       touchInput.removeEventListener('change', updateInput);
       soundtrack.dispose();
@@ -1078,6 +1081,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       disposeScene(scene);
       architectureLight.dispose(); furnitureLight.dispose(); joineryLight.dispose();
       if (environmentTarget) environmentTarget.dispose(); else scene.environment?.dispose();
+      scene.environment = null;
     },
     setVisible(visible, reducedMotion) {
       roomVisible = visible;
@@ -1086,6 +1090,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       syncVideoPlayback();
     },
     shade(renderer, target) {
+      effectsSuspended=false;
       if (environmentDirty && !preparationPromise) this.prepare(renderer).catch(console.error);
       const depthExcluded = glassMeshes;
       const visible = depthExcluded.map(object => object.visible);
@@ -1220,4 +1225,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
     },
     reset() { pointer.set(0, 0); look.set(0, 0); highlight(null); soundtrack.stop(); exterior.reset(); syncVideoPlayback(); recordPlayer?.reset(); sunlight.shadow.needsUpdate=true; camera.quaternion.copy(baseRotation); camera.position.copy(basePosition); },
   };
+  try { modelTextures=await createModelTextureResidency(loaded[0].value,scene); }
+  catch (error) { room.dispose(); throw error; }
+  return room;
 }

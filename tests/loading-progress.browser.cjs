@@ -15,7 +15,7 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
     await page.addInitScript(() => {
       window.loadingValues = []; window.loadingMessages = [];
       new MutationObserver(() => {
-        const bar = document.querySelector('[role="progressbar"]');
+        const bar = document.querySelector('.progress-track[role="progressbar"]');
         if (bar) window.loadingValues.push(Number(bar.getAttribute('aria-valuenow')));
         const message = document.querySelector('#load-status')?.textContent;
         if (message) window.loadingMessages.push(message);

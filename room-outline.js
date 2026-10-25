@@ -3,27 +3,28 @@ import { FullScreenQuad } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examp
 
 // One shared depth buffer decides which geometry is visible. Sampling and
 // comparing depth in a second shader can split moving contours on mobile GPUs.
-export function createRoomOutline(scene, camera) {
+export function createRoomOutline(scene, camera, {strokeWidth=4}={}) {
   const mask = new THREE.WebGLRenderTarget(1, 1);
   mask.texture.name = 'Room interaction mask';
   mask.texture.generateMipmaps = false;
   const selectedMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, fog: false, toneMapped: false });
   const occluderMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, fog: false, toneMapped: false });
   const overlayMaterial = new THREE.ShaderMaterial({
-    uniforms: { maskTexture: { value: mask.texture }, strokeTexel: { value: new THREE.Vector2() } },
+    uniforms: { maskTexture: { value: mask.texture }, strokeTexel: { value: new THREE.Vector2() }, strokeWidth: { value: strokeWidth } },
     transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
     vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }',
     fragmentShader: `
       varying vec2 vUv;
       uniform sampler2D maskTexture;
       uniform vec2 strokeTexel;
+      uniform float strokeWidth;
       void main() {
         vec4 mask = texture2D(maskTexture, vUv);
         if ((1.0 - mask.r) * (1.0 - mask.g) > .5) discard;
         float contour = 0.0;
         for (int i = 0; i < 16; i++) {
           float angle = float(i) * 6.28318530718 / 16.0;
-          vec4 neighbor = texture2D(maskTexture, vUv + vec2(cos(angle), sin(angle)) * strokeTexel * 4.0);
+          vec4 neighbor = texture2D(maskTexture, vUv + vec2(cos(angle), sin(angle)) * strokeTexel * strokeWidth);
           contour = max(contour, (1.0 - neighbor.r) * (1.0 - neighbor.g));
         }
         float coverage = smoothstep(.2, .8, contour);

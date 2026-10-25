@@ -74,8 +74,14 @@ export async function createTokyoClouds({ renderer, radius, latitude, longitude 
   const shadow = new THREE.DataTexture(bytes.subarray(size ** 3 * 2), size, size);
   shadow.minFilter = shadow.magFilter = THREE.LinearFilter;
   shadow.needsUpdate = true;
-  renderer.initTexture(texture);
-  renderer.initTexture(shadow);
+  try {
+    renderer.initTexture(texture);
+    renderer.initTexture(shadow);
+  } catch (error) {
+    texture.dispose(); shadow.dispose();
+    geometry.dispose(); shadowGeometry.dispose();
+    throw error;
+  }
   const cloud = new THREE.Mesh(geometry, new THREE.RawShaderMaterial({
     glslVersion: THREE.GLSL3,
     uniforms: { cloudMap: { value: texture }, opacity: { value: 0 } },

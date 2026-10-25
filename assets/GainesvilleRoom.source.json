@@ -1,0 +1,191 @@
+{
+  "source": "User-supplied GainesvilleRoom.blend; original meshes with proportion-corrected computer/display and even bezel borders. No replacement workstation.",
+  "source_blend_sha256": "63004120df6d306c63877a792d9696ac6af5b71c91cb06afa78f50fe5ebaf3aa",
+  "mesh_nodes": [
+    "Cube",
+    "Cube.005",
+    "Computer",
+    "Screen",
+    "Cube.001",
+    "Cylinder",
+    "Cylinder.001",
+    "Cylinder.002",
+    "Cylinder.003",
+    "LightBulb008_Geo_LOD0.001",
+    "Cone.001",
+    "Cylinder.004",
+    "ExitSign"
+  ],
+  "files": {
+    "GainesvilleRoom.glb": "59b9c7a607b2aacbec00ab17cad51f43987ec3dcf4ff05d129ba0e5d9ecd7dcb",
+    "gainesville-light-architecture.webp": "d30c4459fdf1d9fc0e7288dd4b038a5f07e9a318fdc67514e70d4404dc346155",
+    "gainesville-light-furniture.webp": "cdb63b189937e5a5294d1276fd9bb99816b55b2ff05517d45a3b02b2c64b81b9",
+    "gainesville-practical-architecture.webp": "f1e7e4c1928bcb6b3273466dd44c4f0a7134317e57a3c7c70136ccf676963f54",
+    "gainesville-practical-furniture.webp": "f1bebc8485565fe32396421c9935ca0f9c64bddf250525b3c6e28241c92dd319"
+  },
+  "computer_proportions": {
+    "displayAspect": 1.3333333333333333,
+    "bezelWidth": 0.09623122215270996,
+    "displayWidth": 0.5775885581970215,
+    "displayHeight": 0.4331914186477661,
+    "sourceCaseHeight": 0.625653862953186,
+    "sourceCaseDepth": 0.5904664993286133
+  },
+  "geometry_fingerprints": {
+    "Cube": "f3db40782b36e629ac91a0d45590a67e5c3f54380aa7df014946fa6e1562a3b9",
+    "Cube.005": "4bd622a5c4226003353c55e30cabb9cfeb8d419de3736ec24e1c7bd647db2662",
+    "Computer": "dce664050c611b32bd796f7f39da75b9810ef732aab03edf2f77d50dd233b67e",
+    "Screen": "56df3ed2f99a289e0ba6936c46f8d137677cade01602b9f9268c5f5115a9b22e",
+    "Cube.001": "90954c835f34781458aec0b608c66e127a2cce37dcdcf9b97192ae6b75d55c32",
+    "Cylinder": "5205e01cccb4403bed1df1a733d66cb2a97fce8257a60bae75c46178d4c8f6de",
+    "Cylinder.001": "c50ccd547e83795bb85c57017ccc9a3816dca0c2b2e08681813ccca5a53f95bd",
+    "Cylinder.002": "cc3956d6e57f7098412959ab5c2b1d0194e544ff20aceb278fccbd53835781b3",
+    "Cylinder.003": "4502d35084dced458fe62061057a442fae81e457235ee581e994a772de746df4",
+    "LightBulb008_Geo_LOD0.001": "26ad2e7d094910447f48e540a4de9cb4407ca150b1baa5d2b28902c8cb93994b",
+    "Cone.001": "998fbadcb159414be0c8a5de8eb68267989ce8895e6d86e1f0ee51bf7a42ae46",
+    "Cylinder.004": "b0cfdf7cc102f2d46856a734148ba52d7174686029cf9f5530adfa5e6622586f",
+    "ExitSign": "16ee1a28d6da7868bcaf74e3abfe09a7877b2ea66eef6d875eb4e5415ecdf563"
+  },
+  "lighting": {
+    "layers": "steady fill/EXIT and independent practical",
+    "staticRGBMRange": 16,
+    "practicalRGBMRange": 64,
+    "meshEmissionTransport": "disabled for bake; explicit area proxies; restored for export",
+    "revision": "fourth-review-local-bounce",
+    "resolution": 2048,
+    "samples": 96,
+    "device": "CPU",
+    "lights": {
+      "practical": {
+        "watts": 25,
+        "size_m": 0.76,
+        "linear_rgb": [
+          1,
+          0.49,
+          0.24
+        ],
+        "approx_kelvin": 3400
+      },
+      "room_indirect": {
+        "watts": 8,
+        "size_m": 5,
+        "linear_rgb": [
+          0.76,
+          0.82,
+          1
+        ],
+        "position": [
+          -0.4,
+          1.4,
+          2.6
+        ],
+        "target": [
+          -0.4,
+          -2,
+          1.1
+        ]
+      },
+      "floor_reflected_up": {
+        "watts": 0.92,
+        "size_m": 3,
+        "linear_rgb": [
+          1,
+          0.72,
+          0.48
+        ],
+        "position": [
+          -0.45,
+          -0.9,
+          0.24
+        ],
+        "target": [
+          -0.45,
+          -0.9,
+          1.2
+        ]
+      },
+      "low_floor_fill_down": {
+        "watts": 5.75,
+        "size_m": 3.5,
+        "linear_rgb": [
+          0.8,
+          0.85,
+          1
+        ],
+        "position": [
+          -0.45,
+          -0.35,
+          1.05
+        ],
+        "target": [
+          -0.45,
+          -0.35,
+          0
+        ]
+      },
+      "table_reflected_case": {
+        "watts": 0.1,
+        "size_m": 0.72,
+        "linear_rgb": [
+          1,
+          0.72,
+          0.48
+        ],
+        "position": [
+          -0.45,
+          -0.15,
+          1.37
+        ],
+        "target": [
+          -0.45,
+          -0.7,
+          1.68
+        ]
+      },
+      "brick_indirect": {
+        "watts": 1.1,
+        "size_m": 3.3,
+        "linear_rgb": [
+          0.9,
+          0.88,
+          0.84
+        ],
+        "position": [
+          -0.95,
+          -3.35,
+          2.3
+        ],
+        "target": [
+          -0.55,
+          -6.4,
+          2.05
+        ]
+      },
+      "exit_local": {
+        "watts": 0.12,
+        "size_m": 0.4,
+        "linear_rgb": [
+          1,
+          0.24,
+          0.18
+        ],
+        "position": [
+          "sign.x",
+          "sign.y-.32",
+          "sign.z"
+        ],
+        "target": [
+          "sign.x",
+          -6.4,
+          "sign.z"
+        ]
+      }
+    }
+  },
+  "wall_material_detail": {
+    "tileResolution": 2048,
+    "repeat": "original Blender scale, retained with KHR_texture_transform",
+    "encoding": "lossless WebP",
+    "lightmaps": "unchanged, separate UV1"
+  }
+}

@@ -1,0 +1,178 @@
+> Superseded by the user’s subsequent request: restore their original room models and use only native Windows XP icon assets. The workstation remodel described below was removed, including its script and generated asset. This file records the earlier pass, not the current model specification.
+
+# Supplied feedback checklist
+
+User requested a full pass. Checked means reviewed and resolved in this implementation, including the explicit conditional decisions below; it does not mean every optional effect was added.
+
+Implementation and review evidence:
+
+- Items 1–28: Luna Start, authentic asset-backed icons, Explorer address/history/search/tasks, active windows/taskbar/tray, Notepad, separate Picture/Fax Viewer and power dialogs. Desktop uses 1024×768; phones use a readable responsive desktop.
+- Items 29–62: coherent E773c-proportioned CRT geometry, 4:3 tube, separate shell/neck/stand, controls/LED, vents/seams/rear connectors/fasteners, restrained ivory plastic finish and wear.
+- Items 63–76: independent curved glass, view-dependent environment/specular reflection and projected lamp reflection, subtle edge darkening/scanlines/optical filtering, content-driven spill, black off-state and power-down fade. Reflection of the overhead lamp is allowed to fall outside the visible glass when the physical reflection geometry places it there.
+- Items 77–103: 1.4m laminate desk, edge band, frame/brackets/30mm tubes/rubber feet, individual keycaps, wired mouse/pad/tower/cables and a CD-R case. Cycles transport and SSAO provide contact.
+- Items 104–117: preserved source brick/plank photographic maps and authored scale; normal/roughness/mortar/seam detail remain. Mipmaps/anisotropy and softer normals reduce distant crunch. Broad world-space tint/roughness variation breaks floor repetition without changing material/lightmap UVs. Source wear supplies subtle age; no extra dust decal is needed.
+- Items 118–136: physical exit housing/brackets and implied doorway/baseboard, ceiling-mounted cable/rose, separate lamp reflector, soft warm practical, weak broad cool fill, bounced illumination and local red EXIT bounce. Global exposure remains restrained.
+- Items 137–150: faint existing haze, oblique 42mm wide view, near-normal close view, eased camera travel, thin localized white hover, external return controls, XP cursors, desktop/Explorer mouse selection and double-click, window dragging on the projected plane, content-light easing and green/amber/off LED.
+
+Conditional decisions:
+
+- 35: Tilt mechanism is modeled; no backward tube tilt was applied because the final head-on desktop alignment is clearer.
+- 50: One CRT dimensional/service reference governs enclosure proportions; the front badge is generic.
+- 91/103/116/121: Chosen optional additions are included (narrower desk, CD-R case, baseboard and implied door).
+- 117: Existing source wear is retained; additional scattered dust would make the quiet room unnecessarily distressed.
+- 137: No additional thick volumetric effect. Existing very weak haze remains.
+- 141: No extra lens blur; keeping desk materials and XP text sharp serves this interactive camera.
+
+Verification: `gainesville-globe-panel`, `gainesville-hardware`, `gainesville-flight`, `gainesville-room`, `gainesville-lighting`, `gainesville-xp`, `gainesville-xp-controls`, `gainesville-xp-authenticity`, plus Tokyo/mobile regressions. Hardware/source edits run in a disposable Blender process; the original user `.blend` is never saved.
+
+
+- [x] 1. Completely redo the Start menu. Yours is too narrow, too simple, and only contains a single column of folders. Original XP's default Luna menu had two columns.
+- [x] 2. Put frequently used programs in the left column, including things like Internet Explorer, Outlook Express, and Notepad.
+- [x] 3. Put My Documents, My Pictures, My Music, My Computer, Control Panel, Search, and Run in the right column.
+- [x] 4. Add the actual All Programs option, including the green arrow icon.
+- [x] 5. Change the bottom of the Start menu to include separate Log Off and Turn Off Computer buttons, with the correct small icons.&#x20;
+- [x] 6. Replace the Windows flag next to "Brayden" with a small XP-style user account picture. The Windows flag works better on the Start button than as the user's profile image.
+- [x] 7. Add thin separators between Start menu groups. The menu currently looks like a simple vertically stacked navigation panel.
+- [x] 8. Match the original XP Start menu's blue gradients. Its header and footer are different shades, while the right column has a light blue background.
+- [x] 9. Use Tahoma for XP interface text, especially menu labels, taskbar items, and Explorer controls. Match the era's font sizes instead of relying on browser defaults.
+- [x] 10. Add Windows XP's characteristic subtle text shadows to desktop icon labels. Your existing white text is a good start.
+- [x] 11. Add My Computer and Recycle Bin to the desktop. They aren't mandatory on a customized XP installation, but they strongly establish the period.
+- [x] 12. Adjust desktop icon spacing to a consistent invisible grid. Your current three folders are positioned reasonably, but the large empty gaps emphasize the artificial layout.
+- [x] 13. Make sure the folder icons themselves use authentic Windows XP icon assets at the intended sizes.
+- [x] 14. Recreate XP's desktop selection behavior, including the dark blue selected-label background and dotted keyboard-focus outline where appropriate.
+- [x] 15. Rebuild the Explorer toolbar. The current `Back Search Folders` row looks too simplified. Give Back, Forward, Search, and Folders their actual XP toolbar icons, sizing, and spacing.
+- [x] 16. Improve the Explorer address bar. Add the "Address" label, drive/folder icon, address field with dropdown, and optionally the Go button.
+- [x] 17. Add the original Explorer task pane on the left for a typical XP folder view, with expandable sections such as File and Folder Tasks and Other Places. This pane could be disabled in XP, so it's an authenticity enhancement rather than an absolute requirement.
+- [x] 18. Make Explorer's borders and toolbar dividers more consistent. Your title bar is close, but the inner content area resembles a simplified web application.
+- [x] 19. Correct the title bar button spacing and proportions using one reference screenshot. The close, maximize, and minimize icons are recognizable but should share exact standardized dimensions.
+- [x] 20. Add subtle window drop shadows and ensure overlapping windows have correct active/inactive title bar states.
+- [x] 21. Make the system tray more believable by including period-appropriate sound, network, and hidden-icon indicators. Your clock is essentially alone.
+- [x] 22. Increase the distinction between the taskbar's active and inactive window buttons. The current buttons look quite similar.
+- [x] 23. Fix the Notepad status bar. In the footage around 15 seconds, `Ln 1, Col 1 UTF-8` resembles a newer Notepad status bar more than XP-era Notepad. The custom `Open on Roblox` link also doesn't belong to the original Notepad interface. Keep that link elsewhere if it needs to be functional.
+- [x] 24. When opening an image, use the actual Windows Picture and Fax Viewer interface, including its bottom navigation and zoom controls, instead of a generic Explorer-style image window.&#x20;
+- [x] 25. Match Notepad's original menus, padding, border thickness, and editor font. Pay particular attention to text wrapping and line spacing.
+- [x] 26. If the visitor chooses Turn Off Computer, show the XP shutdown dialog with Stand By, Turn Off, and Restart before shutting the screen off. Right now the transition feels too immediate.
+- [x] 27. Optional: include a brief Windows XP logoff/shutdown screen before the monitor goes dark.
+- [x] 28. Render the actual XP desktop at a consistent resolution, preferably 1024 × 768, rather than sizing individual elements independently as the screen changes.
+- [x] 29. Fix the screen's aspect ratio. It looks nearly square in the footage. Make the visible display 4:3, matching a typical XP-era CRT configuration.
+- [x] 30. Widen the monitor's front housing to accommodate that ratio without leaving unrealistically thick side borders.
+- [x] 31. Add a substantial back housing. A typical 17-inch CRT might extend roughly 35–45 cm backward, depending on the model.
+- [x] 32. Make the back taper toward a narrower, rounded rear section instead of keeping the entire housing box-shaped.
+- [x] 33. Add an actual stand or pedestal underneath. Currently the monitor appears to be sitting directly on the table as one solid box.
+- [x] 34. Add a distinct mounting neck between the housing and the stand.
+- [x] 35. Give the monitor a subtle backward tilt of around 3–7 degrees if it suits the final camera framing.
+- [x] 36. Separate the glass screen, inner bezel, front plastic shell, rear housing, and base into visually distinguishable components.
+- [x] 37. Give the screen glass a mild outward curvature rather than using an entirely flat plane.
+- [x] 38. Add more believable curvature at the screen corners. The existing rounded corners are noticeable, but they look more like a rectangular screen mask than optical glass.
+- [x] 39. Add a thin black or very dark gray border immediately around the glass. This helps distinguish the display tube from the surrounding plastic.
+- [x] 40. Reduce the broad, angular indentation currently surrounding the display, or reshape it to match a specific CRT model.
+- [x] 41. Add a front power button near the bottom-right side of the frame.
+- [x] 42. Add a tiny power indicator LED beside it: green when on, amber when in standby, and off when fully powered down.
+- [x] 43. Add three to six small physical display-control buttons, typically under the screen or toward the lower-right bezel.
+- [x] 44. Add a subtle, period-appropriate manufacturer logo or generic badge on the front.
+- [x] 45. Add horizontal or vertical ventilation slots along the upper/rear housing.
+- [x] 46. Add a visible seam where the front plastic shell meets the rear plastic shell.
+- [x] 47. Add tiny screw holes or recessed screws on the back.
+- [x] 48. Add a monitor power cable exiting the rear casing and running off the table.
+- [x] 49. Add a video cable running from the monitor to a computer tower or down behind the table.
+- [x] 50. Use reference photos of a single real CRT model to determine where the vents, controls, cable exits, and seams belong. Combining random features from different monitors can make the object feel less realistic.
+- [x] 51. Shift the casing toward a slightly warmer ivory or aged beige if you want a classic 2000s PC, rather than the current strong olive-green tint. Keep the green if it's a deliberate artistic choice.
+- [x] 52. Try a plastic roughness around 0.65–0.8 as a starting range.
+- [x] 53. Add a very fine molded-plastic bump or normal texture. It should be barely noticeable at the distance of the full-room camera.
+- [x] 54. Add broad, subtle color variation to the casing rather than applying a completely uniform base color.
+- [x] 55. Put slightly more yellowing on the top surface and around the vent openings to simulate aging.
+- [x] 56. Give the underside and recessed areas a little darker discoloration.
+- [x] 57. Add tiny scratches around the power button, where fingers would repeatedly make contact.
+- [x] 58. Add subtle dust inside the upper vent slots and at plastic seams.
+- [x] 59. Give external edges a small bevel to catch highlights. Start around 1–3 mm for ordinary shell edges, then use larger radii for deliberately rounded corners.
+- [x] 60. Add a narrow, uneven roughness variation near the case edges and on the top surface. This makes the plastic react to light more naturally.
+- [x] 61. Create very subtle tonal separation between different molded parts. A real front bezel and rear housing don't always age identically.
+- [x] 62. Avoid adding strong rust or grunge. Most old CRT monitors were plastic, and excessive wear could make the model look artificially distressed.
+- [x] 63. Create an independent curved glass surface rather than making the wallpaper itself the visible frontmost plane.
+- [x] 64. Add faint reflections from the hanging overhead light. The reflection should change as the viewer's angle changes.
+- [x] 65. Add a small Fresnel-based reflectivity increase toward the edges of the glass.
+- [x] 66. Add a very subtle darkening toward the corners of the display.
+- [x] 67. Apply mild CRT-style geometric distortion, particularly near the display edges. Don't distort the whole interface heavily.
+- [x] 68. Add extremely subtle horizontal scanlines or an aperture-grille/shadow-mask texture, visible mostly at close distances.
+- [x] 69. Apply very small amounts of color-channel misregistration near high-contrast edges. Keep it near imperceptible.
+- [x] 70. Slightly soften the screen image. Real CRT text is less perfectly sharp than a modern high-density display.
+- [x] 71. Add mild bloom around white text, bright windows, and high-contrast areas—not a strong glow over the whole screen.
+- [x] 72. Make bright white Explorer windows emit more visible light than the darker desktop wallpaper.
+- [x] 73. Use the screen as a local light source. Your bezel, keyboard area, and nearby table should receive a faint blue-green cast when the XP desktop is visible.
+- [x] 74. When a mostly white Notepad window opens, the monitor's reflected light should become slightly more neutral and brighter.
+- [x] 75. Add a very faint black-glass appearance to the screen when it's turned off, instead of making it look like a completely empty hole.
+- [x] 76. If the screen turns off during the interaction, fade the image briefly and leave a subtle glass reflection. A tiny CRT power-down flash is optional, but could work very well.
+- [x] 77. Give the tabletop a more believable material. Currently its color is quite similar to the monitor's casing, making the two objects blend together.
+- [x] 78. Consider a faded white or light gray laminate top with a black or brown edge band. This would fit the early-2000s office aesthetic.
+- [x] 79. Add a subtle surface texture. Laminate should have extremely fine roughness variation, not a perfectly smooth surface.
+- [x] 80. Start with tabletop roughness around 0.55–0.75, depending on the finish.
+- [x] 81. Give the tabletop a believable thickness, roughly 25–40 mm.
+- [x] 82. Add a distinct edge band around the tabletop rather than making the top and sides the same continuous material.
+- [x] 83. Make the tabletop's corners slightly rounded, but keep them consistent with the style of table you've chosen.
+- [x] 84. Add an underside support frame. The current legs appear to connect directly into the tabletop without enough visible construction.
+- [x] 85. Add mounting plates or brackets where the legs connect to the table.
+- [x] 86. Give the black metal legs a slightly more interesting finish, with muted reflections and very subtle wear.
+- [x] 87. Add plastic or rubber feet to the bottoms of the legs.
+- [x] 88. Make sure the legs have realistic thickness. Metal furniture tubing around 25–35 mm is a reasonable starting point.
+- [x] 89. Add stronger contact shadows where the feet touch the floor.
+- [x] 90. Add subtle contact shadows beneath the monitor's stand.
+- [x] 91. Consider narrowing the table somewhat. Its large, nearly empty surface makes the small CRT look lost in the wide shot. A width around 120–150 cm could be a reasonable starting point.
+- [x] 92. Add a few small surface imperfections, such as minor scuffs or worn spots near the monitor's base.
+- [x] 93. Add a period-appropriate beige or off-white keyboard in front of the monitor.
+- [x] 94. Model the keyboard's individual keycaps and gaps rather than using a flat keyboard texture.
+- [x] 95. Give the keys slightly different roughness from the keyboard's body.
+- [x] 96. Add a wired mouse with a realistically curved cable.
+- [x] 97. Use an early-2000s optical or ball mouse rather than a modern wireless design.
+- [x] 98. Add a mousepad with subtle fabric texture.
+- [x] 99. Put a computer tower beneath or beside the table if this is intended to be a conventional CRT setup.
+- [x] 100. Give the tower a front optical drive, ventilation, power button, and small indicator lights.
+- [x] 101. Add power and display cables behind the table. They can disappear into the darkness, but there should still be visible connections.
+- [x] 102. Add small cable bends and gravity-driven sag rather than perfectly straight cable paths.
+- [x] 103. Consider one era-appropriate object, such as a CD-R case, floppy disk, or old computer manual, for environmental storytelling.
+- [x] 104. Make the back wall more visible. I can make out the dark wall texture in the recording, but much of it disappears into black. A weak, broad fill light would reveal its surface.
+- [x] 105. Break up the wall's uniform darkness with subtle lighting variation.
+- [x] 106. If you're using a brick wall texture, make sure the brick scale matches real-world brick dimensions.
+- [x] 107. Add subtle surface normal detail to the brick instead of relying only on the color texture.
+- [x] 108. Add variation in mortar roughness and color.
+- [x] 109. Give the wall-floor intersection a subtle shadow. This helps communicate that the room has actual dimensions.
+- [x] 110. Reduce repetition in the wood floor. The texture is visible, but its repeating pattern makes the floor feel less natural.
+- [x] 111. Adjust floor UVs so the wood planks have believable widths and lengths.
+- [x] 112. Add small variation between individual floorboards.
+- [x] 113. Reduce excessively sharp surface-detail contrast in the floor if it looks too noisy at a distance.
+- [x] 114. Give the floor roughness variation so worn areas reflect light differently from untouched areas.
+- [x] 115. Add subtle seams or bevels between boards to catch grazing light.
+- [x] 116. Consider a baseboard along the back wall to ground the architecture.
+- [x] 117. Add very slight dust or worn patches near the table legs if the room is meant to feel old or abandoned.
+- [x] 118. Turn the EXIT text into a physical sign if it's meant to exist in the room. Right now it looks like large red text floating near the top-right.
+- [x] 119. Give the EXIT sign a housing, mounting brackets, and a faint glow against the wall.
+- [x] 120. Position the sign where it makes architectural sense, such as over a visible or implied doorway.
+- [x] 121. Consider adding a faint doorway outline or architectural feature beneath the sign.
+- [x] 122. Give the hanging light fixture a visible mounting point and cable or support above the shade.
+- [x] 123. Make the lamp shade look like actual metal or painted plastic, with separate interior and exterior surfaces.
+- [x] 124. Make the overhead lamp the main source of environmental illumination. Its effect should be clearly visible on the tabletop, monitor, and nearby floor.
+- [x] 125. Use a soft light source with realistic shadow edges. Avoid the appearance of a perfectly even pool of light.
+- [x] 126. Add a weaker secondary fill so shadowed surfaces aren't completely invisible.
+- [x] 127. Use warmer light from the overhead lamp, approximately 3000–4000 K.
+- [x] 128. Use cooler light from the CRT display, with a tint that changes according to the onscreen content.
+- [x] 129. Add weak bounced light beneath the table, particularly from the pale tabletop and nearby floor.
+- [x] 130. Make sure the monitor casts a believable shadow onto the table. This is currently difficult to distinguish.
+- [x] 131. Add subtle shading inside the monitor's vents and underneath its casing.
+- [x] 132. Give the front and sides of the monitor different light exposure so its shape is easier to read.
+- [x] 133. Add very faint reflections to the tabletop from the CRT display.
+- [x] 134. Allow a little of the EXIT sign's red light to affect the nearby wall if it is an illuminated sign.
+- [x] 135. Reduce overly uniform illumination across the tabletop. Surfaces should become darker farther from the light source.
+- [x] 136. Avoid simply raising the scene's global brightness; doing that could destroy the eerie mood.
+- [x] 137. If you add volumetric haze, make it exceptionally subtle and concentrated near the hanging lamp. The room shouldn't look filled with thick fog.
+- [x] 138. Try a slightly off-center camera in the wide shot. The perfectly centered composition makes the workstation look almost like a product showcase.
+- [x] 139. Keep the close-up of the CRT nearly straight-on so that XP's menus remain easy to read.
+- [x] 140. Use a natural perspective camera rather than an excessively wide field of view. A 40–55 mm full-frame equivalent is a reasonable starting range for the wide view.
+- [x] 141. Add only subtle depth of field. The desk and computer should remain sharp enough to appreciate their materials.
+- [x] 142. Slow down or ease the transition between the distant computer and the close-up interface if that movement currently feels instantaneous.
+- [x] 143. Replace the thick white hover outline. Around 24 seconds, the outline around the computer looks like a game-object selection box. A subtler highlight or localized interaction indicator would fit the realism better.
+- [x] 144. Move the "Click or tap outside the computer to return" instruction away from the rendered monitor bezel if possible. It currently overlaps the physical presentation.
+- [x] 145. Make interactive mouse feedback use XP-style cursors when navigating the desktop.
+- [x] 146. Reproduce actual Windows XP double-click and window-drag behavior if the scene is meant to simulate using a real computer.
+- [x] 147. Keep window-opening animations consistent with XP, avoiding modern easing, rounded floating panels, or oversized transitions.
+- [x] 148. Add a very small transition in the CRT's luminance when windows open or close.
+- [x] 149. Have the monitor's power LED change state after a shutdown, not just the screen itself.
+- [x] 150. Consider a slight change in room illumination after the display powers down, since the CRT should stop casting light onto the surroundings.

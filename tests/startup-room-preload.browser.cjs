@@ -14,6 +14,7 @@ const { chromium } = require('playwright');
       await route.fulfill({ response, body: await response.text() + `
         window.preloadProbe = () => ({
           ready: !!japanRoom && !!window.preloadRoomReady,
+          backgroundStarted: backgroundAreasStarted,
           programs: renderer?.info.programs.map(program => program.id) || [],
           roomDraws: window.preloadRoomDraws || 0,
           videoPaused: document.querySelector('#tokyo-window-video')?.paused,
@@ -45,6 +46,7 @@ const { chromium } = require('playwright');
     });
     await page.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
     await page.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 15000 });
+    assert.equal(await page.locator('#app.is-static-fallback').count(), 0, 'This preparation check requires an available WebGL context');
     const startup = await page.evaluate(() => window.startupComplete);
     console.log('Cold startup:', { ...startup, programs: startup.programs.length });
     assert.equal(startup.ready, false, 'The globe must become usable while Tokyo is still downloading');
@@ -52,12 +54,15 @@ const { chromium } = require('playwright');
     await page.getByRole('button', { name: 'Music Reviews', exact: true }).waitFor();
     await page.getByRole('button', { name: /Tokyo, Japan/ }).click();
     releaseRoom();
-    await page.waitForFunction(() => window.preloadProbe().ready, null, { timeout: 60000 });
+    try { await page.waitForFunction(() => window.preloadProbe().ready, null, { timeout: 60000 }); }
+    catch (error) { console.log('Preparation state:', await page.evaluate(() => ({ probe: preloadProbe(), notices: document.querySelector('#area-loads').innerText, stages: performance.getEntriesByType('measure').map(e => e.name) }))); throw error; }
     const prepared = await page.evaluate(() => window.preloadProbe());
     assert.equal(prepared.readersHidden, true, 'Prepared reader pages stay hidden on the globe');
     assert.equal(prepared.videoPaused, true, 'Preloading must not play the hidden room video');
     assert.equal(prepared.audioPaused, true, 'Preloading must not play room audio');
 
+    await page.waitForFunction(() => window.preloadProbe().backgroundStarted, null, { timeout: 15000 });
+    await page.locator('#area-loads:empty').waitFor({ state: 'attached', timeout: 60000 });
     const requestCount = requests.length;
     const idle = await page.evaluate(() => window.preloadProbe());
     await page.waitForTimeout(500);
@@ -91,7 +96,7 @@ const { chromium } = require('playwright');
     // Chrome may revalidate the tab icon after a History API URL change.
     const newSceneRequests = newRequests.filter(url => !url.includes('/assets/towski-dev-logo.png'));
     assert.deepEqual(newSceneRequests, [], 'Explore must reuse prepared scene and media assets');
-    assert.ok(arrival.exploreToTravelMs < 100, 'A prepared Explore click must start travel within 100ms');
+    assert.ok(arrival.exploreToTravelMs < 750, 'Cached imagery must rehydrate and start travel within750ms without another download');
     assert.deepEqual(errors, []);
     await page.close();
 

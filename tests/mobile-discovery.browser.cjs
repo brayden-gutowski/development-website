@@ -7,15 +7,16 @@ const { chromium } = require('playwright');
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
     const errors = [], requests = [];
     page.on('pageerror', e => errors.push(e.message));
-    page.on('request', r => requests.push(r.url()));
+    page.on('request', r => requests.push({url:r.url(),at:Date.now()}));
     await page.route('**/script.js*', async route => {
       const response = await route.fetch();
-      await route.fulfill({ response, body: await response.text() + ';window.touchRoom = () => japanRoom;' });
+      await route.fulfill({ response, body: await response.text() + `;window.touchRoom = () => japanRoom;window.touchBackgroundStarted=()=>backgroundAreasStarted;new MutationObserver(()=>{if(ui.loading.classList.contains('is-complete'))window.touchForegroundReadyAt ||=Date.now();}).observe(ui.loading,{attributes:true,attributeFilter:['class']});` });
     });
     await page.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
     await page.locator('#loading-screen').waitFor({ state: 'hidden' });
-    await page.waitForTimeout(700);
-    assert.ok(!requests.some(url => /JapanRoom|diary-reader|book-reader|tokyo-flight|tokyo-window/.test(url)), 'An unrelated globe visit must not download Tokyo');
+    await page.waitForFunction(()=>touchBackgroundStarted());
+    const foregroundReadyAt=await page.evaluate(()=>touchForegroundReadyAt);
+    assert.ok(requests.filter(({url})=>/JapanRoom|diary-reader|book-reader|tokyo-flight|tokyo-window/.test(url)).every(({at})=>at>=foregroundReadyAt), 'Background Tokyo preparation starts after the globe becomes usable');
     await page.mouse.move(5,5);
     await page.locator('[data-location="tokyo"]').blur();
     assert.equal(await page.locator('[data-location="tokyo"]').evaluate(e => getComputedStyle(e).outlineStyle), 'none', 'Persistent outlines belong only to the room props');
@@ -50,6 +51,6 @@ const { chromium } = require('playwright');
     await page.getByRole('button', { name: 'Put books back', exact: true }).click();
     assert.deepEqual(await selected(), actions, 'Discovery returns when the book closes');
     assert.deepEqual(errors, []);
-    console.log('PASS: deferred Tokyo downloads, only five room contours, and reader suppression');
+    console.log('PASS: foreground-first background Tokyo preparation, only five room contours, and reader suppression');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

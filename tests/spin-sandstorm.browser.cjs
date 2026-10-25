@@ -13,6 +13,7 @@ const {PNG}=require('pngjs');
     });
     await page.goto((process.env.TEST_URL||'http://127.0.0.1:4173')+'/#tokyo');
     await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
+    await page.locator('#loading-screen').waitFor({state:'hidden'});
     await page.emulateMedia({reducedMotion:'no-preference'});
     await page.locator('#tokyo-record-track').evaluate(a=>{a.volume=0;});
     await page.locator('[data-room-action="music"]').focus();await page.keyboard.press('Enter');

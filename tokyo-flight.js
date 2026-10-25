@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createTokyoClouds } from "./tokyo-clouds.js?v=20261018-optimized-25";
+import { createTokyoClouds } from "./tokyo-clouds.js?v=20261025-leak-audit-2";
 
 // A small, prepared imagery pyramid on the actual globe. The camera never
 // changes renderers, projections, or coordinate systems during the flight.
@@ -10,24 +10,20 @@ function smooth(min, max, value) {
   return t * t * (3 - 2 * t);
 }
 
-export async function createTokyoFlight({ renderer, earthGroup, radius, location, globeLighting }) {
+export async function createTokyoFlight({ renderer, earthGroup, radius, location, globeLighting, assetDirectory = "assets/tokyo-flight" }) {
   const container = document.querySelector("#city-flight");
   const latitude = THREE.MathUtils.degToRad(location.lat);
   // Atlases are prepared once offline; visiting Tokyo never downloads or
   // assembles hundreds of third-party map tiles on the UI thread.
   let prepared = [];
   try {
-    const response = await fetch('assets/tokyo-flight/manifest.json?v=20261018-optimized-25', { signal: AbortSignal.timeout(2500) });
+    const response = await fetch(`${assetDirectory}/manifest.json?v=20261024-1`, { signal: AbortSignal.timeout(2500) });
     if (!response.ok) throw new Error('Flight manifest unavailable');
     const layers = await response.json();
     const loaded = await Promise.allSettled(layers.map(async layer => {
-      const response = await fetch(`assets/tokyo-flight/${layer.zoom}.webp?v=20261018-optimized-25`, { signal: AbortSignal.timeout(2500) });
+      const response = await fetch(`${assetDirectory}/${layer.zoom}.webp?v=20261024-1`, { signal: AbortSignal.timeout(2500) });
       if (!response.ok) throw new Error('Flight atlas unavailable');
-      const image = await createImageBitmap(await response.blob(), { imageOrientation: 'flipY', premultiplyAlpha: 'none' });
-      const texture = new THREE.Texture(image);
-      texture.flipY = false;
-      texture.needsUpdate = true;
-      return { ...layer, texture };
+      return { ...layer, blob: await response.blob() };
     }));
     prepared = loaded.flatMap(result => result.status === 'fulfilled' ? [result.value] : []);
   } catch { /* The existing globe provides a complete fallback. */ }
@@ -37,13 +33,14 @@ export async function createTokyoFlight({ renderer, earthGroup, radius, location
   }
 
   const group = new THREE.Group();
-  group.name = "tokyo-aerial-imagery";
+  const city = location.id || "tokyo";
+  group.name = `${city}-aerial-imagery`;
   const materials = [];
   for (const [index, layer] of prepared.entries()) {
-    const texture = layer.texture;
+    const texture = layer.texture = new THREE.Texture();
+    texture.flipY = false;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    renderer.initTexture(texture);
     const segments = layer.zoom <= 6 ? 128 : 40;
     const geometry = new THREE.PlaneGeometry(1, 1, segments, segments);
     const uv = geometry.attributes.uv;
@@ -100,38 +97,112 @@ export async function createTokyoFlight({ renderer, earthGroup, radius, location
       `);
     };
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = `tokyo-aerial-${layer.zoom}`;
+    mesh.name = `${city}-aerial-${layer.zoom}`;
     mesh.renderOrder = 10 + index;
     mesh.frustumCulled = false;
     group.add(mesh);
-    materials.push({ material, mesh, zoom: layer.zoom });
-    // Let focus/panel animations draw between texture uploads.
-    await new Promise(requestAnimationFrame);
+    materials.push({ material, mesh, layer, zoom: layer.zoom });
+  }
+  let preparation, resident = false, wanted = false, disposed = false, generation = 0;
+  function releaseAtlases() {
+    resident = false;
+    for (const { texture } of prepared) {
+      texture.dispose();
+      texture.image?.close();
+      texture.image = null;
+    }
+  }
+  function prepare() {
+    if (disposed) return Promise.reject(new Error('Flight imagery has been disposed'));
+    wanted = true;
+    if (resident) return Promise.resolve();
+    if (preparation) return preparation.then(() => { if (wanted && !resident) return prepare(); });
+    const version = generation;
+    return preparation = (async () => {
+      const layers = prepared;
+      const decoded = await Promise.allSettled(layers.map(layer =>
+        createImageBitmap(layer.blob, { imageOrientation: 'flipY', premultiplyAlpha: 'none' })));
+      try {
+        let uploadStartedAt = performance.now();
+        for (const [index, result] of decoded.entries()) {
+          if (!wanted || version !== generation) return;
+          const layer = layers[index];
+          if (result.status === 'rejected') {
+            // A broken detail atlas must not hide the remaining imagery.
+            const materialIndex = materials.findIndex(value => value.layer === layer);
+            const [{ mesh, material }] = materials.splice(materialIndex, 1);
+            mesh.removeFromParent(); mesh.geometry.dispose(); material.dispose(); layer.texture.dispose();
+            prepared = prepared.filter(value => value !== layer);
+            continue;
+          }
+          const image = result.value;
+          layer.width = image.width;
+          layer.texture.image = image;
+          layer.texture.needsUpdate = true;
+          renderer.initTexture(layer.texture);
+          // Bound upload work without charging every atlas a whole frame.
+          if (performance.now() - uploadStartedAt >= 6) {
+            await new Promise(requestAnimationFrame);
+            uploadStartedAt = performance.now();
+          }
+        }
+        resident = wanted && version === generation;
+      } catch (error) {
+        releaseAtlases();
+        throw error;
+      } finally {
+        for (const [index, result] of decoded.entries()) {
+          if (result.status === 'fulfilled' && layers[index].texture.image !== result.value) result.value.close();
+        }
+      }
+    })().finally(() => { preparation = null; });
+  }
+  function disposeGroup() {
+    releaseAtlases();
+    group.removeFromParent();
+    const textures = new Set();
+    group.traverse(object => {
+      object.geometry?.dispose();
+      for (const material of [object.material].flat()) if (material) {
+        if (material.map) textures.add(material.map);
+        for (const uniform of Object.values(material.uniforms || {})) if (uniform.value?.isTexture) textures.add(uniform.value);
+        material.dispose();
+      }
+    });
+    textures.forEach(texture => texture.dispose());
   }
   let clouds;
   try {
+    await prepare();
+    if (!prepared.length) { delete container.dataset.ready; return null; }
     clouds = await createTokyoClouds({ renderer, radius, latitude, longitude: THREE.MathUtils.degToRad(location.lon) });
+    group.add(clouds.group, clouds.shadows);
+    // Compile and upload before the timed animation, never on its first frame.
+    await renderer.compileAsync(group, new THREE.PerspectiveCamera());
   } catch (error) {
-    group.traverse(object => {
-      object.geometry?.dispose();
-      if (object.material) {
-        object.material.map?.image?.close?.();
-        object.material.map?.dispose();
-        object.material.dispose();
-      }
-    });
+    disposeGroup();
     throw error;
   }
-  group.add(clouds.group, clouds.shadows);
-  earthGroup.add(group);
-  // Compile and upload before the timed animation, never on its first frame.
-  await renderer.compileAsync(group, new THREE.PerspectiveCamera());
   group.visible = false;
+  earthGroup.add(group);
   // Imagery attribution remains in the Towski.dev project drawer and assets credits.
   container.replaceChildren();
   if (prepared.length) container.dataset.ready = "true";
   container.dataset.zoom = "1.2";
   return {
+    group, prepare,
+    suspend() {
+      wanted = false;
+      generation++;
+      if (group.visible) this.setOpacity(0);
+      releaseAtlases();
+    },
+    dispose() {
+      this.suspend();
+      disposed = true;
+      disposeGroup();
+      prepared = [];
+    },
     cloudHeight: .00024,
     update: clouds.update,
     setProgress(zoom) {
@@ -141,8 +212,8 @@ export async function createTokyoFlight({ renderer, earthGroup, radius, location
       if (globeLighting) globeLighting.daylight.value = prepared.length ? THREE.MathUtils.smootherstep(zoom, 3.8, 7.8) : 0;
       const detailZoom = zoom + Math.log2(renderer.getPixelRatio()) * smooth(5, 7, zoom);
       const frameSpan = Math.hypot(innerWidth, innerHeight);
-      const base = Math.max(0, materials.findLastIndex(layer => layer.zoom <= detailZoom
-        && layer.material.map.image.width * 2 ** (zoom - layer.zoom) * .6 >= frameSpan));
+      const base = Math.max(0, materials.findLastIndex(entry => entry.zoom <= detailZoom
+        && entry.layer.width * 2 ** (zoom - entry.zoom) * .6 >= frameSpan));
       materials.forEach(({ material, mesh, zoom: level }, index) => {
         // Bring detail in before its predecessor is enlarged. Keep one broad
         // parent beneath the feathered edges; older full-screen layers add cost.

@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch({channel:'chrome',headless:true});try{const p=await b.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});await p.goto(process.env.TEST_URL||'http://127.0.0.1:4173');await p.locator('#loading-screen').waitFor({state:'hidden'});
+ assert.equal(await p.locator('[data-location="gainesville"] .location-link__star').innerHTML(),await p.locator('[data-location="tokyo"] .location-link__star').innerHTML(),'Gainesville uses the same star as Tokyo');
+ await p.getByRole('button',{name:/Gainesville, Florida/}).click();
+ assert.equal(await p.locator('.panel-actions button').count(),1,'Gainesville globe panel should contain only Explore');
+ const style=async()=>p.getByRole('button',{name:'Explore',exact:true}).evaluate(e=>{const s=getComputedStyle(e);return ['backgroundImage','borderColor','boxShadow','textShadow','fontSize','padding','borderRadius'].map(k=>s[k]);});
+ const gainesville=await style();await p.getByRole('button',{name:/Tokyo, Japan/}).click();assert.deepEqual(await style(),gainesville,'Gainesville and Tokyo Explore styles should match exactly');
+ console.log('PASS: Gainesville has only Explore and shares Tokyo button styling');
+}finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1;});

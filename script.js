@@ -4,6 +4,7 @@ import { springStep, resistBoundary, easeTokyoApproach } from "./motion.mjs?v=20
 const DEFAULT_DOCUMENT_TITLE = 'Towski.dev';
 const ENGLISH_WORDMARK = "BRAYDEN GUTOWSKI";
 const JAPANESE_WORDMARK = "ブライデン・グトウスキ";
+const WORDMARK_GLITCH_CHARACTERS = ["ア", "ヲ", "7", "#", "?", "▓"];
 
 const CONFIG = {
   globeRadius: 1.72,
@@ -35,14 +36,7 @@ const LOCATIONS = {
     lon: -82.3248,
     description: "I'm currently a player and the market coordinator for UF Valorant Esports.  I'm also a part of the DevLUp game development club at UF.",
     actions: [
-      {
-        label: "Projects",
-        categories: [
-          { label: "General", drawerId: "coding-projects" },
-          { label: "Games", drawerId: "game-development" },
-          { label: "Competition", drawerId: "competition" },
-        ],
-      },
+      { label: "Explore", explore: true },
     ],
   },
   nashville: {
@@ -96,7 +90,7 @@ const DRAWERS = {
         image: "assets/ArcadeAdventuresWeb.webp",
         imageAlt: "Arcade Adventures game thumbnail showing players at arcade cabinets",
         href: "https://www.roblox.com/games/96313690258281/Arcade-Adventures",
-        linkLabel: "Open on Roblox",
+        linkLabel: "Game link",
       },
 
     ],
@@ -107,6 +101,7 @@ const DRAWERS = {
     entries: [
       {
         title: "Towski.dev",
+        githubHref: "https://github.com/brayden-gutowski/development-website",
         meta: "Javascript; HTML",
         description: "This website is a museum of my life I plan to update monthly or yearly for a long time. I hope that one day I've travelled the world and this globe is filled with different areas to look at.  In the meantime I have information on my Japanese and coding journey.\n\nThank you for looking at my world.",
         attributions: [
@@ -150,6 +145,7 @@ const DRAWERS = {
       },
       {
         title: "AREDL Discord Bot",
+        githubHref: "https://github.com/brayden-gutowski/aredl-leaderboards-bot",
         meta: "REST API; Java",
         description: "This discord bot was my biggest dive into using APIs to automate a previously manual task.  This bot searched through the All Rated Extreme Demon List API in order to rank individual members within a discord server.  I implemented features like sorting via hardest level, total points, or extreme demon count for quality of life for users using a cached hash map of the leaderboard.",
       },
@@ -161,6 +157,7 @@ const DRAWERS = {
     entries: [
       {
         title: "SteadyForum",
+        githubHref: "https://github.com/Del0m/KnightHacks2026",
         meta: "TypeScript; Swift; React Native; DataBricks; Neon; HuggingFace",
         award: 'Won 2nd place in "Databricks: Best Use of Databricks" at Knight Hacks IX',
         description: 'This project was my first attempt at a hackathon project, and it was probably the hardest I\'ve ever worked on a project.  I pulled multiple all-nighters to get it done, and our final push ended up being just 1 minute before the deadline.  For this project, we created an app that tracks and corrects form while in the gym, preventing further injuries.  I worked with an incredible team (me and 3 others) in order to make this come to life.  I worked primarily on integration and front-end for the app, connecting things like Databricks for processing workout data, HuggingFace for AI-generated coaching feedback, and Neon for storing user accounts and workout history.',
@@ -701,7 +698,7 @@ function isTokyoRoute() {
 
 function updateLocationUrl({ force = false, replace = true } = {}) {
   if (routeLocationAfterTravel !== null || !force && (readBlogRoute() || readBookReviewRoute())) return;
-  const id = roomIsVisible ? 'tokyo' : hoveredLocationId || (state.selectedId !== 'tokyo' ? state.selectedId : null);
+  const id = roomIsVisible ? roomLocationId : hoveredLocationId || (state.selectedId !== 'tokyo' ? state.selectedId : null);
   writePageRoute(id ? `#${id}` : '', id ? LOCATIONS[id].kicker : '', { replace });
 }
 
@@ -813,6 +810,42 @@ let glassTarget;
 let glassScene;
 let glassCamera;
 let glassMaterial;
+let gainesvilleRoom, gainesvilleRoomPromise, xpDesktop;
+let roomLocationId = 'tokyo';
+function activeRoom() { return roomLocationId === 'gainesville' ? gainesvilleRoom : japanRoom; }
+async function loadGainesvilleRoom() {
+  setAreaLoadProgress('gainesville', 8, 'Downloading the Gainesville room', 'Models, textures and lighting');
+  return gainesvilleRoomPromise ||= Promise.all([
+    import('./gainesville-room.js?v=20261025-leak-audit-2'),
+    import('./xp-desktop.js?v=20261025-leak-audit-2'),
+  ]).then(async ([module, desktop])=>{
+    const room=await module.createGainesvilleRoom();
+    try {
+      setAreaLoadProgress('gainesville', 78, 'Preparing the Gainesville room', 'Adding lighting and desktop resources');
+      room.resize(innerWidth,innerHeight,renderer.getPixelRatio(),renderScale);
+      await room.prepare(renderer);
+      const target=renderer.getRenderTarget();
+      let compiling;
+      try { renderer.setRenderTarget(glassTarget); compiling=renderer.compileAsync(room.scene,room.camera); }
+      finally { renderer.setRenderTarget(target); }
+      await compiling;
+      const warmTarget=glassTarget.clone();
+      try { renderer.setRenderTarget(warmTarget); renderer.render(room.scene,room.camera); room.shade(renderer,warmTarget); room.outline.render(renderer,warmTarget,warmTarget); }
+      finally { renderer.setRenderTarget(target); warmTarget.dispose(); }
+      gainesvilleRoom=room;
+      xpDesktop ||= desktop.createXPDesktop({getRoom:()=>gainesvilleRoom,
+        categories:[{id:'general',label:'General',entries:DRAWERS['coding-projects'].entries},
+          {id:'games',label:'Game Development',entries:DRAWERS['game-development'].entries},
+          {id:'competition',label:'Competition',entries:DRAWERS.competition.entries}],
+        recycledEntries:[{title:"Miner's Tycoon",meta:'Roblox Studio; Lua (Luau)',
+          description:"I'm only putting this on here so people can see my beginnings.  My very first experience with coding was in 2017, when I was 10 years old.  Me and one of my friends decided to try and make a mining simulator within Roblox.  I did a lot of 3D design and made a bit of code, but eventually I ended up moving on and leaving the project behind.  Funnily enough, the project is still on my Roblox account to this day.  I'll link the game here if you want to check it out, but it's only a museum of the past at this point.",
+          image:'assets/miners-tycoon.png',imageAlt:"Miner's Tycoon in Roblox Studio",href:'https://www.roblox.com/games/1253369771/Miners-Tycoon'}],
+        onExit:options=>activateRoomObject(null,options)});
+      await xpDesktop.prepare();
+      return room;
+    } catch(error) { gainesvilleRoom=null;room.dispose();throw error; }
+  }).catch(error=>{gainesvilleRoomPromise=null;throw error;});
+}
 let japanRoom;
 let japanRoomPromise;
 let japanRoomModule;
@@ -822,20 +855,115 @@ let bookReader;
 let readerModules, createDiaryReader, createBookReader;
 const flightDaylight = { value: 0 };
 let cityFlight;
-let cityFlightPromise;
+const cityFlightPromises = new Map();
 let tokyoVisit;
 let roomIsVisible = false;
 let roomIsLoading = false;
+let pendingExploreLocation = null;
 let openContentOnArrival = false;
 let contentRoutingReady = false;
 let globePromise;
 let loadingProgress = 0;
+let startupLoadingArea = null;
+const areaLoads = new Map();
+let backgroundAreasStarted = false;
+const areaLoadStack = document.querySelector('#area-loads');
+const areaLoadAnnouncement = document.querySelector('#area-load-announcement');
+
+function setAreaLoadProgress(id, percent, message, detail = '', ready, total) {
+  if (startupLoadingArea === id) setLoadProgress(percent, message, detail);
+  const notice = areaLoads.get(id);
+  if (!notice || notice.dataset.state === 'complete' || notice.dataset.state === 'error') return;
+  notice.dataset.state = 'loading';
+  notice.querySelector('.area-load__detail').textContent = detail || message;
+  const bar = notice.querySelector('[role="progressbar"]');
+  bar.setAttribute('aria-valuetext', `${message}${detail ? ': ' + detail : ''}`);
+  if (Number.isFinite(total) && total > 0) {
+    bar.setAttribute('aria-valuenow', ready);
+    bar.setAttribute('aria-valuemax', total);
+    bar.style.setProperty('--area-progress', `${ready / total * 100}%`);
+  } else {
+    bar.removeAttribute('aria-valuenow');
+    bar.style.removeProperty('--area-progress');
+  }
+}
+
+function dismissAreaLoad(id, error) {
+  const notice = areaLoads.get(id);
+  if (!notice) return;
+  const name = notice.querySelector('.area-load__name').textContent;
+  notice.dataset.state = error ? 'error' : 'complete';
+  notice.querySelector('.area-load__detail').textContent = error ? 'Unavailable · will retry when visited' : 'Ready to explore';
+  notice.querySelector('[role="progressbar"]').hidden = true;
+  areaLoadAnnouncement.textContent = `${name}: ${error ? 'preparation failed; visit to retry' : 'ready to explore'}`;
+  setTimeout(() => {
+    notice.classList.add('is-leaving');
+    setTimeout(() => {
+      const following = [...areaLoadStack.children].filter(item => item !== notice);
+      const tops = following.map(item => item.getBoundingClientRect().top);
+      notice.remove();
+      areaLoads.delete(id);
+      if (!state.reducedMotion) following.forEach((item, i) => item.animate([
+        { transform: `translateY(${tops[i] - item.getBoundingClientRect().top}px)` },
+        { transform: 'translateY(0)' },
+      ], { duration: 260, easing: 'ease-out' }));
+    }, state.reducedMotion ? 0 : 320);
+  }, error ? 4500 : 1200);
+}
+
+async function waitForBackgroundTurn() {
+  // Keep scene preparation out of a timed flight; foreground callers reuse the
+  // same loader promises and can start a queued destination immediately.
+  while (document.hidden || roomIsLoading || tokyoVisit && tokyoVisit.direction !== 'room') {
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+}
+
+async function preloadOtherAreas() {
+  if (backgroundAreasStarted) return;
+  backgroundAreasStarted = true;
+  const current = roomIsVisible ? roomLocationId : 'globe';
+  const areas = ['globe', 'tokyo', 'gainesville'].filter(id => id !== current);
+  for (const id of areas) {
+    const notice = document.createElement('div');
+    notice.className = 'area-load';
+    notice.dataset.area = id;
+    notice.dataset.state = 'waiting';
+    const name = id === 'globe' ? 'Globe' : LOCATIONS[id].kicker.split(',')[0];
+    notice.innerHTML = `<p class="area-load__name"></p><p class="area-load__detail">Waiting to prepare</p><div class="area-load__progress" role="progressbar" aria-valuemin="0"><span></span></div>`;
+    notice.querySelector('.area-load__name').textContent = name;
+    notice.querySelector('[role="progressbar"]').setAttribute('aria-label', `${name} background preparation`);
+    areaLoadStack.append(notice);
+    areaLoads.set(id, notice);
+  }
+  areaLoadAnnouncement.textContent = 'Preparing other areas in the background';
+  for (const id of areas) {
+    await waitForBackgroundTurn();
+    setAreaLoadProgress(id, 0, 'Preparing area', 'Starting background preparation');
+    try {
+      await (id === 'globe' ? loadGlobe() : id === 'tokyo' ? loadJapanRoom() : loadGainesvilleRoom());
+      if (!state.reducedMotion && state.globeAvailable) {
+        await waitForBackgroundTurn();
+        setAreaLoadProgress(id, 0, 'Preparing the flight', 'Loading aerial imagery');
+        // A direct room visit also needs its departure imagery once the globe exists.
+        await loadCityFlight(id === 'globe' ? current : id, { activate: false });
+      }
+      const room=id==='tokyo'?japanRoom:id==='gainesville'?gainesvilleRoom:null;
+      if(room && !(roomLocationId===id && (roomIsVisible || tokyoVisit || roomIsLoading))){room.suspendEffects?.();room.suspendTextures?.();}
+      dismissAreaLoad(id);
+    } catch (error) {
+      console.warn(`${id} background preparation failed; navigation will retry`, error);
+      dismissAreaLoad(id, error);
+    }
+  }
+}
 let resetPanelScroll, resetDrawerScroll;
 let renderScale = 1;
 let slowFrameTime = 0;
 let qualityCheckAfter = 0;
 let hoveredLocationId = null;
 let routeLocationAfterTravel = null;
+let routeHashAfterTravel = null;
 let roomPointerDown;
 const roomHud = document.querySelector("#room-hud");
 const roomHint = document.querySelector("#room-hint");
@@ -853,17 +981,28 @@ function loadReaders() {
 
 function prepareTokyo() {
   loadJapanRoom().catch(error => console.warn('Room preparation failed; Explore will retry', error));
-  if (!state.reducedMotion) loadCityFlight();
+  if (!state.reducedMotion) loadCityFlight("tokyo", {activate:false});
 }
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261024-outline-1")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261025-leak-audit-2")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS,
-      onProgress: (ready, total) => setLoadProgress(8 + ready / total * 57,
-        'Downloading the Tokyo room', `${ready} of ${total} assets ready`),
+      onProgress: (ready, total) => setAreaLoadProgress('tokyo', 8 + ready / total * 57,
+        'Downloading the Tokyo room', `${ready} of ${total} assets ready`, ready, total),
     }))
     .catch(error=>{japanRoomAssets=null;throw error;});
+}
+
+// Keep diagnostic samples useful without retaining one entry for every visit.
+function markLatest(name) {
+  performance.clearMarks(name);
+  performance.mark(name);
+}
+
+function measureLatest(name, options) {
+  performance.clearMeasures(name);
+  return performance.measure(name, options);
 }
 
 function loadJapanRoom() {
@@ -877,7 +1016,7 @@ function loadJapanRoom() {
         // Disable unsupported targets before even the material warmup can
         // trigger Three.js's automatic environment-map conversion.
         if (!renderer.extensions.has('EXT_color_buffer_float')) await room.prepare(renderer);
-        setLoadProgress(70, 'Preparing books and diary', 'Loading pages and photographs');
+        setAreaLoadProgress('tokyo', 70, 'Preparing books and diary', 'Loading pages and photographs');
         await loadReaders();
         await Promise.all([ensureDiaryReader().prepare(), ensureBookReader().prepare()]);
         room.resize(innerWidth, innerHeight, renderer.getPixelRatio(), renderScale);
@@ -888,38 +1027,38 @@ function loadJapanRoom() {
             if (material) for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
           }
         });
-        setLoadProgress(78, 'Preparing the room', 'Adding textures and lighting');
+        setAreaLoadProgress('tokyo', 78, 'Preparing the room', 'Adding textures and lighting');
         let uploadStartedAt = performance.now(), uploaded = 0;
         for (const texture of textures) {
           renderer.initTexture(texture);
-          setLoadProgress(78 + ++uploaded / textures.size * 5, 'Preparing the room', 'Adding textures and lighting');
+          setAreaLoadProgress('tokyo', 78 + ++uploaded / textures.size * 5, 'Preparing the room', 'Adding textures and lighting');
           if (performance.now() - uploadStartedAt >= 6) {
             await new Promise(requestAnimationFrame);
             uploadStartedAt = performance.now();
           }
         }
-        setLoadProgress(86, 'Preparing the room', 'Setting up the scene for your device');
-        performance.mark("room-compile-start");
+        setAreaLoadProgress('tokyo', 86, 'Preparing the room', 'Setting up the scene for your device');
+        markLatest("room-compile-start");
         const compileTarget = renderer.getRenderTarget();
         renderer.setRenderTarget(glassTarget);
         const compiling = renderer.compileAsync(room.scene, room.camera);
         renderer.setRenderTarget(compileTarget);
         await compiling;
-        performance.measure("room-compile", "room-compile-start");
-        setLoadProgress(90, 'Preparing the lighting', 'Finishing reflections and shadows');
-        performance.mark("room-probe-start");
+        measureLatest("room-compile", "room-compile-start");
+        setAreaLoadProgress('tokyo', 90, 'Preparing the lighting', 'Finishing reflections and shadows');
+        markLatest("room-probe-start");
         await room.prepare(renderer);
-        performance.measure("room-probe", "room-probe-start");
+        measureLatest("room-probe", "room-probe-start");
         // The captured environment changes CubeUV shader dimensions.
-        setLoadProgress(94, 'Finishing up', 'Almost ready to explore');
-        performance.mark("room-final-compile-start");
+        setAreaLoadProgress('tokyo', 94, 'Finishing up', 'Almost ready to explore');
+        markLatest("room-final-compile-start");
         const finalCompileTarget = renderer.getRenderTarget();
         renderer.setRenderTarget(glassTarget);
         const finalCompiling = renderer.compileAsync(room.scene, room.camera);
         renderer.setRenderTarget(finalCompileTarget);
         await finalCompiling;
-        performance.measure("room-final-compile", "room-final-compile-start");
-        setLoadProgress(97, 'Finishing up', 'Checking the scene');
+        measureLatest("room-final-compile", "room-final-compile-start");
+        setAreaLoadProgress('tokyo', 97, 'Finishing up', 'Checking the scene');
         await new Promise(requestAnimationFrame);
         const previousTarget = renderer.getRenderTarget();
         // Match the live buffer so glass/transmission and post effects allocate
@@ -928,25 +1067,25 @@ function loadJapanRoom() {
         try {
           renderer.setRenderTarget(warmTarget);
           const beforeWarmPrograms = new Set(renderer.info.programs.map(program => program.id));
-          performance.mark("room-render-start");
+          markLatest("room-render-start");
           renderer.render(room.scene, room.camera);
-          performance.measure("room-render", {start: "room-render-start", detail: { newPrograms: renderer.info.programs.filter(program => !beforeWarmPrograms.has(program.id)).length }});
+          measureLatest("room-render", {start: "room-render-start", detail: { newPrograms: renderer.info.programs.filter(program => !beforeWarmPrograms.has(program.id)).length }});
           renderer.setRenderTarget(previousTarget);
           await new Promise(requestAnimationFrame);
-          performance.mark("room-shade-start");
+          markLatest("room-shade-start");
           room.shade(renderer, warmTarget);
-          performance.measure("room-shade", "room-shade-start");
+          measureLatest("room-shade", "room-shade-start");
           renderer.setRenderTarget(previousTarget);
           await new Promise(requestAnimationFrame);
           room.highlight("music");
-          performance.mark("room-outline-start");
+          markLatest("room-outline-start");
           room.outline.render(renderer, warmTarget, warmTarget, 0, false);
-          performance.measure("room-outline", "room-outline-start");
+          measureLatest("room-outline", "room-outline-start");
           room.highlight(null);
           renderer.setRenderTarget(previousTarget);
           // Complete GPU work before Explore starts the timed flight. Yield
           // with the main target restored so the globe can keep rendering.
-          setLoadProgress(99, 'Finishing up', 'Checking the scene');
+          setAreaLoadProgress('tokyo', 99, 'Finishing up', 'Checking the scene');
           const gl = renderer.getContext();
           const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
           gl.flush();
@@ -964,46 +1103,76 @@ function loadJapanRoom() {
   return japanRoomPromise;
 }
 
-function loadCityFlight() {
-  if (!cityFlightPromise) {
-    cityFlightPromise = import("./tokyo-flight.js?v=20261018-seamless-3").then(module => module.createTokyoFlight({
-      renderer, earthGroup, radius: CONFIG.globeRadius, location: LOCATIONS.tokyo,
+function loadCityFlight(locationId = roomLocationId, { activate = true } = {}) {
+  if (!cityFlightPromises.has(locationId)) {
+    const promise = import("./tokyo-flight.js?v=20261025-leak-audit-2").then(module => module.createTokyoFlight({
+      renderer, earthGroup, radius: CONFIG.globeRadius, location: LOCATIONS[locationId], assetDirectory: `assets/${locationId === "tokyo" ? "tokyo" : "gainesville"}-flight`,
       globeLighting: earthMaterial.userData.globeLighting,
     })).then(async flight => {
-      cityFlight = flight;
-      if (flight) {
+      // The imagery loader also returns null for a recoverable network failure.
+      // Keep that fallback usable, but let the next visit retry its download.
+      if(!flight){cityFlightPromises.delete(locationId);return null;}
+      try {
         // Flight imagery is drawn into the linear glass buffer, not the screen
         // used by its module's initial compile. Warm that actual shader variant.
         const target = renderer.getRenderTarget();
         let compiling;
-        flight.setOpacity(1);
         try {
           renderer.setRenderTarget(glassTarget);
-          compiling = renderer.compileAsync(scene, camera);
-        } finally {
-          renderer.setRenderTarget(target);
-          flight.setOpacity(0);
-        }
+          compiling = renderer.compileAsync(flight.group, camera, scene);
+        } finally { renderer.setRenderTarget(target); }
         await compiling;
+      } catch (error) {
+        flight.dispose();
+        throw error;
       }
       return flight;
     }).catch(error => {
       console.warn("City imagery unavailable; using the globe transition", error);
-      cityFlightPromise = null;
+      cityFlightPromises.delete(locationId);
       return null;
     });
+    cityFlightPromises.set(locationId, promise);
   }
-  return cityFlightPromise;
+  return cityFlightPromises.get(locationId).then(async flight=>{
+    if(!flight)return null;
+    if(activate && roomLocationId===locationId && roomIsLoading){
+      // Publish the reservation before awaiting, so background completion cannot
+      // suspend imagery that foreground navigation is rehydrating.
+      cityFlight=flight;
+      const start=performance.now();await flight.prepare();measureLatest('flight-resume',{start,detail:{city:locationId}});
+      if(cityFlight!==flight || roomLocationId!==locationId || !roomIsLoading && (!tokyoVisit || tokyoVisit.direction==='room'))flight.suspend();
+    }else if(cityFlight!==flight)flight.suspend();
+    return flight;
+  });
+}
+
+function warmRoomEffects(room){
+  if(!room?.effectsSuspended)return;
+  const previous=renderer.getRenderTarget(),start=performance.now();
+  // This synchronous warmup safely reuses the existing offscreen buffer.
+  // Scene models, full-resolution textures and shader programs stay cached.
+  try{renderer.setRenderTarget(glassTarget);renderer.render(room.scene,room.camera);room.shade(renderer,glassTarget);room.outline.render(renderer,glassTarget,glassTarget);}
+  finally{renderer.setRenderTarget(previous);measureLatest('room-effects-resume',{start});}
 }
 
 function showRoomView(visible) {
   roomIsVisible = visible;
-  japanRoom?.setVisible(visible, state.reducedMotion);
+  activeRoom()?.setVisible(visible, state.reducedMotion);
+  if(!visible){xpDesktop?.close(true);activeRoom()?.suspendEffects?.();activeRoom()?.suspendTextures?.();}
   ui.app.classList.toggle("is-in-room", visible);
   roomHud.hidden = !visible;
+  roomHint.hidden=false;
+  roomHud.setAttribute('aria-label',LOCATIONS[roomLocationId].kicker+' room');
+  roomHud.querySelectorAll('[data-room-action]').forEach(button=>{
+    button.hidden = roomLocationId === 'gainesville' ? !['door','computer','lamp'].includes(button.dataset.roomAction) : ['computer','lamp'].includes(button.dataset.roomAction);
+  });
+  if(visible) roomHud.querySelector('[data-room-action="computer"]').setAttribute("aria-pressed", "false");
+  const exitButton=roomHud.querySelector('[data-room-action="door"]');
+  exitButton.setAttribute('aria-label',roomLocationId==='gainesville'?'Exit sign · Return to globe':'Door · Return to globe');
   const touch = matchMedia('(hover: none), (pointer: coarse)').matches;
   roomHint.textContent = touch ? 'Tap an outlined object to explore' : 'Hover over objects to explore';
-  ui.stage.setAttribute("aria-label", visible ? (touch ? 'Tokyo room. Tap an outlined object to explore.' : "Tokyo room. Move the pointer to look around; click objects to explore.") : "Interactive 3D globe");
+  ui.stage.setAttribute("aria-label", visible ? `${LOCATIONS[roomLocationId].kicker} room. ${touch ? 'Tap an outlined object to explore.' : 'Move the pointer to look around; click outlined objects to explore.'}` : "Interactive 3D globe");
   hoveredLocationId = null;
   updateLocationUrl();
 }
@@ -1014,18 +1183,27 @@ function setGlobeInterfaceInert(inert) {
   ui.panel.inert = inert;
 }
 
-async function exploreTokyo() {
-  if (roomIsLoading || tokyoVisit) return;
-  if (!state.globeAvailable) return;
+async function exploreTokyo(locationId = "tokyo") {
+  if (roomIsLoading) {
+    if (!tokyoVisit && locationId !== roomLocationId) pendingExploreLocation=locationId;
+    return;
+  }
+  if (tokyoVisit || !state.globeAvailable) return;
   roomIsLoading = true;
   const button = ui.actions.querySelector("[data-explore]");
   button.disabled = true;
   button.textContent = "Preparing room…";
   ui.panel.querySelector(".room-load-error")?.remove();
   try {
-    await Promise.all([loadJapanRoom(), state.reducedMotion ? null : loadCityFlight()]);
-    // A visitor may select another location while the room downloads.
-    if (state.selectedId !== "tokyo") return;
+    roomLocationId=locationId;
+    cityFlight=null;
+    const [room]=await Promise.all([
+      (locationId==='gainesville'?loadGainesvilleRoom():loadJapanRoom()).then(async room=>{const start=performance.now();await room.prepareTextures?.();measureLatest('room-textures-resume',{start,detail:{city:locationId}});return room;}),
+      state.reducedMotion ? null : loadCityFlight(locationId),
+    ]);
+    // A visitor may select another location while cached pixels are restored.
+    if (state.selectedId !== locationId){room.suspendTextures?.();room.suspendEffects?.();cityFlight?.suspend();return;}
+    warmRoomEffects(room);
     closeDrawer({ preserveContentUrl: openContentOnArrival });
     ui.panel.classList.remove("is-open");
     ui.panel.setAttribute("aria-hidden", "true");
@@ -1034,17 +1212,19 @@ async function exploreTokyo() {
     state.zoomVelocity = 0;
     camera.near = 0.005;
     camera.updateProjectionMatrix();
-    japanRoom.reset();
+    activeRoom().reset();
     cityFlight?.resize();
     cityFlight?.setOpacity(1);
     tokyoVisit = { direction: "in", startedAt: performance.now(), startZ: state.cameraCurrentZ, startScale: state.globeCurrentScale, startQuaternion: state.currentQuaternion.clone(), startRelief: earthMaterial.displacementScale, startReliefBias: earthMaterial.displacementBias };
     setGlobeInterfaceInert(true);
     ui.app.classList.add("is-travelling");
-    roomTransition.hidden = false;
-  roomTransition.setAttribute('aria-label', 'Travelling to Tokyo');
+    roomTransition.dataset.destination=roomLocationId;
+  roomTransition.hidden = false;
+  roomTransition.setAttribute('aria-label', `Travelling to ${LOCATIONS[locationId].kicker}`);
     roomTransition.focus({ preventScroll: true });
   } catch (error) {
-    console.error("Tokyo room could not load", error);
+    console.error(`${locationId} room could not load`, error);
+    cityFlight?.suspend();activeRoom()?.suspendTextures?.();activeRoom()?.suspendEffects?.();
     const message = document.createElement("p");
     message.className = "room-load-error";
     message.setAttribute("role", "status");
@@ -1054,6 +1234,9 @@ async function exploreTokyo() {
     button.disabled = false;
     button.textContent = "Explore";
     roomIsLoading = false;
+    const next=pendingExploreLocation;
+    pendingExploreLocation=null;
+    if(next && state.selectedId===next && !tokyoVisit) exploreTokyo(next);
   }
 }
 
@@ -1063,15 +1246,24 @@ async function leaveTokyo() {
   roomHud.inert = true;
   roomHint.textContent = 'Preparing the globe…';
   try {
-    // Shared room links defer the globe and flight until someone uses the door.
+    // Reuse background preparation, or complete the same promises on demand.
     await loadGlobe();
+    if (!state.initialZoomAligned) {
+      state.initialZoomAligned = true;
+      state.currentQuaternion.copy(orientationForLocation(LOCATIONS[roomLocationId]));
+      state.targetQuaternion.copy(state.currentQuaternion);
+      state.globeCurrentScale = CONFIG.maxGlobeScale;
+      state.zoomProgress = state.zoomCurrentProgress = 1;
+    }
     if (!state.reducedMotion) await loadCityFlight();
-    if (routeLocationAfterTravel === 'tokyo') {
+    if (routeLocationAfterTravel === roomLocationId) {
       routeLocationAfterTravel = null;
+      cityFlight?.suspend();
       roomHud.inert = Boolean(state.drawerId);
       return;
     }
   } catch (error) {
+    cityFlight?.suspend();
     console.error('The globe could not load', error);
     roomHint.textContent = 'The globe couldn’t load. Try the door again.';
     roomHud.inert = false;
@@ -1083,14 +1275,16 @@ async function leaveTokyo() {
         ? 'Tap an outlined object to explore' : 'Hover over objects to explore';
     }
   }
+  xpDesktop?.close(true);
   bookReader?.close(true);diaryReader?.close(true);closeDrawer();
-  japanRoom.soundtrack.stop();
+  activeRoom()?.soundtrack?.stop();
   updateMusicControl(false);
   roomHud.inert = true;
   cityFlight?.resize();
   cityFlight?.setOpacity(1);
   tokyoVisit = { direction: "out", startedAt: performance.now() };
   ui.app.classList.add("is-travelling");
+  roomTransition.dataset.destination=roomLocationId;
   roomTransition.hidden = false;
   roomTransition.setAttribute('aria-label', 'Returning to the globe');
   roomTransition.focus({ preventScroll: true });
@@ -1127,7 +1321,7 @@ function updateTokyoTravel(now) {
   state.cameraCurrentZ = camera.position.z;
   if (cityFlight && !state.reducedMotion) {
     const groundWidth = 2 * altitude * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
-    const zoom = Math.log2(2 * Math.PI * surfaceZ * Math.cos(THREE.MathUtils.degToRad(LOCATIONS.tokyo.lat)) / groundWidth) + Math.log2(innerWidth / 256);
+    const zoom = Math.log2(2 * Math.PI * surfaceZ * Math.cos(THREE.MathUtils.degToRad(LOCATIONS[roomLocationId].lat)) / groundWidth) + Math.log2(innerWidth / 256);
     cityFlight.setProgress(zoom);
     cityFlight.update(now / 1000);
   }
@@ -1137,7 +1331,7 @@ function updateTokyoTravel(now) {
   earthMaterial.displacementBias = entering ? tokyoVisit.startReliefBias * (1 - smooth(0, 0.3)) : -0.002 * smooth(0.72, 1);
   if (entering) {
     state.globeCurrentScale = THREE.MathUtils.lerp(tokyoVisit.startScale, CONFIG.maxGlobeScale, smooth(0, 0.27));
-    state.currentQuaternion.slerpQuaternions(tokyoVisit.startQuaternion, orientationForLocation(LOCATIONS.tokyo), smooth(0, 0.27));
+    state.currentQuaternion.slerpQuaternions(tokyoVisit.startQuaternion, orientationForLocation(LOCATIONS[roomLocationId]), smooth(0, 0.27));
     if (p >= 0.9 && !roomIsVisible) {
       showRoomView(true);
       roomHud.inert = true;
@@ -1145,7 +1339,7 @@ function updateTokyoTravel(now) {
   } else {
     if (p >= 0.27 && roomIsVisible) {
       // Reset the pointer camera only after white fully covers the room.
-      japanRoom.reset();
+      activeRoom().reset();
       showRoomView(false);
       closePanel();
     }
@@ -1153,6 +1347,7 @@ function updateTokyoTravel(now) {
   if (p === 1) {
     roomTransition.hidden = true;
     cityFlight?.setOpacity(0);
+    cityFlight?.suspend();
     ui.app.classList.remove("is-travelling");
     roomHud.inert = false;
     if (entering) {
@@ -1174,13 +1369,15 @@ function updateTokyoTravel(now) {
       if (cloudLayer) cloudLayer.material.opacity = 0.62;
       earthMaterial.displacementScale = 0.018;
       earthMaterial.displacementBias = -0.002;
-      document.querySelector('[data-location="tokyo"]').focus({ preventScroll: true });
+      document.querySelector(`[data-location="${roomLocationId}"]`).focus({ preventScroll: true });
       if (openContentOnArrival) handleContentRouteChange();
     }
     if (routeLocationAfterTravel !== null) {
       const id = routeLocationAfterTravel;
       routeLocationAfterTravel = null;
-      writePageRoute(id ? `#${id}` : '', id ? LOCATIONS[id].kicker : '');
+      const route=routeHashAfterTravel || (id ? `#${id}` : '');
+      routeHashAfterTravel=null;
+      writePageRoute(route, id ? LOCATIONS[id].kicker : '');
       handleContentRouteChange();
     }
   }
@@ -1193,8 +1390,27 @@ function updateMusicControl(playing) {
   document.querySelector("#room-music-label").textContent = playing ? "Pause the record" : "Play a record";
 }
 
-async function activateRoomObject(action) {
+async function activateRoomObject(action,{restoreFocus=false}={}) {
   if (!roomIsVisible || roomIsLoading || tokyoVisit?.direction !== "room") return;
+  if (roomLocationId === 'gainesville') {
+    // XP handles clicks on the glass. A second stage hit on the physical
+    // bezel returns to the room rather than reopening the focused computer.
+    if(action==='computer'&&activeRoom().computerFocused)action=null;
+    if(action==='door')leaveTokyo();
+    else if(action==='lamp')activeRoom().flickerLamp();
+    else if(action==='computer' || !action) {
+      activeRoom().focusComputer(action==='computer');
+      roomHud.inert=action==='computer';
+      if(action==='computer')xpDesktop?.open();else {
+        xpDesktop?.defocus();
+        if(restoreFocus)roomHud.querySelector('[data-room-action="computer"]').focus({preventScroll:true});
+      }
+      roomHud.querySelector('[data-room-action="computer"]').setAttribute('aria-pressed',String(action==='computer'));
+      roomHint.hidden=action==='computer';
+      roomHint.textContent=action==='computer'?'Click or tap outside the computer to return':matchMedia('(hover: none), (pointer: coarse)').matches?'Tap an outlined object to explore':'Hover over objects to explore';
+    }
+    return;
+  }
   if (action === "door") leaveTokyo();
   if (action === "diary") openDrawer("japanese-blog");
   if (action === "books") openDrawer("japanese-book-reviews");
@@ -1217,8 +1433,8 @@ function pointInRoom(event) {
 }
 
 function hoverRoomObject(action) {
-  japanRoom.highlight(action);
-  const labels = { diary: "Diary · Japanese Blog", books: "Books · Japanese Books", door: "Door · Return to the world", music: "Record player · Play / pause", curtains: "Curtains · Open / close" };
+  activeRoom().highlight(action);
+  const labels = { lamp: "Overhead light · Flicker and swing", computer: "Computer · Look closer", diary: "Diary · Japanese Blog", books: "Books · Japanese Books", door: "Door · Return to the world", music: "Record player · Play / pause", curtains: "Curtains · Open / close" };
   roomHint.setAttribute("aria-label", labels[action] || roomHint.textContent);
   ui.stage.style.cursor = action ? "pointer" : "default";
 }
@@ -1238,6 +1454,8 @@ function setupGlassRefraction() {
       panels: { value: [new THREE.Vector4(), new THREE.Vector4()] },
       strengths: { value: [0, 0] },
       dream: { value: 0 },
+      diffusionStrength: { value: 1 },
+      sourceAgX: { value: 0 },
       sceneDepth: { value: null },
       dreamBloom: { value: null },
       focusCamera: { value: new THREE.Vector2(.1,150) },
@@ -1257,6 +1475,8 @@ function setupGlassRefraction() {
       uniform vec4 panels[2];
       uniform float strengths[2];
       uniform float dream;
+      uniform float diffusionStrength;
+      uniform float sourceAgX;
       uniform sampler2D sceneDepth;
       uniform sampler2D dreamBloom;
       uniform vec2 focusCamera;
@@ -1302,15 +1522,18 @@ function setupGlassRefraction() {
             float angle=float(i)*1.5707963;
             soft+=texture2D(sceneTexture,sampleUV+vec2(cos(angle),sin(angle))*softness/viewport).rgb;
           }
-          gl_FragColor.rgb=mix(gl_FragColor.rgb,soft*.25,.24);
-          gl_FragColor.rgb += texture2D(dreamBloom,sampleUV).rgb * vec3(.24,.21,.175);
+          gl_FragColor.rgb=mix(gl_FragColor.rgb,soft*.25,.24*diffusionStrength);
+          gl_FragColor.rgb += texture2D(dreamBloom,sampleUV).rgb * vec3(.24,.21,.175)*diffusionStrength;
           float luminance=dot(gl_FragColor.rgb,vec3(.2126,.7152,.0722));
-          gl_FragColor.rgb=mix(vec3(luminance),gl_FragColor.rgb,.945);
-          gl_FragColor.rgb*=mix(vec3(.92,.975,1.07),vec3(1.10,1.015,.90),smoothstep(.04,.48,luminance));
+          gl_FragColor.rgb=mix(vec3(luminance),gl_FragColor.rgb,mix(1.,.945,diffusionStrength));
+          gl_FragColor.rgb*=mix(vec3(1.),mix(vec3(.92,.975,1.07),vec3(1.10,1.015,.90),smoothstep(.04,.48,luminance)),diffusionStrength);
           vec2 centered = uvScene * 2.0 - 1.0;
           gl_FragColor.rgb *= 1.0 - .055 * dream * smoothstep(.3, 1.5, dot(centered, centered));
         }
-        #include <tonemapping_fragment>
+        if(sourceAgX>.5){gl_FragColor.rgb=AgXToneMapping(gl_FragColor.rgb);}
+        else {
+          #include <tonemapping_fragment>
+        }
         #include <colorspace_fragment>
       }
     `,
@@ -1319,12 +1542,14 @@ function setupGlassRefraction() {
 }
 
 function renderGlassScene(activeScene = scene, activeCamera = camera) {
-  glassMaterial.uniforms.dream.value = activeScene === japanRoom?.scene ? 1 : 0;
-  if(activeScene===japanRoom?.scene){
-    glassMaterial.uniforms.sceneDepth.value=japanRoom.windowLight.uniforms.tDepth.value;
-    glassMaterial.uniforms.dreamBloom.value=japanRoom.bloomTexture;
-    glassMaterial.uniforms.focusCamera.value.set(japanRoom.camera.near,japanRoom.camera.far);
-  }
+  glassMaterial.uniforms.dream.value = activeScene === activeRoom()?.scene ? 1 : 0;
+  glassMaterial.uniforms.diffusionStrength.value=activeRoom()?.diffusionStrength ?? 1;
+  glassMaterial.uniforms.sourceAgX.value=activeScene===activeRoom()?.scene && activeRoom().sourceAgX ? 1 : 0;
+  if(activeScene===activeRoom()?.scene){
+    glassMaterial.uniforms.sceneDepth.value=activeRoom().windowLight.uniforms.tDepth.value;
+    glassMaterial.uniforms.dreamBloom.value=activeRoom().bloomTexture;
+    glassMaterial.uniforms.focusCamera.value.set(activeRoom().camera.near,activeRoom().camera.far);
+  }else{glassMaterial.uniforms.sceneDepth.value=null;glassMaterial.uniforms.dreamBloom.value=null;}
   const elements = [ui.panel, ui.drawer];
   elements.forEach((element, index) => {
     const rect = element.getBoundingClientRect();
@@ -1335,14 +1560,14 @@ function renderGlassScene(activeScene = scene, activeCamera = camera) {
   });
   renderer.setRenderTarget(glassTarget);
   renderer.render(activeScene, activeCamera);
-  if (activeScene === japanRoom?.scene) {
-    japanRoom.shade(renderer, glassTarget);
+  if (activeScene === activeRoom()?.scene) {
+    activeRoom().shade(renderer, glassTarget);
   }
   renderer.setRenderTarget(null);
   renderer.render(glassScene, glassCamera);
   // Draw interaction UI after the photographic glow so it stays one crisp line.
-  if (activeScene === japanRoom?.scene) {
-    japanRoom.outline.render(renderer, glassTarget, null, 0, false);
+  if (activeScene === activeRoom()?.scene) {
+    activeRoom().outline.render(renderer, glassTarget, null, 0, false);
   }
 }
 
@@ -1403,6 +1628,31 @@ function setWordmarkAccent(name) {
   ui.wordmarkAccentName.textContent = isJapanese ? "トウスキ" : "towski";
 }
 
+function distributeWordmarkCharacters(characters, slotCount) {
+  const slots = Array(slotCount).fill("");
+  if (characters.length === 1) {
+    slots[Math.floor(slotCount / 2)] = characters[0];
+    return slots;
+  }
+  characters.forEach((character, index) => {
+    const slotIndex = Math.round((index / (characters.length - 1)) * (slotCount - 1));
+    slots[slotIndex] = character;
+  });
+  return slots;
+}
+
+function shuffledWordmarkSlots(slotCount) {
+  const slots = Array.from({ length: slotCount }, (_value, index) => index);
+  for (let index = slots.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [slots[index], slots[swapIndex]] = [slots[swapIndex], slots[index]];
+  }
+  if (slots.every((slot, index) => slot === index) && slots.length > 1) {
+    [slots[0], slots[1]] = [slots[1], slots[0]];
+  }
+  return slots;
+}
+
 function waitForWordmarkFrame(duration, token) {
   return new Promise((resolve) => {
     window.setTimeout(() => resolve(token === wordmarkTransitionToken), duration);
@@ -1410,17 +1660,49 @@ function waitForWordmarkFrame(duration, token) {
 }
 
 async function transitionWordmarkTo(targetName) {
-  if (ui.wordmarkNames[0]?.textContent === targetName && !ui.wordmark.classList.contains("is-switching")) return;
+  const currentName = ui.wordmarkNames[0]?.textContent || ENGLISH_WORDMARK;
+  const isGlitching = ui.wordmark.classList.contains("is-glitching");
+  const isJapaneseWordmark = ui.wordmark.classList.contains("is-japanese");
+  const targetsJapaneseWordmark = targetName === JAPANESE_WORDMARK;
+  if (!isGlitching && isJapaneseWordmark === targetsJapaneseWordmark) return;
   const token = ++wordmarkTransitionToken;
-  if (!state.reducedMotion) {
-    ui.wordmark.classList.add("is-switching");
-    if (!await waitForWordmarkFrame(120, token)) return;
+
+  if (state.reducedMotion) {
+    ui.wordmark.classList.remove("is-glitching");
+    setWordmarkName(targetName);
+    setWordmarkAccent(targetName);
+    ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
+    ui.wordmarkTitle.textContent = `${targetName}.dev`;
+    return;
   }
+
+  const sourceCharacters = [...currentName];
+  const targetCharacters = [...targetName];
+  const slotCount = Math.max(sourceCharacters.length, targetCharacters.length);
+  const currentSlots = distributeWordmarkCharacters(sourceCharacters, slotCount);
+  const targetSlots = distributeWordmarkCharacters(targetCharacters, slotCount);
+  const transitionSlots = shuffledWordmarkSlots(slotCount)
+    .filter((slotIndex) => currentSlots[slotIndex] !== targetSlots[slotIndex]);
+  ui.wordmark.classList.add("is-glitching");
+
+  for (let index = 0; index < transitionSlots.length; index += 1) {
+    if (state.reducedMotion) break;
+    const slotIndex = transitionSlots[index];
+    const glitchCharacter = WORDMARK_GLITCH_CHARACTERS[index % WORDMARK_GLITCH_CHARACTERS.length];
+    currentSlots[slotIndex] = glitchCharacter;
+    setWordmarkName(currentSlots.join(""));
+    if (!await waitForWordmarkFrame(32, token)) return;
+    currentSlots[slotIndex] = targetSlots[slotIndex];
+    setWordmarkName(currentSlots.join(""));
+    if (!await waitForWordmarkFrame(58, token)) return;
+  }
+
+  if (token !== wordmarkTransitionToken) return;
   setWordmarkName(targetName);
   setWordmarkAccent(targetName);
+  ui.wordmark.classList.remove("is-glitching");
   ui.wordmark.classList.toggle("is-japanese", targetName === JAPANESE_WORDMARK);
   ui.wordmarkTitle.textContent = `${targetName}.dev`;
-  ui.wordmark.classList.remove("is-switching");
 }
 
 function globeTextureSources() {
@@ -1430,7 +1712,7 @@ function globeTextureSources() {
     'assets/earth-normal-2048.png',
     'assets/earth-roughness-2048.webp',
     'assets/earth-height-2048.webp',
-    compact ? 'assets/stars-2560.webp' : navigator.deviceMemory <= 6 ? 'assets/stars-4096.webp' : 'assets/stars-8192.webp',
+    compact ? 'assets/stars-2560.webp' : 'assets/stars-4096.webp',
     compact ? 'assets/earth-night-2048.webp' : 'assets/earth-night-3600.jpg',
     compact ? 'assets/earth-clouds-2048.webp' : 'assets/earth-clouds-4096.webp',
   ];
@@ -1785,6 +2067,7 @@ function setupRenderer() {
     alpha: true,
     powerPreference: "high-performance",
   });
+  renderer.setClearColor(0x020406,1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.04;
@@ -1971,6 +2254,7 @@ function resize() {
   glassMaterial.uniforms.viewport.value.set(window.innerWidth, window.innerHeight);
   if (travelStars) travelStars.material.uniforms.uPixelRatio.value = pixelRatio;
   japanRoom?.resize(window.innerWidth, window.innerHeight, pixelRatio, renderScale);
+  gainesvilleRoom?.resize(window.innerWidth, window.innerHeight, pixelRatio, renderScale);
   diaryReader?.resize();
   bookReader?.resize();
   cityFlight?.resize();
@@ -2121,8 +2405,9 @@ function animate(now = 0) {
   bookReader?.update(dt, state.reducedMotion);
   updateTokyoTravel(now);
   if (roomIsVisible) {
-    japanRoom.update(dt, state.reducedMotion);
-    renderGlassScene(japanRoom.scene, japanRoom.camera);
+    const room=activeRoom();room.update(dt, state.reducedMotion);
+    if(roomLocationId==='gainesville')xpDesktop?.update(dt,state.reducedMotion);
+    renderGlassScene(room.scene, room.camera);
     return;
   }
   if (tokyoVisit && tokyoVisit.direction !== "room") {
@@ -2219,8 +2504,8 @@ function onPointerDown(event) {
 function onPointerMove(event) {
   if (roomIsVisible && tokyoVisit?.direction === "room" && !state.drawerId) {
     const [x, y] = pointInRoom(event);
-    japanRoom.point(x, y);
-    hoverRoomObject(japanRoom.pick(x, y));
+    activeRoom().point(x, y);
+    hoverRoomObject(activeRoom().pick(x, y));
     return;
   }
   if (tokyoVisit) return;
@@ -2257,18 +2542,20 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
+  // Navigation may begin while a pointer is held. Release input ownership even
+  // when the room/travel branches below skip ordinary globe interaction.
+  state.activePointers.delete(event.pointerId);
+  if (ui.stage.hasPointerCapture(event.pointerId)) ui.stage.releasePointerCapture(event.pointerId);
   if (roomIsVisible && tokyoVisit?.direction === "room" && !state.drawerId) {
     const press = roomPointerDown;
     roomPointerDown = null;
     if (event.type === "pointercancel" || !press || event.pointerId !== press.id || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) return;
     const [x, y] = pointInRoom(event);
-    activateRoomObject(japanRoom.pick(x, y));
+    activateRoomObject(activeRoom().pick(x, y));
     return;
   }
   if (tokyoVisit) return;
   const endedPinch = state.pinching;
-  state.activePointers.delete(event.pointerId);
-  if (ui.stage.hasPointerCapture(event.pointerId)) ui.stage.releasePointerCapture(event.pointerId);
 
   if (endedPinch) {
     state.pinching = state.activePointers.size >= 2;
@@ -2398,6 +2685,7 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   const location = LOCATIONS[locationId];
   if (!location) return;
   if (locationId === 'tokyo' && state.globeAvailable) prepareTokyo();
+  if (locationId === 'gainesville' && state.globeAvailable) loadGainesvilleRoom().catch(()=>{});
   closeDrawer({ preserveContentUrl });
 
   if (state.globeAvailable) {
@@ -2434,7 +2722,7 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
     button.className = "text-button";
     button.type = "button";
     button.textContent = action.label;
-    if (action.explore) button.dataset.explore = "tokyo";
+    if (action.explore) button.dataset.explore = locationId;
     else button.dataset.drawer = action.drawerId;
     return button;
   }));
@@ -2447,7 +2735,7 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
     () => state.selectedId === locationId && !state.drawerId && ui.panel.classList.contains('is-open'));
   if (locationId === "tokyo" && state.globeAvailable) {
     loadJapanRoom().catch(() => {});
-    if (!state.reducedMotion) loadCityFlight();
+    if (!state.reducedMotion) loadCityFlight("tokyo", {activate:false});
   }
 }
 
@@ -3012,7 +3300,16 @@ function closePanel({ restoreFocus = false } = {}) {
 
 function handleContentRouteChange() {
   if (!contentRoutingReady) return;
+  const destination=isTokyoRoute()?'tokyo':readLocationRoute();
+  if(tokyoVisit && destination && ['tokyo','gainesville'].includes(destination) && destination!==roomLocationId){
+    routeLocationAfterTravel=destination;
+    routeHashAfterTravel=window.location.hash;
+    if(tokyoVisit.direction==='room')leaveTokyo();
+    return;
+  }
+
   // Every new route replaces any destination queued during the current flight.
+  routeHashAfterTravel=null;
   routeLocationAfterTravel = roomIsVisible && roomIsLoading && isTokyoRoute() ? 'tokyo' : null;
   const blogRoute = readBlogRoute();
   const blogMatch = blogRoute ? findBlogEntry(blogRoute.categoryId, blogRoute.entryId) : null;
@@ -3050,11 +3347,11 @@ function handleContentRouteChange() {
   if (state.drawerId === "japanese-blog" || state.drawerId === "japanese-book-reviews") {
     closeDrawer({ preserveContentUrl: true });
   }
-  if (locationId === 'tokyo') {
-    if (tokyoVisit?.direction === 'out' || roomIsVisible && roomIsLoading) routeLocationAfterTravel = 'tokyo';
+  if (locationId === 'tokyo' || locationId === 'gainesville') {
+    if (tokyoVisit?.direction === 'out' || roomIsVisible && roomIsLoading) routeLocationAfterTravel = locationId;
     else if (!roomIsVisible && !tokyoVisit) {
-      focusLocation('tokyo', { preserveContentUrl: true });
-      if (state.globeAvailable) exploreTokyo();
+      focusLocation(locationId, { preserveContentUrl: true });
+      if (state.globeAvailable) exploreTokyo(locationId);
     }
   } else if (tokyoVisit) {
     routeLocationAfterTravel = locationId || '';
@@ -3123,7 +3420,7 @@ function bindEvents() {
     state.zoomVelocity = 0;
     const wordmark = ui.wordmark.querySelector('svg');
     if (matches) wordmark?.pauseAnimations(); else wordmark?.unpauseAnimations();
-    japanRoom?.setVisible(roomIsVisible, matches);
+    activeRoom()?.setVisible(roomIsVisible, matches);
   });
   transparencyPreference.addEventListener('change', ({ matches }) => { state.reducedTransparency = matches; });
   resetDrawerScroll = bindElasticScroll(ui.drawer, ui.drawerContent);
@@ -3136,7 +3433,7 @@ function bindEvents() {
   ui.panelClose.addEventListener("click", () => closePanel({ restoreFocus: true }));
   ui.drawerClose.addEventListener("click", () => closeDrawer({ restoreFocus: true }));
   ui.actions.addEventListener("click", (event) => {
-    if (event.target.closest("[data-explore]")) { exploreTokyo(); return; }
+    if (event.target.closest("[data-explore]")) { exploreTokyo(event.target.closest("[data-explore]").dataset.explore); return; }
     const button = event.target.closest("[data-drawer]");
     if (button) openDrawer(button.dataset.drawer);
   });
@@ -3146,14 +3443,14 @@ function bindEvents() {
     if (button) activateRoomObject(button.dataset.roomAction);
   });
   roomHud.querySelectorAll("[data-room-action]").forEach(button => {
-    const highlight = () => { if (japanRoom) hoverRoomObject(button.dataset.roomAction); };
+    const highlight = () => { if (activeRoom()) hoverRoomObject(button.dataset.roomAction); };
     button.addEventListener("pointerenter", highlight);
     button.addEventListener("focus", highlight);
-    button.addEventListener("pointerleave", () => { if (japanRoom) hoverRoomObject(null); });
-    button.addEventListener("blur", () => { if (japanRoom) hoverRoomObject(null); });
+    button.addEventListener("pointerleave", () => { if (activeRoom()) hoverRoomObject(null); });
+    button.addEventListener("blur", () => { if (activeRoom()) hoverRoomObject(null); });
   });
   ui.stage.addEventListener("pointerleave", () => {
-    if (roomIsVisible) { japanRoom.point(0, 0); hoverRoomObject(null); }
+    if (roomIsVisible) { activeRoom().point(0, 0); hoverRoomObject(null); }
     else hoverLocation(null);
   });
   document.addEventListener("visibilitychange", () => {
@@ -3175,6 +3472,7 @@ function bindEvents() {
   window.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.drawerId) closeDrawer({ restoreFocus: true });
+    else if (roomIsVisible && roomLocationId==='gainesville' && activeRoom().computerFocused) activateRoomObject(null,{restoreFocus:true});
     else if (roomIsVisible) leaveTokyo();
     else {
       const menu = ui.actions.querySelector(".project-menu.is-expanded");
@@ -3190,23 +3488,25 @@ function loadGlobe() {
   return globePromise ||= (async () => {
     const sources = globeTextureSources();
     let ready = 0;
-    setLoadProgress(8, 'Downloading the globe', `0 of ${sources.length} assets ready`);
+    setAreaLoadProgress('globe', 8, 'Downloading the globe', `0 of ${sources.length} assets ready`);
     const textures = await Promise.all(sources.map(source => new THREE.TextureLoader().loadAsync(source).then(texture => {
-      setLoadProgress(8 + ++ready / sources.length * 57, 'Downloading the globe', `${ready} of ${sources.length} assets ready`);
+      setAreaLoadProgress('globe', 8 + ++ready / sources.length * 57, 'Downloading the globe', `${ready} of ${sources.length} assets ready`, ready, sources.length);
       return texture;
     })));
-    setLoadProgress(70, 'Preparing the globe', 'Positioning the stars and location signals');
+    setAreaLoadProgress('globe', 70, 'Preparing the globe', 'Positioning the stars and location signals');
+    const navigation = roomIsVisible ? {
+      cameraCurrentZ: state.cameraCurrentZ, cameraTargetZ: state.cameraTargetZ,
+      currentQuaternion: state.currentQuaternion.clone(), targetQuaternion: state.targetQuaternion.clone(),
+    } : null;
     setupScene(...textures);
-    // A lazily loaded exit flight starts over Tokyo, matching normal arrivals.
-    if (roomIsVisible) {
-      state.initialZoomAligned = true;
-      state.currentQuaternion.copy(orientationForLocation(LOCATIONS.tokyo));
-      state.targetQuaternion.copy(state.currentQuaternion);
-      state.globeCurrentScale = CONFIG.maxGlobeScale;
-      state.zoomProgress = state.zoomCurrentProgress = 1;
-    }
     state.globeAvailable = true;
     resize();
+    if (navigation) {
+      state.currentQuaternion.copy(navigation.currentQuaternion);
+      state.targetQuaternion.copy(navigation.targetQuaternion);
+      state.cameraCurrentZ = navigation.cameraCurrentZ;
+      state.cameraTargetZ = navigation.cameraTargetZ;
+    }
   })().catch(error => { globePromise = null; throw error; });
 }
 
@@ -3221,25 +3521,30 @@ async function init() {
     }
     setLoadProgress(4, 'Starting your visit', 'Opening the scene');
     setupRenderer();
-    if (isTokyoRoute()) {
-      setLoadProgress(8, 'Downloading the Tokyo room', 'Models, textures and city footage');
-      try { await loadJapanRoom(); }
+    if (isTokyoRoute() || readLocationRoute()==='gainesville') {
+      roomLocationId=isTokyoRoute()?'tokyo':'gainesville';
+      startupLoadingArea = roomLocationId;
+      setLoadProgress(8, 'Downloading the '+LOCATIONS[roomLocationId].kicker+' room', 'Models, textures and lighting');
+      try { await (roomLocationId==='gainesville'?loadGainesvilleRoom():loadJapanRoom()); }
       catch (error) { console.warn('Direct room entry failed; preparing the globe for retry', error); }
     }
     // Read the route again: visitors can navigate away while assets download.
-    if (japanRoom && isTokyoRoute()) {
-      state.selectedId = 'tokyo';
+    if (activeRoom() && (isTokyoRoute() ? roomLocationId==='tokyo' : readLocationRoute()===roomLocationId)) {
+      state.selectedId = roomLocationId;
       tokyoVisit = { direction: 'room' };
       setGlobeInterfaceInert(true);
       showRoomView(true);
-      renderGlassScene(japanRoom.scene, japanRoom.camera);
+      renderGlassScene(activeRoom().scene, activeRoom().camera);
     } else {
+      startupLoadingArea = 'globe';
       setLoadProgress(8, 'Downloading the globe');
       await loadGlobe();
       renderGlassScene();
     }
     animate();
     closeLoadingScreen();
+    startupLoadingArea = null;
+    setTimeout(preloadOtherAreas, 1000);
     contentRoutingReady = true;
     handleContentRouteChange();
   } catch (error) {

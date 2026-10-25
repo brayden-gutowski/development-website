@@ -9,8 +9,9 @@ const { chromium } = require('playwright');
     await page.addInitScript(() => {
       const NativeContext = window.AudioContext;
       window.AudioContext = class extends NativeContext {
-        constructor(...args) { super(...args); window.recordContext = this; }
         createMediaElementSource(audio) {
+          // Background XP preparation owns a different AudioContext.
+          window.recordContext = this;
           const source = super.createMediaElementSource(audio);
           const connect = source.connect.bind(source);
           source.connect = node => { window.recordMusicInput = node; return connect(node); };

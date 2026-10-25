@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch({channel:'chrome',headless:true});try{
+ const p=await b.newPage({viewport:{width:1200,height:800},reducedMotion:'reduce'}),errors=[];
+ p.on('pageerror',e=>errors.push(e.message));
+ let release;const delayed=new Promise(resolve=>{release=resolve;});
+ await p.route('**/GainesvilleRoom.glb*',async route=>{await delayed;await route.continue();});
+ await p.goto(process.env.TEST_URL||'http://127.0.0.1:4173');await p.locator('#loading-screen').waitFor({state:'hidden'});
+ await p.getByRole('button',{name:/Gainesville, Florida/}).click();
+ await p.getByRole('button',{name:'Explore',exact:true}).click();
+ await p.evaluate(()=>{location.hash='#tokyo';});
+ await p.getByRole('heading',{name:'Languages',exact:true}).waitFor();
+ release();
+ await p.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
+ assert.equal(await p.evaluate(()=>location.hash),'#tokyo');
+ await p.evaluate(()=>{location.hash='#gainesville';});
+ await p.getByRole('button',{name:'Exit sign · Return to globe'}).waitFor();
+ await p.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:30000});
+ await p.evaluate(()=>{location.hash='#tokyo/books/yaseuma';});
+ await p.locator('#book-reader[data-phase="reading"][data-book="yaseuma"]').waitFor({timeout:30000});
+ assert.equal(await p.evaluate(()=>location.hash),'#tokyo/books/yaseuma');
+ assert.deepEqual(errors,[]);
+ console.log('PASS: latest room destination wins during downloads; cross-room book links retain their content');
+}finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1;});

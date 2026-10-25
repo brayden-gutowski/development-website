@@ -15,13 +15,15 @@ const {PNG}=require('pngjs');
     });
     await page.goto((process.env.TEST_URL||'http://127.0.0.1:4173')+'/#tokyo');
     await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
+    await page.locator('#loading-screen').waitFor({state:'hidden'});
     const video=page.locator('#tokyo-window-video'),track=page.locator('#tokyo-record-track');
     const source=await video.evaluate(v=>v.currentSrc);
     assert.match(source,/^blob:/,'The whole city clip must be buffered before playback');
     await track.evaluate(a=>{a.volume=0;});
     await page.mouse.move(10,880);
     const pixels=async name=>PNG.sync.read(await page.screenshot({path:`/tmp/spin-city-${name}.png`})).data;
-    const baseline=await pixels('normal');
+    const geometry=()=>page.evaluate(()=>{const r=spinRoom(),g=r.exterior.horizon.geometry;return {positions:Array.from(g.attributes.position.array),uv:Array.from(g.attributes.uv.array),camera:r.camera.matrixWorld.toArray(),texture:r.exterior.horizon.material.map.uuid};});
+    const baseline=await pixels('normal'),baselineGeometry=await geometry();
     const play=async()=>{await page.locator('[data-room-action="music"]').focus();await page.keyboard.press('Enter');};
     await play();
     await page.waitForFunction(()=>document.querySelector('#tokyo-record-track').dataset.phase==='lead-in');
@@ -34,14 +36,22 @@ const {PNG}=require('pngjs');
     await page.locator('[data-room-action="music"]').blur();
     await page.mouse.move(10,880);
     const warm=await pixels('western');
+    assert.deepEqual(await geometry(),baselineGeometry,'Weather preserves the original city geometry, camera, UVs and video texture');
     await page.screenshot({path:'/tmp/spin-city-detail.png',clip:{x:0,y:0,width:610,height:680}});
     const luminance=(a,i)=>a[i]*.2126+a[i+1]*.7152+a[i+2]*.0722;
+    // Compare architectural edges below the single-pixel sand-grain scale.
+    // Fast high-frequency grains have their own motion/occlusion regression.
+    const structuralLuminance=(a,i)=>{
+      let total=0;
+      for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++)total+=luminance(a,i+(y*1440+x)*4)*(y===0?2:1)*(x===0?2:1);
+      return total/16;
+    };
     const edgesA=[],edgesB=[];let changed=0;
     for(let y=170;y<460;y++)for(let x=235;x<300;x++){
       const i=(y*1440+x)*4;
       if(Math.abs(warm[i]-baseline[i])+Math.abs(warm[i+1]-baseline[i+1])+Math.abs(warm[i+2]-baseline[i+2])>30)changed++;
-      edgesA.push(luminance(baseline,i+4)-luminance(baseline,i));
-      edgesB.push(luminance(warm,i+4)-luminance(warm,i));
+      edgesA.push(structuralLuminance(baseline,i+4)-structuralLuminance(baseline,i));
+      edgesB.push(structuralLuminance(warm,i+4)-structuralLuminance(warm,i));
     }
     const mean=a=>a.reduce((s,n)=>s+n,0)/a.length,ma=mean(edgesA),mb=mean(edgesB);
     let covariance=0,va=0,vb=0;

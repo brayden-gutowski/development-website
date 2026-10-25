@@ -1,0 +1,282 @@
+{
+  "revision": "fourth-review-local-bounce",
+  "source_blend_sha256": "63004120df6d306c63877a792d9696ac6af5b71c91cb06afa78f50fe5ebaf3aa",
+  "preserved_optimized_glb_sha256": "59b9c7a607b2aacbec00ab17cad51f43987ec3dcf4ff05d129ba0e5d9ecd7dcb",
+  "files": {
+    "gainesville-light-architecture.webp": "d30c4459fdf1d9fc0e7288dd4b038a5f07e9a318fdc67514e70d4404dc346155",
+    "gainesville-light-furniture.webp": "cdb63b189937e5a5294d1276fd9bb99816b55b2ff05517d45a3b02b2c64b81b9",
+    "gainesville-practical-architecture.webp": "f1e7e4c1928bcb6b3273466dd44c4f0a7134317e57a3c7c70136ccf676963f54",
+    "gainesville-practical-furniture.webp": "f1bebc8485565fe32396421c9935ca0f9c64bddf250525b3c6e28241c92dd319"
+  },
+  "resolution": 2048,
+  "samples": 96,
+  "device": "CPU",
+  "layers": "steady fill/EXIT and independent practical",
+  "staticRGBMRange": 16,
+  "practicalRGBMRange": 64,
+  "meshEmissionTransport": "disabled for bake; explicit area proxies; restored for export",
+  "lights": {
+    "practical": {
+      "watts": 25,
+      "size_m": 0.76,
+      "linear_rgb": [
+        1,
+        0.49,
+        0.24
+      ],
+      "approx_kelvin": 3400
+    },
+    "room_indirect": {
+      "watts": 8,
+      "size_m": 5,
+      "linear_rgb": [
+        0.76,
+        0.82,
+        1
+      ],
+      "position": [
+        -0.4,
+        1.4,
+        2.6
+      ],
+      "target": [
+        -0.4,
+        -2,
+        1.1
+      ]
+    },
+    "floor_reflected_up": {
+      "watts": 0.92,
+      "size_m": 3,
+      "linear_rgb": [
+        1,
+        0.72,
+        0.48
+      ],
+      "position": [
+        -0.45,
+        -0.9,
+        0.24
+      ],
+      "target": [
+        -0.45,
+        -0.9,
+        1.2
+      ]
+    },
+    "low_floor_fill_down": {
+      "watts": 5.75,
+      "size_m": 3.5,
+      "linear_rgb": [
+        0.8,
+        0.85,
+        1
+      ],
+      "position": [
+        -0.45,
+        -0.35,
+        1.05
+      ],
+      "target": [
+        -0.45,
+        -0.35,
+        0
+      ]
+    },
+    "table_reflected_case": {
+      "watts": 0.1,
+      "size_m": 0.72,
+      "linear_rgb": [
+        1,
+        0.72,
+        0.48
+      ],
+      "position": [
+        -0.45,
+        -0.15,
+        1.37
+      ],
+      "target": [
+        -0.45,
+        -0.7,
+        1.68
+      ]
+    },
+    "brick_indirect": {
+      "watts": 1.1,
+      "size_m": 3.3,
+      "linear_rgb": [
+        0.9,
+        0.88,
+        0.84
+      ],
+      "position": [
+        -0.95,
+        -3.35,
+        2.3
+      ],
+      "target": [
+        -0.55,
+        -6.4,
+        2.05
+      ]
+    },
+    "exit_local": {
+      "watts": 0.12,
+      "size_m": 0.4,
+      "linear_rgb": [
+        1,
+        0.24,
+        0.18
+      ],
+      "position": [
+        "sign.x",
+        "sign.y-.32",
+        "sign.z"
+      ],
+      "target": [
+        "sign.x",
+        -6.4,
+        "sign.z"
+      ]
+    }
+  },
+  "validation": {
+    "geometry": "All 13 original mesh nodes: exact POSITION, triangle indices, UV0 and UV1 against current optimized asset; donor discarded for integration.",
+    "preview_glb": "Byte-identical copy of current optimized asset; no material/image changes.",
+    "packing": "pack-gainesville-light.py RGBM range and precision assertions, lossless WebP round-trip pixel equality.",
+    "source": "Original source blend SHA-256 unchanged.",
+    "python": "Both modified exporter/bake scripts pass py_compile."
+  },
+  "integration": "Copy only four WebPs into assets, retain current optimized GLB exactly, update four hashes and lighting provenance; runtime cache keys owned by parent.",
+  "atlas_radiance_regions": {
+    "under_table_floor": {
+      "samples": 62,
+      "before_linear_rgb": [
+        0.0551638155614085,
+        0.05682360917427223,
+        0.06531104473687062
+      ],
+      "after_linear_rgb": [
+        0.06221184519946277,
+        0.06418241702509117,
+        0.07370472864237855
+      ],
+      "before_irradiance_luma": 0.057083529899797,
+      "after_irradiance_luma": 0.06445098435373071,
+      "luma_change_percent": 12.906445110991482
+    },
+    "front_case": {
+      "samples": 468,
+      "before_linear_rgb": [
+        0.047622083366263813,
+        0.040652942608127386,
+        0.04277406131698389
+      ],
+      "after_linear_rgb": [
+        0.05813571749160758,
+        0.04731568583231311,
+        0.046684625901535826
+      ],
+      "before_irradiance_luma": 0.04228772670408663,
+      "after_irradiance_luma": 0.04957046203607699,
+      "luma_change_percent": 17.221865301372596
+    },
+    "tabletop_outer_edge": {
+      "samples": 198,
+      "before_linear_rgb": [
+        0.36077376259104826,
+        0.18101108477401784,
+        0.0948700107297293
+      ],
+      "after_linear_rgb": [
+        0.3631581315454889,
+        0.18219179720691356,
+        0.09540113917016942
+      ],
+      "before_irradiance_luma": 0.21300924453192085,
+      "after_irradiance_luma": 0.21439895437704176,
+      "luma_change_percent": 0.6524176207350685
+    },
+    "tabletop": {
+      "samples": 252,
+      "before_linear_rgb": [
+        0.4843937066354092,
+        0.24186040907343845,
+        0.12394816968923984
+      ],
+      "after_linear_rgb": [
+        0.4929060687948658,
+        0.24606138382512002,
+        0.12634244773266445
+      ],
+      "before_irradiance_luma": 0.2849097244515743,
+      "after_irradiance_luma": 0.28989685666381265,
+      "luma_change_percent": 1.750425409956824
+    },
+    "brick_whole": {
+      "samples": 3300,
+      "before_linear_rgb": [
+        0.019778549281811563,
+        0.011954199029675034,
+        0.009271839176989968
+      ],
+      "after_linear_rgb": [
+        0.02014141906106464,
+        0.012185789293996045,
+        0.009456710653682079
+      ],
+      "before_irradiance_luma": 0.013423989511915396,
+      "after_irradiance_luma": 0.013680116704644158,
+      "luma_change_percent": 1.9079811743105024
+    },
+    "brick_near_exit": {
+      "samples": 42,
+      "before_linear_rgb": [
+        0.03727759374642034,
+        0.016669264539247615,
+        0.013367279790538453
+      ],
+      "after_linear_rgb": [
+        0.0469012192243537,
+        0.019924447282777098,
+        0.015968046819889323
+      ],
+      "before_irradiance_luma": 0.020812192029835735,
+      "after_irradiance_luma": 0.025374056884135788,
+      "luma_change_percent": 21.91919451713833
+    },
+    "brick_far_from_exit": {
+      "samples": 210,
+      "before_linear_rgb": [
+        0.017893222569587478,
+        0.012701671782285902,
+        0.011150773222616232
+      ],
+      "after_linear_rgb": [
+        0.01735746525634295,
+        0.012133445626122731,
+        0.010638283292663335
+      ],
+      "before_irradiance_luma": 0.013693420603658068,
+      "after_irradiance_luma": 0.01313612147903178,
+      "luma_change_percent": -4.0698313500821754
+    },
+    "distant_floor": {
+      "samples": 7440,
+      "before_linear_rgb": [
+        0.014629467326323482,
+        0.00882488108701341,
+        0.0066449448844383315
+      ],
+      "after_linear_rgb": [
+        0.014858721382639746,
+        0.009030010091967784,
+        0.006859332505712195
+      ],
+      "before_irradiance_luma": 0.00990154472766481,
+      "after_irradiance_luma": 0.010112471190636988,
+      "luma_change_percent": 2.130237945427371
+    }
+  }
+}

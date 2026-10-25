@@ -6,24 +6,26 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    const requests = [], errors = [];
-    page.on('request', request => requests.push(request.url()));
+    const requests = [], requestTimes = [], errors = [];
+    page.on('request', request => { requests.push(request.url()); requestTimes.push({url:request.url(),at:Date.now()}); });
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/script.js*', async route => {
       const response = await route.fetch();
-      await route.fulfill({ response, body: await response.text() + ';window.exitPending=()=>roomIsLoading;window.canvasDiary=()=>activateRoomObject("diary");window.globeOrientation=()=>state.currentQuaternion.toArray();' });
+      await route.fulfill({ response, body: await response.text() + ';window.exitPending=()=>roomIsLoading;window.canvasDiary=()=>activateRoomObject("diary");window.globeOrientation=()=>state.currentQuaternion.toArray();new MutationObserver(()=>{if(ui.loading.classList.contains("is-complete"))window.directForegroundReadyAt ||= Date.now();}).observe(ui.loading,{attributes:true,attributeFilter:["class"]});' });
     });
-    await page.goto(`${base}/#Tokyo`);
-    await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({ timeout: 30000 });
-    assert.equal(await page.title(), 'Tokyo, Japan | Towski.dev');
-    assert.equal(requests.some(url => /earth-|stars-\d|tokyo-flight|cloud-volume/.test(url)), false,
-      'A shared Tokyo link must open the room without downloading the globe or flight');
     let releaseGlobe, globeRequested;
     const heldGlobe = new Promise(resolve => { releaseGlobe = resolve; });
     const startedGlobe = new Promise(resolve => { globeRequested = resolve; });
-    await page.route('**/assets/earth-4096.webp', async route => {
+    await page.route(/assets\/earth-(?:2048|4096)\.webp/, async route => {
       globeRequested(); await heldGlobe; await route.continue();
     });
+    await page.goto(`${base}/#Tokyo`);
+    await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({ timeout: 30000 });
+    await page.locator('#loading-screen').waitFor({ state: 'hidden', timeout: 30000 });
+    assert.equal(await page.title(), 'Tokyo, Japan | Towski.dev');
+    const foregroundReadyAt = await page.evaluate(() => window.directForegroundReadyAt);
+    assert.ok(requestTimes.filter(({url}) => /earth-|stars-\d|tokyo-flight|cloud-volume/.test(url)).every(({at}) => at >= foregroundReadyAt),
+      'A shared Tokyo link opens its room before starting background globe or flight preparation');
     await page.getByRole('button', { name: 'Door · Return to globe', exact: true }).focus();
     await page.keyboard.press('Enter');
     await startedGlobe;
@@ -38,7 +40,7 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
       'A newer diary link cancels departure while the globe downloads');
     await page.getByRole('button', { name: 'Put diary back', exact: true }).click();
     await page.locator('#diary-reader').waitFor({ state: 'hidden' });
-    // Leaving must lazily load a usable globe, then allow normal travel back in.
+    // Leaving reuses a usable globe and allows normal travel back in.
     await page.getByRole('button', { name: 'Door · Return to globe', exact: true }).focus();
     await page.keyboard.press('Enter');
     await page.locator('#app:not(.is-in-room):not(.is-travelling)').waitFor({ timeout: 30000 });
@@ -61,6 +63,6 @@ const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
     await page.getByRole('button', { name: 'Explore', exact: true }).click();
     await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({ timeout: 30000 });
     assert.deepEqual(errors, []);
-    console.log('PASS: #Tokyo opens directly; the globe loads on exit and remains usable');
+    console.log('PASS: #Tokyo opens directly; exit reuses globe preparation and remains usable');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

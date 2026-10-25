@@ -1,0 +1,624 @@
+{
+  "description": "XP system icon resources and original-size XP interface assets. No generated/redrawn artwork.",
+  "shell32_sha256": "7c201e812138e2b9cbc2aa94e41d5573775d893b8104833a997acc79486d9a3a",
+  "mapping": {
+    "folder.png": "shell32-4-native.png",
+    "text-file.png": "shell32-152-native.png",
+    "notepad.png": "shell32-152-native.png",
+    "MyComputer.png": "shell32-16-native.png",
+    "RecycleBin(empty).png": "shell32-32-native.png",
+    "InternetExplorer6.png": "shell32-512-native.png",
+    "OutlookExpress.png": "shell32-265-native.png",
+    "MyPictures.png": "shell32-327-native.png",
+    "MyMusic.png": "shell32-237-native.png",
+    "ControlPanel.png": "shell32-137-native.png",
+    "Search.png": "shell32-23-native.png",
+    "Run.png": "shell32-25-native.png",
+    "Volume.png": "shell32-230-native.png",
+    "NetworkConnection.png": "shell32-19-native.png",
+    "WindowsPictureandFaxViewer.png": "shell32-226-native.png",
+    "Power.png": "shell32-329-native.png",
+    "Standby.png": "original-standby-native.png",
+    "MyDocuments.png": "shell32-235-native.png",
+    "Go.png": "shell32-290-native.png",
+    "Play.png": "shell32-246-native.png",
+    "UserAccounts.png": "shell32-220-native.png",
+    "Back.png": "original-back.png",
+    "Forward.png": "original-forward.png",
+    "Up.png": "original-up.png",
+    "Restart.png": "original-restart-native.png",
+    "User.png": "original-user.png",
+    "AllPrograms.png": "original-all-programs-native.png",
+    "windows.png": "original-windows-transparent.png",
+    "Logout.png": "shell32-logoff-native.png",
+    "StartButton.png": "original-start.png",
+    "folder-large.png": "shell32-4-native-48.png",
+    "text-file-large.png": "shell32-152-native-48.png",
+    "MyComputer-large.png": "shell32-16-native-48.png",
+    "RecycleBin(empty)-large.png": "shell32-32-native-48.png",
+    "RecycleBin(full).png": "shell32-33-native.png",
+    "RecycleBin(full)-large.png": "shell32-33-native-48.png",
+    "LocalDisk.png": "shell32-8-native.png",
+    "LocalDisk-large.png": "shell32-8-native-48.png",
+    "CDDrive.png": "shell32-12-native.png",
+    "CDDrive-large.png": "shell32-12-native-48.png",
+    "PicturePrevious.png": "shimgvw-toolbar-0-native.png",
+    "PictureNext.png": "shimgvw-toolbar-1-native.png",
+    "PictureZoomIn.png": "shimgvw-toolbar-2-native.png",
+    "PictureZoomOut.png": "shimgvw-toolbar-3-native.png",
+    "PictureBestFit.png": "shimgvw-toolbar-5-native.png",
+    "PictureActualSize.png": "shimgvw-toolbar-6-native.png"
+  },
+  "icons": [
+    {
+      "file": "shell32-4.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 4",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "c66540175143c39dd6f6fef1b255ff2ab6c6346fe16bd8f2d2d96e48cf83aac4"
+    },
+    {
+      "file": "shell32-4-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "8db84adcd8a14f0a0280ef95d4d27c0c0c700c7fa7ca97c8f1c9c5cbc039e5b4",
+      "source_file": "shell32-4.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-152.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 152",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "e9c7a9efc99cec911c5082225f2b1bc8a83b66470eda2222cec067bed44f6ea3"
+    },
+    {
+      "file": "shell32-152-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "19ea1ea28cbe50f2e14212b15bf516db6f721bdadab8245e5426be61eeed9f15",
+      "source_file": "shell32-152.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-16.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 16",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "bb9ce1e08b2dd78edf42d7e7b1ee70f5c8b665a4342ee36832001bfda201a4fd"
+    },
+    {
+      "file": "shell32-16-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "92bee8d01c6ad583b6b65a881f4e99f5b9c0accd79ed9f039ae134e77d795a86",
+      "source_file": "shell32-16.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-32.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 32",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "e5fd1987abde480e45391abd68187cbfd69bd9508400bcd1bb1a13c6c92f52ac"
+    },
+    {
+      "file": "shell32-32-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "66dd6674b93735e59f125ef997b3cdffb2f6ca6dfe1345d416788c62a8c84c8c",
+      "source_file": "shell32-32.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-512.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 512",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "62682ff9a9fa489fb069375298f117b79b26b7b6f5e80256789ea44751f64617"
+    },
+    {
+      "file": "shell32-512-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "18d2cf3b53755413dc07ebbb37b2b4ee617c8230d8647823e0b0def91dd25724",
+      "source_file": "shell32-512.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-265.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 265",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "810ccde0b55027c657dfdb47220135400f55224211aca3f2974f1a04a8dc610d"
+    },
+    {
+      "file": "shell32-265-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "98998d813ab30732da9878a4a4e52d6bdad3fe7764d3be9b754e18f532041b01",
+      "source_file": "shell32-265.ico",
+      "conversion": "Lossless PNG encoding of the native 16x16, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-327.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 327",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "7042b77a779fcd54b41f52bfc285321ed05f33b613ab0e1e0741f9c1d77e7aef"
+    },
+    {
+      "file": "shell32-327-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "accc471e10d56800dc7c49c775d3a2f640f08cd3fbfde3dc97cc68693421d655",
+      "source_file": "shell32-327.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-237.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 237",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "0c18fb5109e80c1a7bdcf27920529469ff599565143a67f48b6370ba905d4d71"
+    },
+    {
+      "file": "shell32-237-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "fee42f2e24516d4ffccd3060715f9fc3b0527eb3a6d1dd25ffd1db90259386c2",
+      "source_file": "shell32-237.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-137.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 137",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "6de01ede2a0d6365c4d85592f5449a05abeb64a16869ae56c60433c07a96d0ca"
+    },
+    {
+      "file": "shell32-137-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "fe6b81ecc3f1fdffc7b54e9fb7855590a2bd59f73ebacfff38442351e4cbef6d",
+      "source_file": "shell32-137.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-23.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 23",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "6f36c5ab771b8bb17ff04b3445041abe33e6dd0fee7ab1284e41776e5bd1cd0c"
+    },
+    {
+      "file": "shell32-23-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "66c9ab2f6447dcf4e83a9a360f830c56aa11b150ebdcf60c1db546e7b61ec779",
+      "source_file": "shell32-23.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-25.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 25",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "49bc167269d0ddec7a3a03582f8da89308fe68d8bac7cb377c748710b714c577"
+    },
+    {
+      "file": "shell32-25-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "d2c7dbfd18e3133e63f9292789c3be70bc21e660d401a47fbe1f4300e275c5cb",
+      "source_file": "shell32-25.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-230.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 230",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "67971d8926acfb9b90ebb7ca0b8da432dbbd02e425a8e2bdfdb103e58b2cc578"
+    },
+    {
+      "file": "shell32-230-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "1720bb23d15537d4db5b043c3b0aebc3fcd3d382af5d6c416d7192b119d8e7fe",
+      "source_file": "shell32-230.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-19.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 19",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "6d308c91e93486fcd6bbac3de29719a634500056a649a43a8a759d4466d1a216"
+    },
+    {
+      "file": "shell32-19-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "466959c60f91caa7d7008fdb206277ae2e07085e7977047c5fc3ba1a969b943c",
+      "source_file": "shell32-19.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-226.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 226",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "becc8fe678d1b4ca0cd1c14616ec659ab0a61c267bcee4e1db2609fdf61d7d24"
+    },
+    {
+      "file": "shell32-226-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "bdc3e9786f6ffc7703ddcceeca393f61da2154c6bc750343d4f4cc8d67a18164",
+      "source_file": "shell32-226.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 8-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-329.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 329",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "41a784c62396062b0a513a7f60d90a64b587e27824c744a6322dfa393e3906f9"
+    },
+    {
+      "file": "shell32-329-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "c8353c8854483c56ccc79527c2f2d8619fc272d57dad9682433ab97c7d97db13",
+      "source_file": "shell32-329.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-221.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 221",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "53c089bbc1ed7eff133975407a6203221dd96485bd9fa1c88da3314e436d5be5"
+    },
+    {
+      "file": "shell32-221-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "4d48b54b30e29107de586138304407c44f3c73fa66a67dac93c411e6fc21ba2f",
+      "source_file": "shell32-221.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 8-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-235.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 235",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "65edad016e3ffd1689b18e9454748ac0cf0ac301cd9df8de9f82b489b60ee5c4"
+    },
+    {
+      "file": "shell32-235-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "e5851ba2af9b34a2eeee6fa215d0661f61e0e60a59e2fcb4241314ee1e6cf77e",
+      "source_file": "shell32-235.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-290.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 290",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "a23860cc6d8abb4c75cb2f0bb7aeed661e2767f5bf9b790646c16bcba676b192"
+    },
+    {
+      "file": "shell32-290-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "ad70bf20031d83b7e51cad0e4a7da92ad02fd85104546930814ab29ae3689338",
+      "source_file": "shell32-290.ico",
+      "conversion": "Lossless PNG encoding of the native 16x16, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-246.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 246",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "c4c98e931b7b3ac3baff8387c1b22a91d4998b6010b1b55dea1bc2ced05f103b"
+    },
+    {
+      "file": "shell32-246-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "c2d19094c3d54e322eee6abc926c307e013ed81f786d4903df5319b8d55f05ad",
+      "source_file": "shell32-246.ico",
+      "conversion": "Lossless PNG encoding of the native 16x16, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-220.ico",
+      "resource": "shell32.dll RT_GROUP_ICON 220",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "f985aa3e2aad39eba0c829da44d314dbef8c1c72a6bbe71dda3d7e9069c493fc"
+    },
+    {
+      "file": "shell32-220-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "75de34bd544835b10fd555e818de15688383431f16e908cde111353c9d4834f4",
+      "source_file": "shell32-220.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 8-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "original-back.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/back.png",
+      "sha256": "61dad80dd52b14a52a23f29bbb67f1ca44c43a178fd5dbe3b4e9396d929c34ee"
+    },
+    {
+      "file": "original-forward.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/forward.png",
+      "sha256": "becf03ee6422cb3ed713df8e6b71f042aa462ed34c1743e548ace9619c3ed24e"
+    },
+    {
+      "file": "original-up.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/up.png",
+      "sha256": "745a1645ea24b43817e5d0ec661f9a55b083019b725454b38fdfce4dc96a5765"
+    },
+    {
+      "file": "original-restart.ico",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/restart.ico",
+      "sha256": "f7cad8017aa941c751f70db1e9bcb68c76328156c1026d943ae444f998d49d8e"
+    },
+    {
+      "file": "original-restart-native.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/restart.ico",
+      "sha256": "329f4d0389c68510fda582c997e92139669f0a79c3fca20838c584800e54aeaa",
+      "source_file": "original-restart.ico",
+      "conversion": "Lossless PNG encoding of the native 32x32, 0-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "original-user.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/user.png",
+      "sha256": "b433dd05647fc0fbe7aed834cc674ea34889cde0b4c8595fd98f7afbf4524455"
+    },
+    {
+      "file": "original-all-programs.ico",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/all-programs.ico",
+      "sha256": "4a344fd4cec7639fd800ec24d324d7af04d96b3425de628bbf3489fdbf8332b6"
+    },
+    {
+      "file": "original-all-programs-native.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/all-programs.ico",
+      "sha256": "c2d19094c3d54e322eee6abc926c307e013ed81f786d4903df5319b8d55f05ad",
+      "source_file": "original-all-programs.ico",
+      "conversion": "Lossless PNG encoding of the native 16x16, 32-bit ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "original-windows.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/windows.png",
+      "sha256": "71c8b4114797cf5c42d0f6e5ab7d3ec81bc73e7c10dd68911fc26796af2e7a9c"
+    },
+    {
+      "file": "original-windows-off.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/windows-off.png",
+      "sha256": "b8d93e1779cc5db506c2aa21bd5fb259521501df5003b1e70644bf3863d9d0b6"
+    },
+    {
+      "file": "original-start.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/start.png",
+      "sha256": "43b9dadd77bffce7621091865a2c9d5546d190237b95ac24de5c84f4a639afc2"
+    },
+    {
+      "file": "original-windows-transparent.png",
+      "url": "https://raw.githubusercontent.com/ShizukuIchi/winXP/856bb554b3667f62078010b4cee10cc2645761e1/src/assets/windowsIcons/windows.png",
+      "source_file": "original-windows.png",
+      "sha256": "448c2c38e0f98c0ba2b538a27a91b159dfba1a1ba9958bb1760721d932938863",
+      "conversion": "Remove only edge-connected pure-white background pixels by alpha masking; all RGB pixels and native dimensions remain unchanged. No AI, resizing, recoloring or redrawing."
+    },
+    {
+      "file": "shell32-4-native-48.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-4.ico",
+      "sha256": "1156c53d15f4607b44cd9516b1f0a4679178e92465f1c67fbbdad28b6f452bf2",
+      "conversion": "Lossless PNG encoding of the original native48x48 32-bit XP icon frame; no scaling or AI processing."
+    },
+    {
+      "file": "shell32-152-native-48.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-152.ico",
+      "sha256": "5e9b67023e5867ae722dc37fbc3b366a4399bf7564d2acf50d6bffc913f83d7a",
+      "conversion": "Lossless PNG encoding of the original native48x48 32-bit XP icon frame; no scaling or AI processing."
+    },
+    {
+      "file": "shell32-16-native-48.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-16.ico",
+      "sha256": "6a69a13c3e85deca7cb148e524f845cffc470bc0d1fc5b8c2fc8fc4f45e9d909",
+      "conversion": "Lossless PNG encoding of the original native48x48 32-bit XP icon frame; no scaling or AI processing."
+    },
+    {
+      "file": "shell32-32-native-48.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-32.ico",
+      "sha256": "1ab317ce703340f11fe54b0b2782578ee74c17579f565a34b0692955ecfdcc32",
+      "conversion": "Lossless PNG encoding of the original native48x48 32-bit XP icon frame; no scaling or AI processing."
+    },
+    {
+      "file": "original-shutdown-buttons.bmp",
+      "url": "https://raw.githubusercontent.com/aubymori/ClassicShutdown/dfd9ae79d16fb8f2684e83e4f99e5effe5305562/src/res/to_buttons.bmp",
+      "sha256": "d7c2718e92cc84a7819c6a3c7841d6363d5cd240734886c9b69bbf2d49aeb2e9"
+    },
+    {
+      "file": "original-standby-native.png",
+      "url": "https://raw.githubusercontent.com/aubymori/ClassicShutdown/dfd9ae79d16fb8f2684e83e4f99e5effe5305562/src/res/to_buttons.bmp",
+      "sha256": "230483467d5ff1b4bf530e8355977937b9b7633e2b2f0799109b0741774ee6fb",
+      "source_file": "original-shutdown-buttons.bmp",
+      "conversion": "Lossless PNG encoding of the original 32x32 Stand By resting frame at [0,96,32,128]. No resizing, recoloring, redrawing, or generated artwork."
+    },
+    {
+      "file": "shell32-33.ico",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "89ded8e60a6e1cf61405f3944a2ae8928bf345fcbbaaa39bccfcce34f5d2fd29",
+      "resource": "shell32.dll RT_GROUP_ICON 33"
+    },
+    {
+      "file": "shell32-33-native.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "c51828656017c40894cfc509b43fbf909fc69810a55263c820731035aaff9c7f",
+      "source_file": "shell32-33.ico",
+      "conversion": "Lossless PNG encoding of the original native 32x32 32-bit XP ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-33-native-48.png",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "sha256": "602ae34e62e89d842e69b2eca03b1e300c39d945f78da8bc8e7d464467eaf85c",
+      "source_file": "shell32-33.ico",
+      "conversion": "Lossless PNG encoding of the original native 48x48 32-bit XP ICO frame. No resizing or artwork changes."
+    },
+    {
+      "file": "shell32-8.ico",
+      "sha256": "fa035f7d96fedc422b6ed1643075630e8f5dcf9b91e3c9898b554f44a962b2a4",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "resource": "shell32.dll RT_GROUP_ICON 8"
+    },
+    {
+      "file": "shell32-8-native.png",
+      "sha256": "1980141929394f97eb055c41aa57805f2c5f8535b9ba0844253038bb82f1006d",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-8.ico",
+      "conversion": "Lossless PNG of native 32x32 true-color ICO frame; no resizing or artwork changes."
+    },
+    {
+      "file": "shell32-8-native-48.png",
+      "sha256": "fec7b1821314dcb21a7a821d48097fec6aa7020cebf4a79d9bc93966af4d8fd1",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-8.ico",
+      "conversion": "Lossless PNG of native 48x48 true-color ICO frame; no resizing or artwork changes."
+    },
+    {
+      "file": "shell32-12.ico",
+      "sha256": "b91c49a9832888b9ecc8aaf8ead98588363a77ddf99af31feb08f63ce0f9b3a8",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "resource": "shell32.dll RT_GROUP_ICON 12"
+    },
+    {
+      "file": "shell32-12-native.png",
+      "sha256": "ad32a200556efb7b5317259b2dbf471bad75fa6536a3a74f4ecf18785988ebf1",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-12.ico",
+      "conversion": "Lossless PNG of native 32x32 true-color ICO frame; no resizing or artwork changes."
+    },
+    {
+      "file": "shell32-12-native-48.png",
+      "sha256": "4f3e6bc380c4469cc6a304d48ff163e6dfc600de9d66707acdd0f0784d046644",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-12.ico",
+      "conversion": "Lossless PNG of native 48x48 true-color ICO frame; no resizing or artwork changes."
+    },
+    {
+      "file": "shell32-14356-original.bmp",
+      "sha256": "59e3ad6419f120cbda989d4c4494e427a71f06d7c45283869744efcf5a4cf34a",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "resource": "shell32.dll RT_BITMAP 14356, original DIB with lossless BMP header"
+    },
+    {
+      "file": "shell32-logoff-native.png",
+      "sha256": "3ceb13a1029fa329c3e8cce6d00b1eaf0575217200ffa0eded94261acd7079b9",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Icons/Windows%20XP/dll/shell32.dll",
+      "source_file": "shell32-14356-original.bmp",
+      "frame": [
+        0,
+        96,
+        32,
+        128
+      ],
+      "conversion": "Lossless native32 resting Log Off frame. Original palette RGB unchanged; original magenta color-key index2 marked transparent, matching the XP bitmap mask."
+    },
+    {
+      "file": "shimgvw-toolbar-original.bmp",
+      "sha256": "cd8c663fa88d516ea34d0ccd4ec99742262b8dd87304c67fecf69ab901b157e3",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "resource": "XP SP1 shimgvw.dll IDB_TOOLBARHIGH (105)",
+      "creator": "Microsoft Corporation",
+      "license": "Proprietary Microsoft XP artwork; original resource used at explicit user request, not claimed openly licensed."
+    },
+    {
+      "file": "shimgvw-toolbar-0-native.png",
+      "sha256": "c8ccc75bb430facce840d93ff793ad78a7576570ead05869706dde3dc799be45",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    },
+    {
+      "file": "shimgvw-toolbar-1-native.png",
+      "sha256": "c87151b4c1d5b64d3c0d016db8ce0aa1776c8f827235ea254a03d81d426af864",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        16,
+        0,
+        32,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    },
+    {
+      "file": "shimgvw-toolbar-2-native.png",
+      "sha256": "9132ad7d0eefd46dcd53e46a3e4ae24018a884727152e3f4994617ff22cf4806",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        32,
+        0,
+        48,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    },
+    {
+      "file": "shimgvw-toolbar-3-native.png",
+      "sha256": "e1b28c1a7b46286c69de76fb61d1794f816eebf8864a3e6f091bf78fd1e9a19f",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        48,
+        0,
+        64,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    },
+    {
+      "file": "shimgvw-toolbar-5-native.png",
+      "sha256": "dc59748e41512bd25b3c5e4a2de39fa4adc1cc2cbb85e8dbaa8b1d8321d19132",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        80,
+        0,
+        96,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    },
+    {
+      "file": "shimgvw-toolbar-6-native.png",
+      "sha256": "c9aa981f847a3754401078ee7f5aa59c67445b9f9edc076fc724cdad186ed028",
+      "url": "https://raw.githubusercontent.com/tongzx/nt5src/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/shell/ext/shimgvw/res/toolbar.bmp",
+      "source_file": "shimgvw-toolbar-original.bmp",
+      "frame": [
+        96,
+        0,
+        112,
+        16
+      ],
+      "conversion": "Lossless native 16x16 BGRA frame with original alpha; no resizing, recoloring, redraw, or generated pixels."
+    }
+  ],
+  "cursors": [
+    {
+      "file": "arrow_m.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/arrow_m.cur",
+      "sha256": "a19a7c5c46920c0e652d3b77355b4d6364ff983dfa364a4d9db6127cf049ecb6"
+    },
+    {
+      "file": "beam_r.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/beam_r.cur",
+      "sha256": "ed3f346a39cc0b0a5ede7fab7ba494b279b4c80b4058dea2afb403d426e58e20"
+    },
+    {
+      "file": "wait_m.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/wait_m.cur",
+      "sha256": "9d16eaa3753144be7c8112dc8499151bb3abf933162ae7e996390789194972bf"
+    },
+    {
+      "file": "size2_m.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/size2_m.cur",
+      "sha256": "2b52fbfff6650593ac0b2cf54231254cc45928e3ea593c62b67bd3aa927a3805"
+    },
+    {
+      "file": "move_m.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/move_m.cur",
+      "sha256": "cd785cdab5f57dbee946db3d106021085da4cf9c0633accb4b9cc7cce5d88653"
+    },
+    {
+      "file": "hand.ani",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/hand.ani",
+      "sha256": "ee30d86bac53ed6ee4501a1fb1753670182a025ca78930376a0dddf54f8d2549"
+    },
+    {
+      "file": "hand-native.cur",
+      "url": "https://raw.githubusercontent.com/bartekl1/windows-ui-assets/21970f48b8f66b4d44742cb30388c1454512d681/Cursors/Windows%20XP/hand.ani",
+      "sha256": "9aef11ab88f05f237689e77ea95a93bc333abf46cfce173649f2f9684b07b341",
+      "source_file": "hand.ani",
+      "conversion": "First native CUR icon chunk extracted byte-for-byte from the RIFF ANI resource; original 32\u00d732 pixels and hotspot retained. No raster conversion, resizing, or redrawing."
+    }
+  ]
+}
