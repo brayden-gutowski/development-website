@@ -1275,6 +1275,10 @@ async function leaveTokyo() {
         ? 'Tap an outlined object to explore' : 'Hover over objects to explore';
     }
   }
+  // Globe orientation can change while the room pauses sky updates. Align it
+  // before the sky is revealed, and keep the distant-view points out of orbit.
+  skySphere.quaternion.copy(state.currentQuaternion);
+  travelStars.visible = earthStar.visible = false;
   xpDesktop?.close(true);
   bookReader?.close(true);diaryReader?.close(true);closeDrawer();
   activeRoom()?.soundtrack?.stop();

@@ -4,6 +4,7 @@ const { resolve } = require('node:path');
 
 const root = resolve(__dirname, '..');
 const focused = [
+  'room-exit-stars',
   'navigation-pointer-lifetimes', 'area-loader-failure', 'gpu-resource-lifetimes', 'xp-lifetimes', 'memory-soak',
   'dark-startup', 'gainesville-fourth-room', 'gainesville-xp-fourth-review', 'flight-residency', 'model-texture-residency', 'memory-residency', 'departure-residency', 'background-areas', 'gainesville-xp-third-review', 'gainesville-globe-panel', 'gainesville-surface-response', 'gainesville-texture-detail', 'gainesville-computer-proportions', 'gainesville-lamp', 'gainesville-lamp-integration', 'gainesville-xp-authenticity', 'gainesville-room', 'gainesville-flight', 'gainesville-routing', 'gainesville-lighting', 'gainesville-xp', 'gainesville-xp-controls',
   'tokyo-wordmark-glitch', 'tokyo-direct-entry', 'render-budget', 'loading-progress',
