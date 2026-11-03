@@ -1,0 +1,816 @@
+{
+  "cycles": 30,
+  "samples": [
+    {
+      "cycle": 1,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 11541408
+    },
+    {
+      "cycle": 2,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 11695652
+    },
+    {
+      "cycle": 3,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 11876176
+    },
+    {
+      "cycle": 4,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 11940864
+    },
+    {
+      "cycle": 5,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12121756
+    },
+    {
+      "cycle": 6,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12156224
+    },
+    {
+      "cycle": 7,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12199436
+    },
+    {
+      "cycle": 8,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12275316
+    },
+    {
+      "cycle": 9,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12364372
+    },
+    {
+      "cycle": 10,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12380404
+    },
+    {
+      "cycle": 11,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12424812
+    },
+    {
+      "cycle": 12,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12525784
+    },
+    {
+      "cycle": 13,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12549104
+    },
+    {
+      "cycle": 14,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12549116
+    },
+    {
+      "cycle": 15,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12549172
+    },
+    {
+      "cycle": 16,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12552312
+    },
+    {
+      "cycle": 17,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12559580
+    },
+    {
+      "cycle": 18,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12563460
+    },
+    {
+      "cycle": 19,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12575160
+    },
+    {
+      "cycle": 20,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12577036
+    },
+    {
+      "cycle": 21,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12609068
+    },
+    {
+      "cycle": 22,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12614048
+    },
+    {
+      "cycle": 23,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12626684
+    },
+    {
+      "cycle": 24,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12628384
+    },
+    {
+      "cycle": 25,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12632972
+    },
+    {
+      "cycle": 26,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12640656
+    },
+    {
+      "cycle": 27,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12639896
+    },
+    {
+      "cycle": 28,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12656772
+    },
+    {
+      "cycle": 29,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12659760
+    },
+    {
+      "cycle": 30,
+      "gpu": {
+        "geometries": 113,
+        "textures": 97
+      },
+      "programs": 102,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1666,
+      "jsEventListeners": 173,
+      "heapBytes": 12663700
+    }
+  ],
+  "errors": []
+}

@@ -17,10 +17,10 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright'),{PNG
  const flying=await p.evaluate(()=>room().reviewBooks.map(b=>({matrix:b.object.matrix.elements.slice(),angle:b.object.userData.frontAngle,rest:b.rest.position.toArray()})));
  await p.screenshot({path:'/tmp/floating-review-books-flight.png'});
  assert.ok(flying.every((b,i)=>b.matrix.some((v,k)=>Math.abs(v-restMatrices[i][k])>.01)),'Every book leaves its own shelf pose');
- assert.equal(flying.length,3);assert.equal(new Set(flying.map(b=>JSON.stringify(b.matrix))).size,3,'Each book has its own pose');
+ assert.equal(flying.length,4);assert.equal(new Set(flying.map(b=>JSON.stringify(b.matrix))).size,4,'Each book has its own pose');
  assert.ok(flying.some(b=>b.angle<.01),'Waiting books stay closed during flight');
  await root.locator('[data-book-index="1"]').waitFor({state:'visible'});await p.locator('#book-reader[data-phase="reading"]').waitFor();
- assert.equal(await root.locator('.review-floating-cover:not([hidden])').count(),2);
+ assert.equal(await root.locator('.review-floating-cover:not([hidden])').count(),3);
  const photoBounds=await root.locator('.review-cover-art').boundingBox();
  const crop={x:Math.ceil(photoBounds.x+6),y:Math.ceil(photoBounds.y+6),width:Math.floor(photoBounds.width-12),height:Math.floor(photoBounds.height-12)};
  const htmlPhoto=PNG.sync.read(await p.screenshot({clip:crop}));
@@ -55,7 +55,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright'),{PNG
  const mobile=await b.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
  await mobile.goto('http://127.0.0.1:4173/#book-review/yaseuma');await mobile.locator('#book-reader[data-phase="reading"][data-book="yaseuma"]').waitFor({timeout:60000});
  assert.ok(await mobile.locator('#app').evaluate(e=>e.classList.contains('is-in-room')),'Review links open in the room');
- assert.equal(await mobile.locator('.review-floating-cover:not([hidden])').count(),2);
+ assert.equal(await mobile.locator('.review-floating-cover:not([hidden])').count(),3);
  await mobile.getByRole('button',{name:'Next book',exact:true}).click();await mobile.locator('#book-reader[data-phase="reading"][data-book="maru-megane-ryoubo-san"]').waitFor();
  console.log('Mobile page metrics',await mobile.locator('.review-copy').evaluate(e=>({font:getComputedStyle(e).fontSize,height:e.clientHeight,scroll:e.scrollHeight,width:e.clientWidth})));
  assert.ok(await mobile.locator('.review-copy').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=11.5&&(e.scrollHeight<=e.clientHeight+1||getComputedStyle(e).overflowY==='auto')),'Phone review text stays readable and can scroll within its page');

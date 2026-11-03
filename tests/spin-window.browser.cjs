@@ -11,18 +11,20 @@ const {PNG}=require('pngjs');
     page.on('request',request=>requests.push(request.url()));
     await page.route('**/script.js*',async route=>{
       const response=await route.fetch();
-      await route.fulfill({response,body:await response.text()+';window.spinRoom=()=>japanRoom;'});
+      await route.fulfill({response,body:await response.text()+';window.spinRoom=()=>japanRoom;window.freezeSpinResolution=()=>{qualityCheckAfter=Infinity;};window.spinRatio=()=>renderer.getPixelRatio();'});
     });
     await page.goto((process.env.TEST_URL||'http://127.0.0.1:4173')+'/#tokyo');
     await page.locator('#app.is-in-room:not(.is-travelling)').waitFor({timeout:60000});
     await page.locator('#loading-screen').waitFor({state:'hidden'});
+    // Compare lighting at one resolution; render-budget tests adaptation separately.
+    await page.evaluate(()=>freezeSpinResolution());
     const video=page.locator('#tokyo-window-video'),track=page.locator('#tokyo-record-track');
     const source=await video.evaluate(v=>v.currentSrc);
     assert.match(source,/^blob:/,'The whole city clip must be buffered before playback');
     await track.evaluate(a=>{a.volume=0;});
     await page.mouse.move(10,880);
     const pixels=async name=>PNG.sync.read(await page.screenshot({path:`/tmp/spin-city-${name}.png`})).data;
-    const geometry=()=>page.evaluate(()=>{const r=spinRoom(),g=r.exterior.horizon.geometry;return {positions:Array.from(g.attributes.position.array),uv:Array.from(g.attributes.uv.array),camera:r.camera.matrixWorld.toArray(),texture:r.exterior.horizon.material.map.uuid};});
+    const geometry=()=>page.evaluate(()=>{const r=spinRoom(),g=r.exterior.horizon.geometry;return {pixelRatio:spinRatio(),positions:Array.from(g.attributes.position.array),uv:Array.from(g.attributes.uv.array),camera:r.camera.matrixWorld.toArray(),texture:r.exterior.horizon.material.map.uuid};});
     const baseline=await pixels('normal'),baselineGeometry=await geometry();
     const play=async()=>{await page.locator('[data-room-action="music"]').focus();await page.keyboard.press('Enter');};
     await play();

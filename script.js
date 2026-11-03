@@ -181,13 +181,11 @@ const DRAWERS = {
     kicker: "Japan / Japanese Blog",
     title: "日本語ブログ",
     description: "",
-    supportsBlog: true,
   },
   "japanese-book-reviews": {
     kicker: "Japan / Japanese Books",
     title: "日本語の本のレビュー",
     description: "",
-    supportsBookReviews: true,
   },
   "music-reviews": {
     kicker: "Nashville / Music Reviews",
@@ -448,6 +446,29 @@ const JAPANESE_BOOK_REVIEWS = [
       ]
     ]
   },
+  {
+    id: "tsumikko",
+    dateTime: "2026-11-03",
+    title: "つみっこ",
+    rating: 4,
+    image: "assets/book-tsumikko.png",
+    imageAlt: "つみっこの本の表紙。レベル２の表示と、つみっこの料理の写真。",
+    body: [
+      "この本はちょっと面白いですよ。「つみっこ」は「やせうま」に似ています。たぶん、この本の著者と「やせうま」の著者は友達だと思います。でも、これは料理本とれきしの本です。まず、全部の材料について話します。次に、料理の作り方を説明します。最後に、つみっこの歴史を話します。",
+      "つみっこは食べ物です。つみっこの中ににんじんやしめじやぶた肉が入っています。次にやさいとにくをきって、お湯をわかして、つみっこが固まって、つみっこを食べます！",
+      "つみっこのれきしは面白いです。基本的に、つみっこを料理するのはかんたんです。さらに、やすいです。",
+      "だから、この本はいいですよ。読んでみてください。来週、つみっこを作ろうと思います。",
+    ],
+    glossary: [
+      ["似ています（にています）", "Is similar"],
+      ["著者（ちょしゃ）", "Author"],
+      ["材料（ざいりょう）", "Ingredients"],
+      ["説明（せつめい）", "Explanation"],
+      ["最後に（さいごに）", "Finally"],
+      ["固まる（かたまる）", "To solidify"],
+      ["基本的に（きほんてきに）", "Basically"],
+    ],
+  },
 ];
 
 // Add future album reviews here in descending rating order.
@@ -526,6 +547,15 @@ const MUSIC_REVIEW_CATEGORIES = [
         description: "Almost everyone would put Illmatic as their best hip-hop debut album of all time, and for good reason.  The lyricism and topics covered in each song is simply incredible and has aged to be one of the greatest albums of all time.  I find it impressive how Nas started out so strong, fell so far, and then came back up with his recent releases of Kings Disease.  Nas’ lyricism is a marvel, and this album is the best example of it by far.",
         image: "assets/Illmatic.jpg",
         imageAlt: "Illmatic album cover by Nas",
+      },
+      {
+        id: "goblin-food",
+        title: "GOBLIN FOOD",
+        artist: "SIM & Zaia",
+        rating: "9.5/10",
+        description: "Recently I've been trying to explore more genres outside of hip hop and this album has single-handedly paid off.  When you cut down a track list to 8 incredible songs, you end up with a project like GOBLIN FOOD.  A boundary pushing, unique, and fun listening experience.  The production is incredible, the vocals are good, and the songs have a common theme that ties the album together.  If you have the time, please go pay this album a listen, it might just be my favorite album of the year.",
+        image: "assets/goblin-food.png",
+        imageAlt: "GOBLIN FOOD album cover: a green hand holding a fork against a dark background",
       },
       {
         id: "blonde",
@@ -816,7 +846,7 @@ function activeRoom() { return roomLocationId === 'gainesville' ? gainesvilleRoo
 async function loadGainesvilleRoom() {
   setAreaLoadProgress('gainesville', 8, 'Downloading the Gainesville room', 'Models, textures and lighting');
   return gainesvilleRoomPromise ||= Promise.all([
-    import('./gainesville-room.js?v=20261025-leak-audit-2'),
+    import('./gainesville-room.js?v=20261103-memory-audit-1'),
     import('./xp-desktop.js?v=20261025-leak-audit-2'),
   ]).then(async ([module, desktop])=>{
     const room=await module.createGainesvilleRoom();
@@ -971,8 +1001,8 @@ const roomTransition = document.querySelector("#room-transition");
 
 function loadReaders() {
   return readerModules ||= Promise.all([
-    import('./diary-reader.js?v=20261023-mobile-1'),
-    import('./book-reader.js?v=20261023-mobile-1'),
+    import('./diary-reader.js?v=20261103-memory-audit-1'),
+    import('./book-reader.js?v=20261103-memory-audit-1'),
   ]).then(([diary, books]) => {
     createDiaryReader = diary.createDiaryReader;
     createBookReader = books.createBookReader;
@@ -985,7 +1015,7 @@ function prepareTokyo() {
 }
 
 function fetchJapanRoom() {
-  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261025-leak-audit-2")
+  return japanRoomAssets ||= (japanRoomModule ||= import("./japan-room.js?v=20261103-memory-audit-1")
     .catch(error=>{japanRoomModule=null;throw error;}))
     .then(module=>module.createJapanRoom({bookCovers:JAPANESE_BOOK_REVIEWS,
       onProgress: (ready, total) => setAreaLoadProgress('tokyo', 8 + ready / total * 57,
@@ -2743,141 +2773,6 @@ function focusLocation(locationId, { preserveContentUrl = false } = {}) {
   }
 }
 
-function renderPrivateBlog() {
-  const activeRoute = readBlogRoute();
-  const categories = JAPANESE_BLOG_CATEGORIES.map((category, categoryIndex) => {
-    const categoryEntries = category.entries || [];
-    const categoryDetails = document.createElement("details");
-    categoryDetails.className = "blog-category";
-    categoryDetails.open = categoryIndex === 0 || activeRoute?.categoryId === category.id;
-
-    const categorySummary = document.createElement("summary");
-    const categoryName = document.createElement("span");
-    categoryName.textContent = category.name;
-    categorySummary.append(categoryName);
-
-    const entriesContainer = document.createElement("div");
-    entriesContainer.className = "blog-category__entries";
-    if (!categoryEntries.length) {
-      const empty = document.createElement("p");
-      empty.className = "blog-category__empty";
-      empty.textContent = "No entries in this category yet.";
-      entriesContainer.append(empty);
-    } else {
-      categoryEntries.forEach((entry) => {
-        const entryDetails = document.createElement("details");
-        entryDetails.className = `blog-entry${entry.media?.length ? " blog-entry--media" : ""}`;
-        entryDetails.dataset.blogCategory = category.id;
-        entryDetails.dataset.blogEntry = entry.id;
-        const entrySummary = document.createElement("summary");
-        const entryTitle = document.createElement("span");
-        entryTitle.textContent = entry.title;
-        entrySummary.append(entryTitle);
-        if (entry.date) {
-          const entryDate = document.createElement("time");
-          entryDate.className = "blog-entry__date";
-          entryDate.textContent = entry.date;
-          if (entry.dateTime) entryDate.dateTime = entry.dateTime;
-          entrySummary.append(entryDate);
-        }
-
-        const content = document.createElement("div");
-        content.className = "blog-entry__content";
-        const body = document.createElement("div");
-        body.className = "blog-entry__body";
-        const paragraphs = Array.isArray(entry.body) ? entry.body : [entry.body];
-        paragraphs.forEach((paragraph) => {
-          const copy = document.createElement("p");
-          copy.className = "blog-entry__paragraph";
-          copy.textContent = paragraph;
-          body.append(copy);
-        });
-
-        if (entry.glossary?.length) {
-          const glossary = document.createElement("dl");
-          glossary.className = "blog-entry__glossary";
-          entry.glossary.forEach(([japanese, english]) => {
-            const term = document.createElement("dt");
-            term.textContent = japanese;
-            const definition = document.createElement("dd");
-            definition.textContent = english;
-            glossary.append(term, definition);
-          });
-          body.append(glossary);
-        }
-
-        if (entry.media?.length) {
-          content.classList.add("blog-entry__content--editorial");
-          const leftRail = document.createElement("div");
-          leftRail.className = "blog-entry__rail blog-entry__rail--left";
-          const rightRail = document.createElement("div");
-          rightRail.className = "blog-entry__rail blog-entry__rail--right";
-
-          entry.media.forEach((media) => {
-            const frame = document.createElement("figure");
-            frame.className = `blog-entry__image blog-entry__image--${media.side}${media.caption ? ` blog-entry__image--caption-${media.captionPosition}` : ""}`;
-            const imageFrame = document.createElement("div");
-            imageFrame.className = "blog-entry__image-frame";
-            if (media.aspectRatio) imageFrame.style.aspectRatio = media.aspectRatio;
-            const image = document.createElement("img");
-            image.src = media.src;
-            image.alt = media.label;
-            image.loading = "lazy";
-            image.decoding = "async";
-            imageFrame.append(image);
-
-            if (media.caption) {
-              const caption = document.createElement("figcaption");
-              caption.className = "blog-entry__caption";
-              caption.textContent = media.caption;
-              if (media.captionPosition === "above") frame.append(caption, imageFrame);
-              else frame.append(imageFrame, caption);
-            } else {
-              frame.append(imageFrame);
-            }
-            (media.side === "right" ? rightRail : leftRail).append(frame);
-          });
-          content.append(leftRail, body, rightRail);
-        } else {
-          content.append(body);
-        }
-
-        entryDetails.append(entrySummary, content);
-        entryDetails.addEventListener("toggle", () => {
-          if (entryDetails.open) {
-            ui.drawerContent.querySelectorAll(".blog-entry[open]").forEach((openEntry) => {
-              if (openEntry !== entryDetails) openEntry.open = false;
-            });
-            const currentRoute = readBlogRoute();
-            const isCurrentRoute = currentRoute?.categoryId === category.id && currentRoute.entryId === entry.id;
-            writeBlogRoute(category.id, entry.id, { replace: isCurrentRoute });
-          } else {
-            const currentRoute = readBlogRoute();
-            if (currentRoute?.categoryId === category.id && currentRoute.entryId === entry.id) {
-              clearBlogRoute();
-            }
-          }
-          ui.drawer.classList.toggle(
-            "has-expanded-entry",
-            Boolean(ui.drawerContent.querySelector(".blog-entry[open]")),
-          );
-        });
-        entryDetails.open = activeRoute?.categoryId === category.id && activeRoute.entryId === entry.id;
-        entriesContainer.append(entryDetails);
-      });
-    }
-
-    categoryDetails.append(categorySummary, entriesContainer);
-    return categoryDetails;
-  });
-  ui.drawerContent.replaceChildren(...categories);
-  const openEntry = ui.drawerContent.querySelector(".blog-entry[open]");
-  ui.drawer.classList.toggle("has-expanded-entry", Boolean(openEntry));
-  if (openEntry) {
-    window.requestAnimationFrame(() => openEntry.scrollIntoView({ block: "nearest" }));
-  }
-}
-
 function renderMusicReviews() {
   const entriesContainer = document.createElement("div");
   entriesContainer.className = "music-review-list";
@@ -2938,129 +2833,11 @@ function renderMusicReviews() {
   ui.drawer.classList.remove("has-expanded-entry");
 }
 
-function createStarRating(value) {
-  const rating = document.createElement("span");
-  rating.className = "book-review__rating";
-  rating.setAttribute("aria-label", `${value} out of 5 stars`);
-
-  for (let index = 1; index <= 5; index += 1) {
-    const star = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    star.setAttribute("viewBox", "0 0 24 24");
-    star.setAttribute("aria-hidden", "true");
-    star.classList.add("book-review__star");
-    if (index <= value) star.classList.add("is-filled");
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "m12 2.7 2.82 5.72 6.31.92-4.57 4.45 1.08 6.29L12 17.11l-5.64 2.97 1.08-6.29-4.57-4.45 6.31-.92L12 2.7Z");
-    star.append(path);
-    rating.append(star);
-  }
-
-  return rating;
-}
-
-function renderBookReviews() {
-  const activeRoute = readBookReviewRoute();
-  const reviews = JAPANESE_BOOK_REVIEWS.map((entry) => {
-    const review = document.createElement("details");
-    review.className = "book-review";
-    review.dataset.bookReview = entry.id;
-
-    const summary = document.createElement("summary");
-    const title = document.createElement("strong");
-    title.className = "book-review__title";
-    title.textContent = entry.title;
-    const identity = document.createElement("div");
-    identity.className = "book-review__identity";
-    identity.append(title);
-    if (entry.dateTime) {
-      const date = document.createElement("time");
-      date.className = "book-review__date";
-      date.dateTime = entry.dateTime;
-      date.textContent = new Date(`${entry.dateTime}T12:00:00`).toLocaleDateString("ja-JP", {
-        year: "numeric", month: "long", day: "numeric",
-      });
-      identity.append(date);
-    }
-    summary.append(identity, createStarRating(entry.rating));
-
-    const content = document.createElement("div");
-    content.className = "book-review__content";
-    const coverFrame = document.createElement("div");
-    coverFrame.className = "book-review__cover-frame";
-    const cover = document.createElement("img");
-    cover.className = "book-review__cover";
-    cover.src = entry.image;
-    cover.alt = entry.imageAlt;
-    cover.loading = "lazy";
-    cover.decoding = "async";
-    coverFrame.append(cover);
-
-    const copy = document.createElement("div");
-    copy.className = "book-review__copy";
-    entry.body.forEach((paragraph) => {
-      const paragraphElement = document.createElement("p");
-      paragraphElement.className = "book-review__paragraph";
-      paragraphElement.textContent = paragraph;
-      copy.append(paragraphElement);
-    });
-
-    const glossarySection = document.createElement("section");
-    glossarySection.className = "book-review__vocabulary";
-    const glossary = document.createElement("dl");
-    glossary.className = "book-review__glossary";
-    entry.glossary.forEach(([japanese, english]) => {
-      const term = document.createElement("dt");
-      term.textContent = japanese;
-      const definition = document.createElement("dd");
-      definition.textContent = english;
-      glossary.append(term, definition);
-    });
-    glossarySection.append(glossary);
-    copy.append(glossarySection);
-    content.append(coverFrame, copy);
-    review.append(summary, content);
-
-    review.addEventListener("toggle", () => {
-      if (review.open) {
-        ui.drawerContent.querySelectorAll(".book-review[open]").forEach((openReview) => {
-          if (openReview !== review) openReview.open = false;
-        });
-        const currentRoute = readBookReviewRoute();
-        writeBookReviewRoute(entry.id, { replace: currentRoute?.entryId === entry.id });
-      } else if (readBookReviewRoute()?.entryId === entry.id) {
-        clearBookReviewRoute();
-      }
-      ui.drawer.classList.toggle(
-        "has-expanded-entry",
-        Boolean(ui.drawerContent.querySelector(".book-review[open]")),
-      );
-    });
-    review.open = activeRoute?.entryId === entry.id;
-
-    return review;
-  });
-
-  ui.drawerContent.replaceChildren(...reviews);
-  const openReview = ui.drawerContent.querySelector(".book-review[open]");
-  ui.drawer.classList.toggle("has-expanded-entry", Boolean(openReview));
-  if (openReview) {
-    window.requestAnimationFrame(() => openReview.scrollIntoView({ block: "nearest" }));
-  }
-}
-
 function renderDrawerContent(drawerId) {
   const drawer = DRAWERS[drawerId];
   if (!drawer) return;
-  if (drawer.supportsBlog) {
-    renderPrivateBlog();
-    return;
-  }
   if (drawer.supportsMusicReviews) {
     renderMusicReviews();
-    return;
-  }
-  if (drawer.supportsBookReviews) {
-    renderBookReviews();
     return;
   }
 
@@ -3246,9 +3023,8 @@ function openDrawer(drawerId, { preserveContentUrl = false } = {}) {
   ui.drawerTitle.textContent = drawer.title;
   ui.drawerDescription.textContent = drawer.description;
   ui.drawerDescription.hidden = !drawer.description;
-  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsBlog || drawer.supportsMusicReviews || drawer.supportsBookReviews));
+  ui.drawer.classList.toggle("is-blog", Boolean(drawer.supportsMusicReviews));
   ui.drawer.classList.toggle("is-music-reviews", Boolean(drawer.supportsMusicReviews));
-  ui.drawer.classList.toggle("is-book-reviews", Boolean(drawer.supportsBookReviews));
   ui.drawer.classList.remove("has-expanded-entry");
   renderDrawerContent(drawerId);
   resetDrawerScroll?.();

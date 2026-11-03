@@ -1,0 +1,118 @@
+{
+  "cycles": 4,
+  "samples": [
+    {
+      "cycle": 1,
+      "gpu": {
+        "geometries": 144,
+        "textures": 101
+      },
+      "programs": 106,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "flight-resume",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1629,
+      "jsEventListeners": 173,
+      "heapBytes": 12331764
+    },
+    {
+      "cycle": 2,
+      "gpu": {
+        "geometries": 144,
+        "textures": 101
+      },
+      "programs": 106,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "flight-resume",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1629,
+      "jsEventListeners": 173,
+      "heapBytes": 12575176
+    },
+    {
+      "cycle": 3,
+      "gpu": {
+        "geometries": 144,
+        "textures": 101
+      },
+      "programs": 106,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "flight-resume",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1629,
+      "jsEventListeners": 173,
+      "heapBytes": 12780168
+    },
+    {
+      "cycle": 4,
+      "gpu": {
+        "geometries": 144,
+        "textures": 101
+      },
+      "programs": 106,
+      "measures": [
+        "room-compile",
+        "room-probe",
+        "room-final-compile",
+        "room-render",
+        "room-shade",
+        "room-outline",
+        "flight-resume",
+        "room-textures-resume",
+        "room-effects-resume"
+      ],
+      "windows": 0,
+      "rooms": {
+        "tokyo": true,
+        "gainesville": false
+      },
+      "documents": 1,
+      "nodes": 1629,
+      "jsEventListeners": 173,
+      "heapBytes": 12845452
+    }
+  ],
+  "errors": []
+}

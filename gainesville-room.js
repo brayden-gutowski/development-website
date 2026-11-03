@@ -291,7 +291,7 @@ export async function createGainesvilleRoom() {
         diffusion.uniforms.image.value=bloomX.texture;diffusion.uniforms.stepUV.value.set(0,1.5/bloomX.height);diffusion.uniforms.extract.value=0;renderer.setRenderTarget(bloomY);diffusionQuad.render(renderer);
       }finally{scene.overrideMaterial=override;scene.background=background;renderer.autoClear=auto;renderer.setRenderTarget(previous);}
     },
-    dispose(){if(disposed)return;disposed=true;modelTextures.dispose();outline.dispose();occlusion.dispose();depthTarget.dispose();depthMaterial.dispose();fog.dispose();fogQuad.dispose();diffusion.dispose();diffusionQuad.dispose();bloomX.dispose();bloomY.dispose();environment?.dispose();architectureLight.dispose();furnitureLight.dispose();architecturePractical.dispose();if(furniturePractical!==architecturePractical)furniturePractical.dispose();blackLight.dispose();const materials=new Set(),textures=new Set();scene.traverse(o=>{o.geometry?.dispose();for(const m of [o.material].flat())if(m)materials.add(m);o.shadow?.dispose();});for(const m of materials){for(const v of Object.values(m))if(v?.isTexture)textures.add(v);m.dispose();}textures.forEach(t=>t.dispose());scene.environment=null;},
+    dispose(){if(disposed)return;disposed=true;modelTextures.dispose();outline.dispose();occlusion.dispose();depthTarget.dispose();depthMaterial.dispose();fog.dispose();fogQuad.dispose();diffusion.dispose();diffusionQuad.dispose();bloomX.dispose();bloomY.dispose();environment?.dispose();disposeRoomScene(scene,ownedTextures);scene.environment=null;},
   };
   room.reset();return room;
   } catch (error) {

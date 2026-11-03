@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createDiaryPrint } from './diary-print.js?v=5';
-import { BOOK_ASPECT, mobileReaderLayout, ease, element as node, createPageSides, trapReaderFocus } from './reader-ui.js';
+import { BOOK_ASPECT, mobileReaderLayout, ease, element as node, createPageSides, trapReaderFocus } from './reader-ui.js?v=20261103-memory-audit-1';
 
 export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
   const entries = categories.flatMap(category => (category.entries || []).map(entry => ({entry, category})))
@@ -83,7 +83,7 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
     if(!lastPlacement||!placement.equals(lastPlacement)){motion.place(placement);lastPlacement=placement;refreshShadow();}
   }
   function restoreOriginal() {
-    motion?.restore();lift=null;originalPose=null;
+    motion?.restore();lift=rig=motion=null;originalPose=null;
     heldRoom?.holdView(false);refreshShadow();heldRoom=null;
   }
   function createPage(page,side,pageIndex) {
@@ -181,7 +181,8 @@ export function createDiaryReader({ categories, getRoom, onPage, onClose }) {
   function finishClose(notify=true) {
     restoreOriginal();root.hidden=true;setPhase('closed');
     book.style.removeProperty('transform');
-    if(notify){onClose();restoreFocus?.focus({preventScroll:true});}
+    const focus=restoreFocus;restoreFocus=null;
+    if(notify){onClose();focus?.focus({preventScroll:true});}
   }
   function prepareAssets() {
     return preparation ||= Promise.all([

@@ -1,5 +1,6 @@
 export const BOOK_ASPECT = .53 / .403;
-export const mobileReaderLayout = () => innerWidth <= 700 || matchMedia('(hover: none) and (pointer: coarse)').matches;
+const touchInput = matchMedia('(hover: none) and (pointer: coarse)');
+export const mobileReaderLayout = () => innerWidth <= 700 || touchInput.matches;
 export const ease = value => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * t * (10 + t * (-15 + 6 * t));

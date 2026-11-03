@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';
 let pending;
-export const loadDiaryAnimation=()=>pending||=new GLTFLoader().loadAsync('assets/diary/diary-opening.glb?v=4').catch(error=>{pending=null;throw error;});
+export const loadDiaryAnimation=()=>pending||=new GLTFLoader().loadAsync('assets/diary/diary-opening.glb?v=4').then(asset=>{delete asset.parser;return asset;}).catch(error=>{pending=null;throw error;});
 
 // Install the animated binding once. The very same meshes and materials sit on
 // the desk, travel to the reader, and return under the room's physical lights.

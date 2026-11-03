@@ -1,14 +1,14 @@
 import { createModelTextureResidency, disposeRoomScene as disposeScene } from './room-texture-residency.js?v=20261025-leak-audit-2';
 import * as THREE from "three";
 import { applyRoomFinish } from './room-finish.js?v=20261020-memory-1';
-import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=13';
-import { createReviewBindings } from './review-bindings.js?v=20261023-mobile-1';
+import { loadDiaryAnimation, createDiaryBinding } from './diary-animation.js?v=20261103-memory-audit-1';
+import { createReviewBindings } from './review-bindings.js?v=20261103-memory-audit-1';
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js";
 import { createRoomOutline } from './room-outline.js?v=20261024-native-1';
 import { SSAOPass } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/SSAOPass.js";
 import { FullScreenQuad } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/Pass.js";
 import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/OBJLoader.js";
-import { createRecordPlayer } from './record-player.js?v=2';
+import { createRecordPlayer } from './record-player.js?v=20261103-memory-audit-1';
 import { createTokyoExterior } from './tokyo-exterior.js?v=20261023-spin-sandstorm-1';
 
 // Interaction metadata is exported from the separate Blender copy; materials
@@ -142,8 +142,8 @@ function createSoundtrack() {
   audio.hidden = true;
   audio.dataset.phase = "stopped";
   document.body.append(audio);
-  let context, runout, surface, surfaceGain, musicGain, leadInTimer;
-  let playing = false;
+  let context, runout, surface, surfaceGain, musicGain, musicSource, leadInTimer;
+  let playing = false, disposed = false;
   let playbackToken = 0;
 
   function startSurface() {
@@ -207,11 +207,13 @@ function createSoundtrack() {
     get progress() { return Number.isFinite(audio.duration)&&audio.duration>0?THREE.MathUtils.clamp(audio.currentTime/audio.duration,0,1):0; },
     onended: null,
     async toggle() {
+      if (disposed) return false;
       if (playing) { this.stop(false); return false; }
       if (!context) {
         context = new (window.AudioContext || window.webkitAudioContext)();
         musicGain = context.createGain();
-        context.createMediaElementSource(audio).connect(musicGain).connect(context.destination);
+        musicSource = context.createMediaElementSource(audio);
+        musicSource.connect(musicGain).connect(context.destination);
       }
       const token = ++playbackToken;
       playing = true;
@@ -225,7 +227,7 @@ function createSoundtrack() {
         // a direct gesture for HTML audio as well as AudioContext.resume().
         const results = await Promise.allSettled([resuming, audio.play()]);
         if (token !== playbackToken) {
-          if (!playing) { audio.pause(); context.suspend(); }
+          if (!playing && !disposed) { audio.pause(); context.suspend().catch(() => {}); }
           return playing;
         }
         const failure = results.find(result => result.status === "rejected");
@@ -259,6 +261,7 @@ function createSoundtrack() {
       }
     },
     stop(rewind = true) {
+      if (disposed) return;
       playbackToken++;
       playing = false;
       clearTimeout(leadInTimer); leadInTimer = null;
@@ -270,15 +273,21 @@ function createSoundtrack() {
         runout.onended = null;
         runout.stop(); runout.disconnect(); runout = null;
       }
-      context?.suspend();
+      context?.suspend().catch(() => {});
     },
     dispose() {
+      if (disposed) return;
       this.stop();
-      context?.close();
+      disposed = true;
+      musicSource?.disconnect(); musicSource = null;
+      musicGain?.disconnect(); musicGain = null;
+      context?.close().catch(() => {}); context = null;
+      audio.removeEventListener('ended', ended);
       audio.removeAttribute('src'); audio.load(); audio.remove();
     },
   };
-  audio.addEventListener("ended", () => { if (playing && audio.ended) finishRecord(); });
+  const ended = () => { if (playing && audio.ended) finishRecord(); };
+  audio.addEventListener('ended', ended);
   return playback;
 }
 
@@ -315,8 +324,8 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       }
     } catch (reason) { failure = {reason}; }
   }
-  if (failure) {
-    for (const result of loaded) {
+  const disposeAssets = results => {
+    for (const result of results) {
       if (result.status !== 'fulfilled') continue;
       const value = result.value;
       if (value.scene) disposeScene(value.scene, value.parser?.associations.keys());
@@ -327,9 +336,14 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
         value.texture.dispose();
       }
     }
+  };
+  if (failure) {
+    disposeAssets(loaded);
     throw failure.reason;
   }
   const [gltf, backdrop, architectureLight, furnitureLight, poster, joineryLight, joineryLayout, joineryUV, labelTexture, diaryAsset,...bookTextures] = loaded.map(result => result.value);
+  let scene, room, soundtrack, touchInput, updateInput, syncVideoPlayback;
+  try {
   // Older web exports included generated cables; keep only user-authored props.
   for (const name of ['Left_speaker_lead', 'Record_player_lead']) {
     const generated = gltf.scene.getObjectByName(name);
@@ -345,7 +359,7 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
     texture.channel = 1;
     texture.colorSpace = THREE.NoColorSpace;
   }
-  const scene = new THREE.Scene();
+  scene = new THREE.Scene();
   scene.background = new THREE.Color(0xdce3e9);
   scene.environment = ambientSky();
   scene.environmentIntensity = .16;
@@ -950,13 +964,13 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
   const look = new THREE.Vector2();
   const pointer = new THREE.Vector2();
   let viewHeld = false;
-  const touchInput = matchMedia('(hover: none), (pointer: coarse)');
+  touchInput = matchMedia('(hover: none), (pointer: coarse)');
   const pickPoint = new THREE.Vector2();
   let viewportWidth = innerWidth, viewportHeight = innerHeight;
   let contactShading = true;
   const raycaster = new THREE.Raycaster();
   let highlighted = null;
-  const soundtrack = createSoundtrack();
+  soundtrack = createSoundtrack();
   let roomVisible = false;
   let stillView = false;
   let clothTime = 0;
@@ -971,13 +985,13 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
     sunlight.color.lerpColors(ordinarySun,westernSun,exterior.blend);
     skyFill.color.lerpColors(ordinarySky,westernSky,exterior.blend*.45);
   }
-  function syncVideoPlayback() {
+  syncVideoPlayback = () => {
     if(document.hidden)exterior.reset();
     applySongLight();
     if (backdrop.ready && roomVisible && !stillView && !document.hidden) {
       backdrop.video.play().catch(() => {});
     } else backdrop.video.pause();
-  }
+  };
   document.addEventListener('visibilitychange', syncVideoPlayback);
   // The room is a fixed late-afternoon memory, independent of the real clock.
   fabricDaylight.value = .82;
@@ -991,12 +1005,12 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
       ? [...Object.values(actionMeshes).flat(), doorOutline]
       : action==='door'?[...actionMeshes.door,doorOutline]:actionMeshes[action] || [];
   }
-  const updateInput = () => highlight(highlighted);
+  updateInput = () => highlight(highlighted);
   touchInput.addEventListener('change', updateInput);
   highlight(null);
   let modelTextures;
   let effectsSuspended=false;
-  const room = {
+  room = {
     get texturesSuspended(){return modelTextures.suspended;},
     prepareTextures:()=>modelTextures.prepare(),
     suspendTextures:()=>modelTextures.suspend(),
@@ -1225,7 +1239,17 @@ export async function createJapanRoom({bookCovers=[],onProgress=()=>{}}={}) {
     },
     reset() { pointer.set(0, 0); look.set(0, 0); highlight(null); soundtrack.stop(); exterior.reset(); syncVideoPlayback(); recordPlayer?.reset(); sunlight.shadow.needsUpdate=true; camera.quaternion.copy(baseRotation); camera.position.copy(basePosition); },
   };
-  try { modelTextures=await createModelTextureResidency(loaded[0].value,scene); }
-  catch (error) { room.dispose(); throw error; }
+  modelTextures=await createModelTextureResidency(gltf,scene);
   return room;
+  } catch (error) {
+    if (room) room.dispose();
+    else {
+      if (syncVideoPlayback) document.removeEventListener('visibilitychange', syncVideoPlayback);
+      if (updateInput) touchInput.removeEventListener('change', updateInput);
+      soundtrack?.dispose();
+      if (scene) { disposeScene(scene); scene.environment?.dispose(); }
+      disposeAssets(loaded);
+    }
+    throw error;
+  }
 }

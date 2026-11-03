@@ -6,7 +6,7 @@ const assert=require('node:assert/strict');const {chromium}=require('playwright'
  await page.goto((process.env.TEST_URL||'http://127.0.0.1:4173')+'/#gainesville');await page.locator('#loading-screen').waitFor({state:'hidden'});const exposure=await page.evaluate(()=>fourthRoom().exposure);
  async function focusComputer(){await page.getByRole('button',{name:'Computer · Look closer',exact:true}).focus();await page.keyboard.press('Enter');}
  await focusComputer();await page.locator('#xp-computer[data-phase="desktop"]').waitFor();await page.waitForFunction(()=>fourthRoom().room.displayState.spill>.1);
- await page.keyboard.press('Escape');await page.locator('#xp-computer.is-passive').waitFor();await page.waitForFunction(()=>!fourthRoom().room.computerFocused);
+ await page.keyboard.press('Escape');await page.locator('#xp-computer.is-passive').waitFor();await page.waitForFunction(()=>!fourthRoom().room.computerFocused);await page.waitForFunction(()=>document.querySelector('.xp-screen').getBoundingClientRect().width<innerWidth*.5);
  assert.equal(await page.locator('#xp-computer').evaluate(el=>el.inert),true);assert.equal(await page.evaluate(()=>fourthRoom().room.displayState.powered),true,'Zooming out preserves desktop illumination');
  assert.ok(await page.locator('.xp-screen').evaluate(el=>el.getBoundingClientRect().width<innerWidth*.5),'Passive desktop maps back onto the original physical glass');
  const hit=await page.locator('.xp-screen').evaluate(el=>{const r=el.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('#xp-computer');});assert.equal(hit,false,'Passive desktop does not intercept room pointer input');

@@ -13,7 +13,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
    const result=await page.evaluate(async()=>{
     const T=await import('three'),{OBB}=await import('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/math/OBB.js');
     const reader=reviewReader(),update=reader.update,books=room().reviewBooks,root=document.querySelector('#book-reader');reader.update=()=>{};
-    const collisions=[],pacing=[],stalls=[],slots=[],ids=['akai-sakana-to-kodomo','yaseuma','maru-megane-ryoubo-san'];let frame=0,phase='';
+    const collisions=[],pacing=[],stalls=[],slots=[],ids=['akai-sakana-to-kodomo','yaseuma','maru-megane-ryoubo-san','tsumikko'];let frame=0,phase='';
     books.forEach(book=>book.meshes.forEach(mesh=>mesh.geometry.computeBoundingBox()));
     function centers(){return books.map(book=>new T.Box3().setFromObject(book.object.getObjectByName('Back_board')).getCenter(new T.Vector3()));}
     function sample(){
@@ -24,14 +24,14 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
       // OBB.applyMatrix4 assumes its center is already in the rotated frame.
       obb.center.copy(bounds.getCenter(new T.Vector3()).applyMatrix4(mesh.matrixWorld));return obb;
      }));
-     for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)if(solids[i].some(a=>solids[j].some(b=>a.intersectsOBB(b))))collisions.push({phase,frame,i,j});
+     for(let i=0;i<books.length;i++)for(let j=i+1;j<books.length;j++)if(solids[i].some(a=>solids[j].some(b=>a.intersectsOBB(b))))collisions.push({phase,frame,i,j});
      frame++;
     }
     function animate(name){
      phase=name;const tracks=[centers()];sample();
      for(let n=0;n<600&&!['closed','reading'].includes(root.dataset.phase);n++){update(1/120,false);sample();tracks.push(centers());}
      if(!['closed','reading'].includes(root.dataset.phase))throw new Error('Animation failed to settle');
-     for(let i=0;i<3;i++){
+     for(let i=0;i<books.length;i++){
       const distances=tracks.slice(1).map((positions,n)=>positions[i].distanceTo(tracks[n][i]));
       const moving=distances.filter(d=>d>1e-9),peak=Math.max(...distances);
       if(peak>.001)pacing.push({phase,i,start:moving[0]/peak,end:moving.at(-1)/peak});
@@ -43,13 +43,13 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
     const launchStart=books.map(book=>({position:new T.Vector3().setFromMatrixPosition(book.object.matrix),rotation:book.object.getObjectByName('Back_board').getWorldQuaternion(new T.Quaternion())}));
     await reader.open(null,false);for(let n=0;n<120;n++)update(1/120,false);
     const launch=books.map((book,i)=>({distance:new T.Vector3().setFromMatrixPosition(book.object.matrix).distanceTo(launchStart[i].position),turn:book.object.getObjectByName('Back_board').getWorldQuaternion(new T.Quaternion()).angleTo(launchStart[i].rotation)}));reader.close(true);
-    for(let initial=0;initial<3;initial++){
+    for(let initial=0;initial<books.length;initial++){
      await reader.open({entryId:ids[initial]},false);animate(`pickup-${initial}`);
      let active=initial;
-     for(const target of [0,1,2,0,2,1]){
+     for(const target of [0,1,2,3,0,3,2,1]){
       if(active===target)continue;
-      const third=3-active-target,selector=root.querySelector(`[data-book-index="${third}"]`),before=['left','top','width','height'].map(key=>selector.style[key]).join(',');
-      root.querySelector(`[data-book-index="${target}"]`).click();slots.push(before===['left','top','width','height'].map(key=>selector.style[key]).join(','));animate(`swap-${active}-${target}`);active=target;
+      const waiting=[...root.querySelectorAll('[data-book-index]')].filter(button=>![active,target].includes(Number(button.dataset.bookIndex))),position=button=>['left','top','width','height'].map(key=>button.style[key]).join(','),before=waiting.map(position);
+      root.querySelector(`[data-book-index="${target}"]`).click();slots.push(waiting.every((button,i)=>position(button)===before[i]));animate(`swap-${active}-${target}`);active=target;
      }
      reader.close();animate(`return-${initial}`);
     }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createDiaryPrint } from './diary-print.js?v=5';
-import { BOOK_ASPECT, mobileReaderLayout as mobileLayout, ease, element, createPageSides, trapReaderFocus } from './reader-ui.js';
+import { BOOK_ASPECT, mobileReaderLayout as mobileLayout, ease, element, createPageSides, trapReaderFocus } from './reader-ui.js?v=20261103-memory-audit-1';
 
 const clamp=THREE.MathUtils.clamp;
 
@@ -71,9 +71,9 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
     const fov=heldRoom?.camera.fov||28;distance=.403/(height/innerHeight*2*Math.tan(THREE.MathUtils.degToRad(fov/2)));
     units=.403/height;
     for(let i=0;i<selectors.length;i++){
-      const slot=slots[i],sideHeight=mobile?waitingHeight:height*.31,sideWidth=sideHeight*.269/.410;
-      const x=mobile?innerWidth/2+(slot===0?-sideWidth*.8:sideWidth*.8):(centerX-width/2)/2;
-      const y=mobile?waitingY:centerY+(slot===0?-.22:.22)*height;
+      const slot=slots[i]-(entries.length-2)/2,sideHeight=mobile?waitingHeight:height*.31,sideWidth=sideHeight*.269/.410;
+      const x=mobile?innerWidth/2+slot*sideWidth*1.6:(centerX-width/2)/2;
+      const y=mobile?waitingY:centerY+slot*.44*height;
       selectors[i].style.cssText=`width:${sideWidth+12}px;height:${sideHeight+12}px;left:${x-sideWidth/2-6}px;top:${y-sideHeight/2-6}px`;
     }
   }
@@ -92,17 +92,17 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function printPages(){
     const room=getRoom();if(!room?.reviewBooks?.length)return;
-    bindings=room.reviewBooks;
+    const printBindings=room.reviewBooks;
     textures.forEach(t=>t.dispose());textures=pages.map((page,i)=>{
       spread.replaceChildren(...page.map(p=>p.cloneNode(true)));
-      const texture=createDiaryPrint(spread,surface,bindings[i].edges.paper,{tape:false,images:imageSources});bindings[i].appearance(texture);return texture;
+      const texture=createDiaryPrint(spread,surface,printBindings[i].edges.paper,{tape:false,images:imageSources});printBindings[i].appearance(texture);return texture;
     });printLayout=layoutKey;renderPage();
   }
   function destination(i){
-    const active=i===index,mobile=mobileLayout(),slot=slots[i];
+    const active=i===index,mobile=mobileLayout(),slot=slots[i],slotOffset=slot-(entries.length-2)/2;
     const smallScale=mobile?waitingHeight/height:.31;
-    const pixelX=active?centerX:mobile?innerWidth/2+(slot===0?-.8:.8)*(waitingHeight*.269/.410):(centerX-width/2)/2;
-    const pixelY=active?centerY:mobile?waitingY:centerY+(slot===0?-.22:.22)*height;
+    const pixelX=active?centerX:mobile?innerWidth/2+slotOffset*1.6*(waitingHeight*.269/.410):(centerX-width/2)/2;
+    const pixelY=active?centerY:mobile?waitingY:centerY+slotOffset*.44*height;
     const scale=new THREE.Vector3(active?(mobile?width/height/(.53/.403):1):smallScale,active?1:smallScale,active?.65:.6);
     const localRotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,active?0:slot===0?.12:-.12,active?0:slot===0?-.07:.06));
     const position=new THREE.Vector3((pixelX-innerWidth/2)*units,(innerHeight/2-pixelY)*units,-distance);
@@ -189,9 +189,10 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
   }
   function finishClose(notify=true){
     const reopen=queuedOpen;queuedOpen=null;pendingClose=false;reflow=null;
-    bindings.forEach(b=>b.restore());shadow();heldRoom?.holdView(false);heldRoom=null;root.hidden=true;root.style.setProperty('--review-presence','0');setPhase('closed');
+    bindings.forEach(b=>b.restore());shadow();heldRoom?.holdView(false);heldRoom=null;bindings=[];root.hidden=true;root.style.setProperty('--review-presence','0');setPhase('closed');
+    const focus=restoreFocus;restoreFocus=null;
     if(reopen){void reader.open(reopen.route,reopen.reducedMotion);}
-    else if(notify){onClose();restoreFocus?.focus({preventScroll:true});}
+    else if(notify){onClose();focus?.focus({preventScroll:true});}
   }
   function select(target,notify=true,pageSide='right'){
     target=(target+entries.length)%entries.length;
@@ -246,6 +247,8 @@ export function createBookReader({entries,getRoom,onBook,onClose}){
       }
       const returning=phase==='returning',flying=phase==='flying',duration=flying?2.15:returning?1.95:1.6,t=reduced?1:clamp(elapsed/duration,0,1);
       bindings.forEach((b,i)=>{
+        // Unselected waiting books keep hovering instead of repeating a flight.
+        if(phase==='switching'&&i!==index&&startOpening[i]===0){place(i,hovering(i,destination(i)),0);return;}
         const target=returning?b.rest:destination(i);
         const flight=follow(i,t,target),p=flight.progress;
         const open=returning?startOpening[i]*(1-clamp(p/.4,0,1)):i===index?clamp((p-.35)/.6,0,1):startOpening[i]*(1-clamp(p/.4,0,1));

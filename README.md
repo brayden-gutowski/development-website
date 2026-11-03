@@ -65,7 +65,7 @@ npm install
 npm run test:browser
 ```
 
-Browser checks require the local server and Google Chrome. They use Playwright and pngjs only as development tools. Run one check with `node tests/<name>.browser.cjs`, or all with `npm run test:browser -- --all`. `TEST_URL` changes the server address in checks that support it. Screenshots go to the system temporary directory. `memory-soak` repeatedly exercises both rooms, the globe, XP and readers, collecting Chrome heap/DOM/listener counts and GPU resources after garbage collection. `gpu-resource-lifetimes`, `area-loader-failure` and `xp-lifetimes` cover interrupted loading and disposal. See [memory audit](docs/performance/2026-10-25-memory-audit.md).
+Browser checks require the local server and Google Chrome. They use Playwright and pngjs only as development tools. Run one check with `node tests/<name>.browser.cjs`, or all with `npm run test:browser -- --all`. `TEST_URL` changes the server address in checks that support it. Screenshots go to the system temporary directory. `memory-soak` repeatedly exercises both rooms, the globe, XP and readers, collecting Chrome heap/DOM/listener counts and GPU resources after garbage collection. `gpu-resource-lifetimes`, `area-loader-failure` and `xp-lifetimes` cover interrupted loading and disposal. See [memory audit](docs/performance/2026-11-03-memory-audit.md).
 
 ## Asset authoring
 

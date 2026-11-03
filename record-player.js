@@ -1,28 +1,7 @@
 import * as THREE from 'three';
 
-// Cylinder.005 contains the entire authored pickup, including its fixed foot.
-// Separate connected islands at glTF material seams; retain every original
-// vertex attribute and triangle instead of adding replacement turntable parts.
-export function createRecordPlayer(scene,labelTexture) {
-  const arm = scene.getObjectByName('Cylinder005') || scene.getObjectByName('Cylinder.005');
-  if (!arm) return null;
-  const disc=scene.getObjectByName('Vinyl');
-  if(disc&&labelTexture){
-    labelTexture.colorSpace=THREE.SRGBColorSpace;
-    const label=new THREE.MeshStandardMaterial({name:'Pressed vinyl label',map:labelTexture,roughness:.74,metalness:0,side:THREE.DoubleSide});
-    disc.traverse(object=>{
-      if(!object.isMesh||!/^PlasticMoldLeather006|^PlasticDamaged001/.test(object.material.name))return;
-      // Reuse the authored circular faces. Planar UVs crop the supplied square
-      // to their circular boundary, with one continuous image across the ring.
-      const positions=object.geometry.attributes.position,uv=new Float32Array(positions.count*2);
-      for(let i=0;i<positions.count;i++){
-        uv[i*2]=.5+positions.getX(i)/.157;
-        uv[i*2+1]=.5-positions.getZ(i)/.157;
-      }
-      object.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
-      object.material=label;
-    });
-  }
+// Keep construction connectivity maps outside the persistent animation closures.
+function splitPickup(arm) {
   const meshes = [];
   arm.traverse(object => { if (object.isMesh) meshes.push(object); });
   const parents = [], points = [], seams = new Map(), sources = [];
@@ -76,6 +55,33 @@ export function createRecordPlayer(scene,labelTexture) {
     else mesh.removeFromParent();
     original.dispose();
   }
+  return { foot, axle, yaw, pitch };
+}
+
+// Cylinder.005 contains the entire authored pickup, including its fixed foot.
+// Separate connected islands at glTF material seams; retain every original
+// vertex attribute and triangle instead of adding replacement turntable parts.
+export function createRecordPlayer(scene,labelTexture) {
+  const arm = scene.getObjectByName('Cylinder005') || scene.getObjectByName('Cylinder.005');
+  if (!arm) return null;
+  const disc=scene.getObjectByName('Vinyl');
+  if(disc&&labelTexture){
+    labelTexture.colorSpace=THREE.SRGBColorSpace;
+    const label=new THREE.MeshStandardMaterial({name:'Pressed vinyl label',map:labelTexture,roughness:.74,metalness:0,side:THREE.DoubleSide});
+    disc.traverse(object=>{
+      if(!object.isMesh||!/^PlasticMoldLeather006|^PlasticDamaged001/.test(object.material.name))return;
+      // Reuse the authored circular faces. Planar UVs crop the supplied square
+      // to their circular boundary, with one continuous image across the ring.
+      const positions=object.geometry.attributes.position,uv=new Float32Array(positions.count*2);
+      for(let i=0;i<positions.count;i++){
+        uv[i*2]=.5+positions.getX(i)/.157;
+        uv[i*2+1]=.5-positions.getZ(i)/.157;
+      }
+      object.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+      object.material=label;
+    });
+  }
+  const { foot, axle, yaw, pitch } = splitPickup(arm);
   const parkedYaw = Math.atan2(.107555 - foot.x, -(-.076219 - foot.z));
   const playingYaw = .30, innerYaw = -.22, contactPitch = .0034, liftedPitch = .15;
   const liftAxis = new THREE.Vector3(.092054, 0, .1324885).normalize();

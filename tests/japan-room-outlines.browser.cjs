@@ -46,7 +46,7 @@ const { PNG } = require('pngjs');
     await page.close();
     // Test the displayed result too: postprocessing must not echo the contour.
     const live = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
-    await live.route('**/script.js*',async route=>{const response=await route.fetch();await route.fulfill({response,body:await response.text()+';window.outlineBackgroundReady=()=>backgroundAreasStarted&&areaLoads.size===0;'});});
+    await live.route('**/script.js*',async route=>{const response=await route.fetch();await route.fulfill({response,body:await response.text()+';window.outlineBackgroundReady=()=>backgroundAreasStarted&&areaLoads.size===0;window.prepareOutlineComparison=()=>{qualityCheckAfter=Infinity;renderScale=1;resize();return renderer.getPixelRatio();};'});});
     await live.goto(process.env.TEST_URL || 'http://127.0.0.1:4173');
     await live.locator('#loading-screen').waitFor({ state: 'hidden' });
     await live.getByRole('button', { name: /Tokyo, Japan/ }).click();
@@ -55,6 +55,9 @@ const { PNG } = require('pngjs');
     // Progress cards animate independently of the contour; finish them before
     // comparing the full displayed frame.
     await live.waitForFunction(()=>outlineBackgroundReady(),null,{timeout:120000});
+    // The white-pixel assertion measures a native-resolution contour; the
+    // render-budget regression covers adaptive scaling and its antialiasing.
+    assert.equal(await live.evaluate(()=>prepareOutlineComparison()),1);
     await live.mouse.move(30, 870);
     const before = PNG.sync.read(await live.screenshot());
     await live.getByRole('button', { name: 'Books · Japanese Books' }).focus();

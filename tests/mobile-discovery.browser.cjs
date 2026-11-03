@@ -42,7 +42,7 @@ const { chromium } = require('playwright');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.locator('.review-book-surface').dispatchEvent('pointerdown', { pointerId: 8, button: 0, clientX: 100, clientY: 400 });
     await page.locator('.review-book-surface').dispatchEvent('pointerup', { pointerId: 8, button: 0, clientX: 220, clientY: 400 });
-    await page.locator('#book-reader[data-phase="reading"][data-book="maru-megane-ryoubo-san"]').waitFor();
+    await page.locator('#book-reader[data-phase="reading"][data-book="tsumikko"]').waitFor();
     await page.waitForFunction(() => {
       const root=document.querySelector('#book-reader'),rect=root.querySelector('.review-page--left').getBoundingClientRect();
       return root.dataset.pageSide==='left' && rect.left>=0 && rect.right<=innerWidth;
